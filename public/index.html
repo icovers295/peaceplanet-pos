@@ -2928,9 +2928,19 @@
       try {
         let html = '';
 
-        // Search Products
+        // Search Products — split words for fuzzy matching
         if (type === 'all' || type === 'products') {
-          const products = await supabase('products', 'GET', null, `or=(name.ilike.*${query}*,sku.ilike.*${query}*,manufacturer.ilike.*${query}*)&limit=50&order=name.asc`);
+          const words = query.split(/\s+/).filter(w => w.length > 0);
+          let productFilter;
+          if (words.length === 1) {
+            // Single word: search name, SKU, and manufacturer
+            productFilter = `or=(name.ilike.*${words[0]}*,sku.ilike.*${words[0]}*,manufacturer.ilike.*${words[0]}*)`;
+          } else {
+            // Multiple words: each word must appear in the name (AND matching)
+            const nameFilters = words.map(w => `name.ilike.*${w}*`).join(',');
+            productFilter = `and=(${nameFilters})`;
+          }
+          const products = await supabase('products', 'GET', null, `${productFilter}&limit=50&order=name.asc`);
           if (products.length > 0) {
             // Fetch all categories for lookup
             const categories = await supabase('categories', 'GET', null, 'select=id,name');
