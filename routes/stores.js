@@ -39,7 +39,7 @@ router.get('/:id', authMiddleware, (req, res) => {
       (SELECT COUNT(*) FROM repairs WHERE store_id = ? AND status NOT IN ('completed', 'collected')) as active_repairs
   `).get(req.params.id, req.params.id, req.params.id, req.params.id);
 
-  res.json({ ...store, stats });
+  res.json({ ...store, ...stats });
 });
 
 // Update store (admin only)

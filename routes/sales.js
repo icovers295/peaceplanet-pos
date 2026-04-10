@@ -131,6 +131,45 @@ router.get('/', authMiddleware, (req, res) => {
   res.json(sales);
 });
 
+// Daily sales summary (must be before /:id to avoid route conflict)
+router.get('/reports/summary', authMiddleware, (req, res) => {
+  const { store_id, date } = req.query;
+  const targetDate = date || new Date().toISOString().split('T')[0];
+
+  let storeFilter = '';
+  let params = [targetDate, targetDate];
+  if (store_id) {
+    storeFilter = 'AND store_id = ?';
+    params.push(store_id);
+  }
+
+  const summary = db.prepare(`
+    SELECT
+      COUNT(*) as total_transactions,
+      COALESCE(SUM(total), 0) as total_revenue,
+      COALESCE(SUM(discount_amount), 0) as total_discounts,
+      COALESCE(AVG(total), 0) as average_transaction,
+      SUM(CASE WHEN payment_method = 'cash' THEN total ELSE 0 END) as cash_total,
+      SUM(CASE WHEN payment_method = 'card' THEN total ELSE 0 END) as card_total
+    FROM sales
+    WHERE date(created_at) = date(?) AND payment_status != 'refunded' ${storeFilter}
+  `).get(...params);
+
+  // Top products today
+  const topProducts = db.prepare(`
+    SELECT p.name, p.sku, SUM(si.quantity) as qty_sold, SUM(si.total) as revenue
+    FROM sale_items si
+    JOIN sales s ON si.sale_id = s.id
+    JOIN products p ON si.product_id = p.id
+    WHERE date(s.created_at) = date(?) AND s.payment_status != 'refunded' ${storeFilter}
+    GROUP BY p.id
+    ORDER BY qty_sold DESC
+    LIMIT 10
+  `).all(...params);
+
+  res.json({ date: targetDate, ...summary, top_products: topProducts });
+});
+
 // Get sale detail
 router.get('/:id', authMiddleware, (req, res) => {
   const sale = db.prepare(`
@@ -180,45 +219,6 @@ router.post('/:id/refund', authMiddleware, (req, res) => {
 
   db.prepare('UPDATE sales SET payment_status = ? WHERE id = ?').run('refunded', req.params.id);
   res.json({ success: true });
-});
-
-// Daily sales summary
-router.get('/reports/summary', authMiddleware, (req, res) => {
-  const { store_id, date } = req.query;
-  const targetDate = date || new Date().toISOString().split('T')[0];
-
-  let storeFilter = '';
-  let params = [targetDate, targetDate];
-  if (store_id) {
-    storeFilter = 'AND store_id = ?';
-    params.push(store_id);
-  }
-
-  const summary = db.prepare(`
-    SELECT
-      COUNT(*) as total_transactions,
-      COALESCE(SUM(total), 0) as total_revenue,
-      COALESCE(SUM(discount_amount), 0) as total_discounts,
-      COALESCE(AVG(total), 0) as average_transaction,
-      SUM(CASE WHEN payment_method = 'cash' THEN total ELSE 0 END) as cash_total,
-      SUM(CASE WHEN payment_method = 'card' THEN total ELSE 0 END) as card_total
-    FROM sales
-    WHERE date(created_at) = date(?) AND payment_status != 'refunded' ${storeFilter}
-  `).get(...params);
-
-  // Top products today
-  const topProducts = db.prepare(`
-    SELECT p.name, p.sku, SUM(si.quantity) as qty_sold, SUM(si.total) as revenue
-    FROM sale_items si
-    JOIN sales s ON si.sale_id = s.id
-    JOIN products p ON si.product_id = p.id
-    WHERE date(s.created_at) = date(?) AND s.payment_status != 'refunded' ${storeFilter}
-    GROUP BY p.id
-    ORDER BY qty_sold DESC
-    LIMIT 10
-  `).all(...params);
-
-  res.json({ date: targetDate, ...summary, top_products: topProducts });
 });
 
 module.exports = router;
