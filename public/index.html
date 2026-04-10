@@ -397,19 +397,28 @@
       padding: 24px;
     }
 
-    .modal-body .form-label {
+    .modal-body .form-label,
+    .main-content .form-label {
       color: var(--text-primary);
     }
 
-    .modal-body .form-input {
+    .modal-body .form-input,
+    .main-content .form-input {
       background: var(--surface-light);
       color: var(--text-primary);
       border: 1px solid var(--border);
     }
 
-    .modal-body .form-input:focus {
+    .modal-body .form-input:focus,
+    .main-content .form-input:focus {
       background: var(--surface-light);
       border-color: var(--primary);
+    }
+
+    .main-content .search-input {
+      background: var(--surface-light);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
     }
 
     .modal-footer {
