@@ -2930,13 +2930,19 @@
 
         // Search Products
         if (type === 'all' || type === 'products') {
-          const products = await supabase('products', 'GET', null, `or=(name.ilike.*${query}*,sku.ilike.*${query}*,category.ilike.*${query}*)&limit=50&order=name.asc`);
+          const products = await supabase('products', 'GET', null, `or=(name.ilike.*${query}*,sku.ilike.*${query}*,manufacturer.ilike.*${query}*)&limit=50&order=name.asc`);
           if (products.length > 0) {
+            // Fetch all categories for lookup
+            const categories = await supabase('categories', 'GET', null, 'select=id,name');
+            const catMap = {};
+            categories.forEach(c => catMap[c.id] = c.name);
+
+            // Fetch stock for all found products in one go per product
             html += '<div style="margin-bottom: 24px;">';
             html += '<h3 style="margin-bottom: 12px; color: var(--text-primary);">Products (' + products.length + (products.length === 50 ? '+' : '') + ')</h3>';
             html += '<table class="data-table"><thead><tr><th>Name</th><th>SKU</th><th>Category</th><th>Price</th>';
             if (isAdmin) html += '<th>Cost</th>';
-            html += '<th>Stock (' + getStoreName(currentStore) + ')</th><th>Actions</th></tr></thead><tbody>';
+            html += '<th>Stock (' + getStoreName(currentStore) + ')</th></tr></thead><tbody>';
 
             for (const p of products) {
               const stockRecs = await supabase('stock_levels', 'GET', null, `product_id=eq.${p.id}&store_id=eq.${currentStore}`);
@@ -2944,11 +2950,10 @@
               html += '<tr>';
               html += '<td>' + (p.name || '-') + '</td>';
               html += '<td>' + (p.sku || '-') + '</td>';
-              html += '<td>' + (p.category || '-') + '</td>';
+              html += '<td>' + (catMap[p.category_id] || '-') + '</td>';
               html += '<td>&pound;' + parseFloat(p.sell_price || 0).toFixed(2) + '</td>';
               if (isAdmin) html += '<td>&pound;' + parseFloat(p.cost_price || 0).toFixed(2) + '</td>';
               html += '<td>' + stock + '</td>';
-              html += '<td><button class="btn btn-sm btn-primary" onclick="navigateTo(\'inventory\')">View</button></td>';
               html += '</tr>';
             }
             html += '</tbody></table></div>';
