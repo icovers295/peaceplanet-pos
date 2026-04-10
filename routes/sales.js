@@ -137,7 +137,7 @@ router.get('/reports/summary', authMiddleware, (req, res) => {
   const targetDate = date || new Date().toISOString().split('T')[0];
 
   let storeFilter = '';
-  let params = [targetDate, targetDate];
+  let params = [targetDate];
   if (store_id) {
     storeFilter = 'AND store_id = ?';
     params.push(store_id);
@@ -155,17 +155,20 @@ router.get('/reports/summary', authMiddleware, (req, res) => {
     WHERE date(created_at) = date(?) AND payment_status != 'refunded' ${storeFilter}
   `).get(...params);
 
+  let topStoreFilter = store_id ? 'AND s.store_id = ?' : '';
+  let topParams = store_id ? [targetDate, store_id] : [targetDate];
+
   // Top products today
   const topProducts = db.prepare(`
     SELECT p.name, p.sku, SUM(si.quantity) as qty_sold, SUM(si.total) as revenue
     FROM sale_items si
     JOIN sales s ON si.sale_id = s.id
     JOIN products p ON si.product_id = p.id
-    WHERE date(s.created_at) = date(?) AND s.payment_status != 'refunded' ${storeFilter}
+    WHERE date(s.created_at) = date(?) AND s.payment_status != 'refunded' ${topStoreFilter}
     GROUP BY p.id
     ORDER BY qty_sold DESC
     LIMIT 10
-  `).all(...params);
+  `).all(...topParams);
 
   res.json({ date: targetDate, ...summary, top_products: topProducts });
 });
