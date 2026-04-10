@@ -1371,6 +1371,13 @@
                 'POS'
               ),
               el('div', {
+                className: `nav-item ${page === 'search' ? 'active' : ''}`,
+                onClick: () => setPage('search')
+              },
+                el('i', { className: 'fas fa-search' }),
+                'Search'
+              ),
+              el('div', {
                 className: `nav-item ${page === 'products' ? 'active' : ''}`,
                 onClick: () => setPage('products')
               },
@@ -1452,6 +1459,7 @@
             ),
             page === 'dashboard' && el(DashboardPage, { user, currentStore, showToast }),
             page === 'pos' && el(POSPage, { currentStore, showToast }),
+            page === 'search' && el(SearchPage, { currentStore, user, showToast, permissions }),
             page === 'products' && el(ProductsPage, { currentStore, user, showToast, permissions }),
             page === 'repairs' && el(RepairsPage, { currentStore, user, showToast, permissions }),
             page === 'customers' && el(CustomersPage, { showToast }),
@@ -1468,6 +1476,154 @@
               el('i', { className: `fas fa-${toast.type === 'success' ? 'check-circle' : toast.type === 'error' ? 'exclamation-circle' : 'info-circle'}` }),
               toast.message
             )
+          )
+        )
+      );
+    }
+
+    // ── Search Page — quick product lookup with fuzzy synonym matching ──
+    const SYNONYMS = {
+      screen: ['lcd', 'oled', 'display', 'digitizer', 'screen', 'amoled', 'tft', 'incell'],
+      lcd: ['screen', 'oled', 'display', 'lcd', 'amoled', 'tft', 'incell'],
+      oled: ['screen', 'lcd', 'display', 'oled', 'amoled'],
+      display: ['screen', 'lcd', 'oled', 'display', 'amoled', 'digitizer'],
+      amoled: ['screen', 'lcd', 'oled', 'display', 'amoled'],
+      digitizer: ['screen', 'lcd', 'display', 'digitizer', 'touch'],
+      battery: ['batt', 'battery'],
+      charger: ['charger', 'adapter', 'charging'],
+      cable: ['cable', 'cord', 'lead'],
+      case: ['case', 'cover', 'bumper'],
+      cover: ['case', 'cover', 'bumper'],
+      protector: ['protector', 'tempered', 'glass', 'film'],
+      tempered: ['protector', 'tempered', 'glass'],
+      camera: ['camera', 'lens'],
+      speaker: ['speaker', 'earpiece', 'loudspeaker'],
+      port: ['port', 'connector', 'charging port', 'dock'],
+      flex: ['flex', 'ribbon'],
+      back: ['back', 'rear', 'housing', 'back glass'],
+      housing: ['back', 'rear', 'housing'],
+      button: ['button', 'key', 'power button', 'volume'],
+    };
+
+    function SearchPage({ currentStore, user, showToast, permissions }) {
+      const [query, setQuery] = useState('');
+      const [results, setResults] = useState([]);
+      const [loading, setLoading] = useState(false);
+      const [totalResults, setTotalResults] = useState(0);
+      const searchTimeout = useRef(null);
+      const inputRef = useRef(null);
+
+      useEffect(() => { if (inputRef.current) inputRef.current.focus(); }, []);
+
+      const doSearch = (searchText) => {
+        setQuery(searchText);
+        if (searchTimeout.current) clearTimeout(searchTimeout.current);
+        if (searchText.length < 2) { setResults([]); setTotalResults(0); return; }
+
+        searchTimeout.current = setTimeout(async () => {
+          setLoading(true);
+          try {
+            // Build synonym-expanded searches: if user types "screen", also search "lcd", "oled" etc.
+            const words = searchText.trim().toLowerCase().split(/\s+/);
+            const expandedQueries = [searchText]; // Always include original
+
+            // Find synonym words and create expanded queries
+            for (const word of words) {
+              if (SYNONYMS[word]) {
+                for (const syn of SYNONYMS[word]) {
+                  if (syn !== word) {
+                    const expanded = words.map(w => w === word ? syn : w).join(' ');
+                    expandedQueries.push(expanded);
+                  }
+                }
+              }
+            }
+
+            // Run up to 5 unique queries and merge results
+            const uniqueQueries = [...new Set(expandedQueries)].slice(0, 6);
+            const allProducts = new Map();
+
+            for (const q of uniqueQueries) {
+              const resp = await api('/products?search=' + encodeURIComponent(q) + '&store_id=' + currentStore + '&limit=30');
+              const prods = resp.products || resp || [];
+              for (const p of prods) {
+                if (!allProducts.has(p.id)) allProducts.set(p.id, p);
+              }
+            }
+
+            // Sort: exact name matches first, then by name
+            const sorted = Array.from(allProducts.values()).sort((a, b) => {
+              const aMatch = a.name.toLowerCase().includes(searchText.toLowerCase()) ? 0 : 1;
+              const bMatch = b.name.toLowerCase().includes(searchText.toLowerCase()) ? 0 : 1;
+              if (aMatch !== bMatch) return aMatch - bMatch;
+              return a.name.localeCompare(b.name);
+            });
+
+            setResults(sorted);
+            setTotalResults(sorted.length);
+          } catch (err) {
+            showToast(err.message, 'error');
+          } finally { setLoading(false); }
+        }, 300);
+      };
+
+      const isAdmin = user?.role === 'admin';
+
+      return el('div', { className: 'page-content' },
+        el('h1', { style: { marginBottom: 16 } }, 'Product Search'),
+        el('div', { style: { marginBottom: 20 } },
+          el('input', {
+            ref: inputRef,
+            type: 'text',
+            value: query,
+            onChange: e => doSearch(e.target.value),
+            placeholder: 'Type to search... e.g. "f 15 screen" or "s 24 oled" or "charger"',
+            style: { width: '100%', padding: '14px 18px', fontSize: 18, borderRadius: 12, border: '2px solid #333', background: '#1a1a2e', color: '#fff' },
+            autoFocus: true
+          }),
+          el('div', { style: { marginTop: 8, fontSize: 13, color: '#666' } },
+            'Shortcuts: f = iPhone, s = Samsung, h = Huawei, g = Google, x = Xiaomi  •  "screen" also finds LCD, OLED, Display'
+          )
+        ),
+
+        loading && el('div', { style: { padding: 20, textAlign: 'center', color: '#888' } }, 'Searching...'),
+
+        !loading && query.length >= 2 && el('div', { style: { marginBottom: 12, color: '#888', fontSize: 14 } },
+          totalResults + ' product' + (totalResults !== 1 ? 's' : '') + ' found'
+        ),
+
+        !loading && results.length > 0 && el('div', { style: { display: 'grid', gap: 8 } },
+          results.map(p =>
+            el('div', { key: p.id, style: { background: '#1a1a2e', borderRadius: 12, padding: '16px 20px', display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', gap: 16, border: '1px solid #252545' } },
+              el('div', null,
+                el('div', { style: { fontWeight: 700, fontSize: 16, marginBottom: 4 } }, p.name),
+                el('div', { style: { display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 13, color: '#888' } },
+                  p.sku && el('span', null, 'SKU: ' + p.sku),
+                  p.category_name && el('span', null, p.category_name)
+                )
+              ),
+              el('div', { style: { textAlign: 'right' } },
+                el('div', { style: { fontSize: 22, fontWeight: 700, color: '#22c55e' } }, '£' + (p.sell_price || 0).toFixed(2)),
+                isAdmin && el('div', { style: { fontSize: 13, color: '#888', marginTop: 2 } }, 'Cost: £' + (p.cost_price || 0).toFixed(2)),
+                el('div', { style: { fontSize: 13, marginTop: 4, color: (p.stock_quantity || 0) > 0 ? '#22c55e' : '#ef4444', fontWeight: 600 } },
+                  (p.stock_quantity || 0) > 0 ? 'In Stock: ' + p.stock_quantity : 'Out of Stock'
+                )
+              )
+            )
+          )
+        ),
+
+        !loading && query.length >= 2 && results.length === 0 && el('div', { style: { padding: 40, textAlign: 'center', color: '#666' } },
+          el('div', { style: { fontSize: 48, marginBottom: 16 } }, '🔍'),
+          el('div', { style: { fontSize: 18 } }, 'No products found for "' + query + '"'),
+          el('div', { style: { marginTop: 8, fontSize: 14 } }, 'Try a different search — e.g. "f 15 screen" or "s charger"')
+        ),
+
+        !loading && query.length < 2 && el('div', { style: { padding: 40, textAlign: 'center', color: '#555' } },
+          el('div', { style: { fontSize: 48, marginBottom: 16 } }, '⚡'),
+          el('div', { style: { fontSize: 18 } }, 'Quick Product Search'),
+          el('div', { style: { marginTop: 8, fontSize: 14, maxWidth: 400, margin: '8px auto', lineHeight: 1.6 } },
+            'Start typing to find products instantly. Use shortcuts like "f" for iPhone, "s" for Samsung. Words like "screen", "lcd", and "oled" are interchangeable.'
           )
         )
       );
