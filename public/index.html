@@ -1260,15 +1260,15 @@
           <div class="page-title">Repairs</div>
           <div id="repairsAlert" class="alert"></div>
           <div style="display: flex; gap: 12px; margin-bottom: 16px;">
-            <select id="repairStatusFilter" class="form-input" style="width: 200px;">
+            <select id="repairStatusFilter" class="form-input" style="width: 200px;" onchange="loadRepairs()">
               <option value="">All Status</option>
-              <option value="checked_in">Checked In</option>
-              <option value="diagnosing">Diagnosing</option>
-              <option value="awaiting_parts">Awaiting Parts</option>
-              <option value="in_repair">In Repair</option>
-              <option value="ready">Ready</option>
-              <option value="completed">Completed</option>
-              <option value="collected">Collected</option>
+              <option value="Checked In">Checked In</option>
+              <option value="Diagnosing">Diagnosing</option>
+              <option value="Awaiting Parts">Awaiting Parts</option>
+              <option value="In Repair">In Repair</option>
+              <option value="Ready">Ready</option>
+              <option value="Completed">Completed</option>
+              <option value="Collected">Collected</option>
             </select>
             <button class="btn btn-primary" onclick="showNewRepairModal()">
               <i class="fas fa-plus"></i> New Repair
@@ -2172,15 +2172,18 @@
           <input type="text" class="form-input" id="modalDeviceModel" required placeholder="e.g., 13 Pro">
         </div>
         <div class="form-group">
-          <label class="form-label">Issue</label>
+          <label class="form-label">Issue Description</label>
           <textarea class="form-input" id="modalIssue" required></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Estimated Cost (£)</label>
+          <input type="number" class="form-input" id="modalEstimatedCost" step="0.01" min="0" placeholder="0.00">
         </div>
         <div class="form-group">
           <label class="form-label">Priority</label>
           <select class="form-input" id="modalPriority">
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
+            <option value="normal">Normal</option>
+            <option value="urgent">Urgent</option>
           </select>
         </div>
       `, [
@@ -2198,13 +2201,22 @@
         const deviceModel = document.getElementById('modalDeviceModel').value;
         const issue = document.getElementById('modalIssue').value;
         const priority = document.getElementById('modalPriority').value;
+        const estimatedCost = parseFloat(document.getElementById('modalEstimatedCost').value) || 0;
 
-        // Get next ticket number
-        const seqResult = await supabase('rpc/next_sequence', 'POST', { seq_name: 'repair_seq' });
-        const ticketNum = `RPR${new Date().toISOString().slice(0, 7).replace(/-/g, '')}-${seqResult.next_value || 1}`;
+        if (!customerName || !deviceType || !issue) {
+          throw new Error('Please fill in customer name, device type, and issue');
+        }
+
+        // Get next ticket number via RPC
+        const ticketNum = await supabase('rpc/generate_ticket_number', 'POST', {});
 
         // Create customer if not exists
-        let customer = await supabase('customers', 'GET', null, `email=eq.${encodeURIComponent(customerEmail)}`);
+        let customer = [];
+        if (customerEmail) {
+          customer = await supabase('customers', 'GET', null, `email=eq.${encodeURIComponent(customerEmail)}`);
+        } else if (customerPhone) {
+          customer = await supabase('customers', 'GET', null, `phone=eq.${encodeURIComponent(customerPhone)}`);
+        }
 
         if (!customer || customer.length === 0) {
           customer = await supabase('customers', 'POST', {
@@ -2212,22 +2224,20 @@
             email: customerEmail || null,
             phone: customerPhone || null
           });
-        } else {
-          customer = customer;
         }
 
         // Create repair
         await supabase('repairs', 'POST', {
           ticket_number: ticketNum,
           store_id: currentStore,
+          staff_id: currentUser.id,
           customer_id: customer[0]?.id,
-          customer_name: customerName,
           device_type: deviceType,
           device_model: deviceModel,
-          issue: issue,
+          issue_description: issue,
           priority: priority,
-          status: 'checked_in',
-          created_at: new Date().toISOString()
+          estimated_cost: estimatedCost,
+          status: 'Checked In'
         });
 
         closeModal();
@@ -2238,8 +2248,75 @@
       }
     }
 
-    function showRepairDetailsModal(repairId) {
-      // TODO: Implement repair details
+    async function showRepairDetailsModal(repairId) {
+      try {
+        const repairArr = await supabase('repairs', 'GET', null, `id=eq.${repairId}&select=*`);
+        const repair = repairArr[0];
+        const parts = await supabase('repair_parts', 'GET', null, `repair_id=eq.${repairId}&select=*`);
+
+        // Get customer info
+        let customerInfo = '-';
+        if (repair.customer_id) {
+          const custArr = await supabase('customers', 'GET', null, `id=eq.${repair.customer_id}`);
+          if (custArr.length) customerInfo = `${custArr[0].name} ${custArr[0].phone ? '(' + custArr[0].phone + ')' : ''} ${custArr[0].email ? custArr[0].email : ''}`;
+        }
+
+        const storeName = Object.entries(STORE_IDS).find(([_, id]) => id === repair.store_id)?.[0] || '-';
+
+        let partsHtml = parts.length ? parts.map(p => `
+          <tr>
+            <td>${p.product_name}</td>
+            <td>${p.quantity}</td>
+            <td>£${parseFloat(p.unit_price).toFixed(2)}</td>
+          </tr>
+        `).join('') : '<tr><td colspan="3" style="text-align:center">No parts added</td></tr>';
+
+        const statusOptions = ['Checked In', 'Diagnosing', 'Awaiting Parts', 'In Repair', 'Ready', 'Completed', 'Collected']
+          .map(s => `<option value="${s}" ${repair.status === s ? 'selected' : ''}>${s}</option>`).join('');
+
+        openModal('Repair Details - ' + repair.ticket_number, `
+          <div style="margin-bottom: 16px;">
+            <p><strong>Customer:</strong> ${customerInfo}</p>
+            <p><strong>Store:</strong> ${storeName}</p>
+            <p><strong>Device:</strong> ${repair.device_type} ${repair.device_model || ''}</p>
+            <p><strong>Issue:</strong> ${repair.issue_description || '-'}</p>
+            <p><strong>Priority:</strong> ${repair.priority || '-'}</p>
+            <p><strong>Estimated Cost:</strong> £${parseFloat(repair.estimated_cost || 0).toFixed(2)}</p>
+            <p><strong>Created:</strong> ${new Date(repair.created_at).toLocaleDateString('en-GB')}</p>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Update Status</label>
+            <select class="form-input" id="repairStatusUpdate">${statusOptions}</select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Notes</label>
+            <textarea class="form-input" id="repairNotesUpdate">${repair.notes || ''}</textarea>
+          </div>
+          <h4 style="margin: 12px 0 8px;">Parts Used</h4>
+          <table class="data-table" style="width:100%">
+            <thead><tr><th>Part</th><th>Qty</th><th>Price</th></tr></thead>
+            <tbody>${partsHtml}</tbody>
+          </table>
+        `, [
+          { text: 'Close', onclick: closeModal },
+          { text: 'Save Changes', onclick: () => updateRepair('${repairId}'), className: 'btn-primary' }
+        ]);
+      } catch (err) {
+        showAlert('repairsAlert', err.message, 'error');
+      }
+    }
+
+    async function updateRepair(repairId) {
+      try {
+        const status = document.getElementById('repairStatusUpdate').value;
+        const notes = document.getElementById('repairNotesUpdate').value;
+        await supabase('repairs', 'PATCH', { status, notes }, `id=eq.${repairId}`);
+        closeModal();
+        loadRepairs();
+        showAlert('repairsAlert', 'Repair updated!', 'success');
+      } catch (err) {
+        showAlert('repairsAlert', err.message, 'error');
+      }
     }
 
     // ===== CUSTOMERS PAGE =====
@@ -2322,7 +2399,7 @@
     // ===== STOCK TRANSFERS PAGE =====
     async function loadTransfers() {
       try {
-        const transfers = await supabase('stock_transfers', 'GET', null, `select=*&order=created_at.desc&limit=50`);
+        const transfers = await supabase('stock_transfers', 'GET', null, `select=*&order=transferred_at.desc&limit=50`);
         renderTransfersTable(transfers);
 
         // Load store selectors
@@ -2339,9 +2416,49 @@
             select.appendChild(opt);
           });
         });
+
+        // Set default from store to current store
+        fromSelect.value = currentStore;
       } catch (err) {
         showAlert('transfersAlert', err.message, 'error');
       }
+    }
+
+    // Transfer product search handler
+    let transferSearchTimeout;
+    document.getElementById('transferProductSearch')?.addEventListener('input', (e) => {
+      clearTimeout(transferSearchTimeout);
+      const query = e.target.value.trim();
+      const resultsDiv = document.getElementById('transferProductResults');
+
+      if (query.length < 2) {
+        resultsDiv.innerHTML = '';
+        delete e.target.dataset.selectedId;
+        delete e.target.dataset.selectedName;
+        return;
+      }
+
+      transferSearchTimeout = setTimeout(async () => {
+        try {
+          const products = await supabase('products', 'GET', null, `name=ilike.*${encodeURIComponent(query)}*&active=eq.true&limit=10&select=id,name,sku`);
+          resultsDiv.innerHTML = products.map(p => `
+            <div style="padding: 8px; cursor: pointer; border-bottom: 1px solid var(--border); background: var(--surface-light);"
+                 onclick="selectTransferProduct('${p.id}', '${p.name.replace(/'/g, "\\'")}')">
+              <strong>${p.name}</strong> <span style="color: var(--text-secondary)">(${p.sku})</span>
+            </div>
+          `).join('') || '<div style="padding: 8px; color: var(--text-secondary)">No products found</div>';
+        } catch (err) {
+          resultsDiv.innerHTML = '<div style="padding: 8px; color: var(--danger)">Search error</div>';
+        }
+      }, 300);
+    });
+
+    function selectTransferProduct(productId, productName) {
+      const input = document.getElementById('transferProductSearch');
+      input.value = productName;
+      input.dataset.selectedId = productId;
+      input.dataset.selectedName = productName;
+      document.getElementById('transferProductResults').innerHTML = '';
     }
 
     function renderTransfersTable(transfers) {
@@ -2350,15 +2467,15 @@
 
       transfers.forEach(transfer => {
         const row = document.createElement('tr');
-        const fromStore = Object.entries(STORE_IDS).find(([_, id]) => id === transfer.from_store_id)?.[0];
-        const toStore = Object.entries(STORE_IDS).find(([_, id]) => id === transfer.to_store_id)?.[0];
+        const fromStore = Object.entries(STORE_IDS).find(([_, id]) => id === transfer.from_store_id)?.[0] || '-';
+        const toStore = Object.entries(STORE_IDS).find(([_, id]) => id === transfer.to_store_id)?.[0] || '-';
 
         row.innerHTML = `
-          <td>${transfer.product_id}</td>
+          <td>${transfer.product_name || transfer.product_id}</td>
           <td>${fromStore}</td>
           <td>${toStore}</td>
           <td>${transfer.quantity}</td>
-          <td>${new Date(transfer.created_at).toLocaleDateString()}</td>
+          <td>${new Date(transfer.transferred_at).toLocaleDateString('en-GB')}</td>
         `;
         tbody.appendChild(row);
       });
@@ -2366,13 +2483,19 @@
 
     async function processTransfer() {
       try {
-        const productId = document.getElementById('transferProductSearch').dataset.selectedId;
+        const searchInput = document.getElementById('transferProductSearch');
+        const productId = searchInput.dataset.selectedId;
+        const productName = searchInput.dataset.selectedName;
         const fromStore = document.getElementById('transferFromStore').value;
         const toStore = document.getElementById('transferToStore').value;
         const quantity = parseInt(document.getElementById('transferQuantity').value);
 
         if (!productId || !fromStore || !toStore || !quantity) {
-          throw new Error('Please fill in all fields');
+          throw new Error('Please search and select a product, then fill in all fields');
+        }
+
+        if (fromStore === toStore) {
+          throw new Error('From and To store cannot be the same');
         }
 
         // Check source stock
@@ -2399,15 +2522,18 @@
         // Record transfer
         await supabase('stock_transfers', 'POST', {
           product_id: productId,
+          product_name: productName,
           from_store_id: fromStore,
           to_store_id: toStore,
           quantity: quantity,
-          created_at: new Date().toISOString()
+          staff_id: currentUser.id
         });
 
         showAlert('transfersAlert', 'Transfer completed!', 'success');
         loadTransfers();
-        document.getElementById('transferProductSearch').value = '';
+        searchInput.value = '';
+        delete searchInput.dataset.selectedId;
+        delete searchInput.dataset.selectedName;
         document.getElementById('transferQuantity').value = '';
       } catch (err) {
         showAlert('transfersAlert', err.message, 'error');
@@ -2831,8 +2957,96 @@
       }
     }
 
-    function showEditStaffModal(staffId) {
-      // TODO: Implement edit staff
+    async function showEditStaffModal(staffId) {
+      try {
+        const staffArr = await supabase('staff', 'GET', null, `id=eq.${staffId}`);
+        const member = staffArr[0];
+        const staffStores = await supabase('staff_stores', 'GET', null, `staff_id=eq.${staffId}`);
+        const assignedStoreIds = staffStores.map(s => s.store_id);
+
+        openModal('Edit Staff', `
+          <div class="form-group">
+            <label class="form-label">Name</label>
+            <input type="text" class="form-input" id="editStaffName" value="${member.name}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-input" id="editStaffEmail" value="${member.email}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Role</label>
+            <select class="form-input" id="editStaffRole">
+              <option value="admin" ${member.role === 'admin' ? 'selected' : ''}>Admin</option>
+              <option value="manager" ${member.role === 'manager' ? 'selected' : ''}>Manager</option>
+              <option value="cashier" ${member.role === 'cashier' ? 'selected' : ''}>Cashier</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Active</label>
+            <select class="form-input" id="editStaffActive">
+              <option value="true" ${member.active ? 'selected' : ''}>Yes</option>
+              <option value="false" ${!member.active ? 'selected' : ''}>No</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Stores</label>
+            <div id="editStoreCheckboxes"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">New Password (leave blank to keep current)</label>
+            <input type="password" class="form-input" id="editStaffPassword" placeholder="Leave blank to keep current">
+          </div>
+        `, [
+          { text: 'Cancel', onclick: closeModal },
+          { text: 'Save Changes', onclick: () => saveEditStaff('${staffId}'), className: 'btn-primary' }
+        ]);
+
+        const checkboxDiv = document.getElementById('editStoreCheckboxes');
+        Object.entries(STORE_IDS).forEach(([name, id]) => {
+          const label = document.createElement('label');
+          label.style.display = 'flex';
+          label.style.gap = '8px';
+          label.style.marginBottom = '8px';
+          label.innerHTML = `
+            <input type="checkbox" class="edit-store-check" value="${id}" ${assignedStoreIds.includes(id) ? 'checked' : ''}>
+            <span>${name}</span>
+          `;
+          checkboxDiv.appendChild(label);
+        });
+      } catch (err) {
+        showAlert('staffAlert', err.message, 'error');
+      }
+    }
+
+    async function saveEditStaff(staffId) {
+      try {
+        const updates = {
+          name: document.getElementById('editStaffName').value,
+          email: document.getElementById('editStaffEmail').value,
+          role: document.getElementById('editStaffRole').value,
+          active: document.getElementById('editStaffActive').value === 'true'
+        };
+        const newPassword = document.getElementById('editStaffPassword').value;
+        if (newPassword) updates.password = newPassword;
+
+        await supabase('staff', 'PATCH', updates, `id=eq.${staffId}`);
+
+        // Update store assignments - delete old, add new
+        await supabase('staff_stores', 'DELETE', null, `staff_id=eq.${staffId}`);
+        const storeChecks = document.querySelectorAll('.edit-store-check:checked');
+        for (const check of storeChecks) {
+          await supabase('staff_stores', 'POST', {
+            staff_id: staffId,
+            store_id: check.value
+          });
+        }
+
+        closeModal();
+        loadStaff();
+        showAlert('staffAlert', 'Staff updated!', 'success');
+      } catch (err) {
+        showAlert('staffAlert', err.message, 'error');
+      }
     }
 
     // ===== MONITOR MODE =====
@@ -2852,7 +3066,7 @@
       try {
         const repairs = await supabase('repairs', 'GET', null, `select=*&store_id=eq.${currentStore}&order=status`);
 
-        const statuses = ['checked_in', 'diagnosing', 'awaiting_parts', 'in_repair', 'ready', 'completed', 'collected'];
+        const statuses = ['Checked In', 'Diagnosing', 'Awaiting Parts', 'In Repair', 'Ready', 'Completed', 'Collected'];
         const grid = document.getElementById('monitorContent');
         grid.innerHTML = '<div class="monitor-title">Repair Status</div><div class="repair-status-grid">';
 
@@ -2861,11 +3075,11 @@
           const column = document.createElement('div');
           column.className = 'status-column';
           column.innerHTML = `
-            <div class="status-header">${status.replace(/_/g, ' ').toUpperCase()}</div>
+            <div class="status-header">${status.toUpperCase()}</div>
             <div class="status-items">
               ${statusRepairs.map(repair => `
                 <div class="status-item">
-                  <div class="status-item-customer">${repair.customer_name}</div>
+                  <div class="status-item-customer">${repair.device_type} ${repair.device_model || ''}</div>
                   <div class="status-item-device">${repair.device_type} ${repair.device_model || ''}</div>
                   <div class="status-item-ticket">${repair.ticket_number}</div>
                 </div>
