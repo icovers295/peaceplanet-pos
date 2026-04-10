@@ -944,6 +944,3446 @@
 
       return el('div', { className: 'login-container' },
         el('div', { className: 'login-card' },
+          el('h1', null, 'ð PeacePlanet POS'),
+          el('p', null, 'Point of Sale System'),
+          el('form', { onSubmit: handleSubmit },
+            el('div', { className: 'form-group' },
+              el('label', null, 'Email'),
+              el('input', {
+                type: 'email',
+                value: email,
+                onChange: e => setEmail(e.target.value),
+                placeholder: 'your@email.com',
+                required: true
+              })
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Password'),
+              el('input', {
+                type: 'password',
+                value: password,
+                onChange: e => setPassword(e.target.value),
+                placeholder: 'â¢â¢â¢â¢â¢â¢â¢â¢',
+                required: true
+              })
+            ),
+            error && el('div', { className: 'error-message' }, error),
+            el('button', {
+              type: 'submit',
+              className: 'btn btn-primary',
+              disabled: loading
+            }, loading ? 'Signing in...' : 'Sign In')
+          )
+        )
+      );
+    }
+
+    // Dashboard Page
+    function DashboardPage({ user, currentStore, showToast }) {
+      const [stats, setStats] = useState(null);
+      const [summary, setSummary] = useState(null);
+      const [loading, setLoading] = useState(true);
+
+      useEffect(() => {
+        const loadData = async () => {
+          try {
+            const [storeStats, salesSummary] = await Promise.all([
+              api(`/stores/${currentStore}`),
+              api(`/sales/reports/summary?store_id=${currentStore}&date=${new Date().toISOString().split('T')[0]}`)
+            ]);
+            setStats(storeStats);
+            setSummary(salesSummary);
+          } catch (err) {
+            showToast(err.message, 'error');
+          } finally {
+            setLoading(false);
+          }
+        };
+        loadData();
+      }, [currentStore, showToast]);
+
+      if (loading) return el('div', { className: 'page-content' }, 'Loading...');
+
+      return el('div', { className: 'page-content' },
+        el('h1', { style: { marginBottom: 24 } }, 'Dashboard'),
+        el('div', { className: 'stat-cards' },
+          el('div', { className: 'stat-card' },
+            el('div', { className: 'stat-label' }, "Today's Sales"),
+            el('div', { className: 'stat-value' }, `Â£${(summary?.total_revenue || 0).toFixed(2)}`)
+          ),
+          el('div', { className: 'stat-card' },
+            el('div', { className: 'stat-label' }, 'Transactions'),
+            el('div', { className: 'stat-value' }, summary?.total_transactions || 0)
+          ),
+          el('div', { className: 'stat-card' },
+            el('div', { className: 'stat-label' }, 'Products in Stock'),
+            el('div', { className: 'stat-value' }, stats?.products_in_stock || 0)
+          ),
+          el('div', { className: 'stat-card' },
+            el('div', { className: 'stat-label' }, 'Active Repairs'),
+            el('div', { className: 'stat-value' }, stats?.active_repairs || 0)
+          )
+        ),
+        summary && el('div', { className: 'card' },
+          el('h3', null, 'Payment Breakdown'),
+          el('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 } },
+            el('div', null,
+              el('div', { className: 'text-sm text-muted' }, 'Cash'),
+              el('div', { style: { fontSize: 20, fontWeight: 700 } }, `Â£${(summary.cash_total || 0).toFixed(2)}`)
+            ),
+            el('div', null,
+              el('div', { className: 'text-sm text-muted' }, 'Card'),
+              el('div', { style: { fontSize: 20, fontWeight: 700 } }, `Â£${(summary.card_total || 0).toFixed(2)}`)
+            )
+          )
+        )
+      );
+    }
+
+    // POS Page
+    function POSPage({ currentStore, showToast }) {
+      const [searchQuery, setSearchQuery] = useState('');
+      const [products, setProducts] = useState([]);
+      const [cart, setCart] = useState([]);
+      const [discountAmount, setDiscountAmount] = useState(0);
+      const [paymentMethod, setPaymentMethod] = useState('cash');
+      const [loading, setLoading] = useState(false);
+      const [checkoutLoading, setCheckoutLoading] = useState(false);
+      const searchInputRef = useRef(null);
+
+      const searchTimeout = useRef(null);
+
+      const searchProducts = useCallback(async (query) => {
+        if (!query.trim()) {
+          setProducts([]);
+          return;
+        }
+        setLoading(true);
+        try {
+          const result = await api(`/products?search=${encodeURIComponent(query)}&store_id=${currentStore}&limit=50`);
+          setProducts(result.products || []);
+        } catch (err) {
+          showToast(err.message, 'error');
+        } finally {
+          setLoading(false);
+        }
+      }, [currentStore, showToast]);
+
+      const handleSearch = (value) => {
+        setSearchQuery(value);
+        clearTimeout(searchTimeout.current);
+        searchTimeout.current = setTimeout(() => searchProducts(value), 300);
+      };
+
+      const handleSearchKeyDown = (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          if (products.length > 0) {
+            addToCart(products[0]);
+          }
+        }
+      };
+
+      const addToCart = (product) => {
+        setCart(prevCart => {
+          const existing = prevCart.find(item => item.product_id === product.id);
+          if (existing) {
+            return prevCart.map(item =>
+              item.product_id === product.id
+                ? { ...item, quantity: item.quantity + 1 }
+                : item
+            );
+          }
+          return [...prevCart, {
+            product_id: product.id,
+            product_name: product.name,
+            quantity: 1,
+            unit_price: product.sell_price
+          }];
+        });
+        setSearchQuery('');
+        setProducts([]);
+        if (searchInputRef.current) searchInputRef.current.focus();
+      };
+
+      const updateCartQty = (productId, qty) => {
+        if (qty <= 0) {
+          removeFromCart(productId);
+        } else {
+          setCart(prevCart =>
+            prevCart.map(item =>
+              item.product_id === productId
+                ? { ...item, quantity: qty }
+                : item
+            )
+          );
+        }
+      };
+
+      const removeFromCart = (productId) => {
+        setCart(prevCart => prevCart.filter(item => item.product_id !== productId));
+      };
+
+      const subtotal = cart.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
+      const total = subtotal - discountAmount;
+
+      const handleCheckout = async () => {
+        if (cart.length === 0) {
+          showToast('Cart is empty', 'error');
+          return;
+        }
+        setCheckoutLoading(true);
+        try {
+          const saleData = {
+            store_id: currentStore,
+            customer_id: null,
+            items: cart.map(item => ({
+              product_id: item.product_id,
+              quantity: item.quantity,
+              unit_price: item.unit_price,
+              discount: 0
+            })),
+            payment_method: paymentMethod,
+            discount_amount: discountAmount,
+            notes: ''
+          };
+          const result = await api('/sales', {
+            method: 'POST',
+            body: JSON.stringify(saleData)
+          });
+          showToast(`Sale completed! Receipt: ${result.receipt_number}`, 'success');
+          setCart([]);
+          setDiscountAmount(0);
+          setPaymentMethod('cash');
+        } catch (err) {
+          showToast(err.message, 'error');
+        } finally {
+          setCheckoutLoading(false);
+        }
+      };
+
+      return el('div', { className: 'page-content' },
+        el('h1', { style: { marginBottom: 16 } }, 'Point of Sale'),
+        el('div', { className: 'pos-container' },
+          el('div', { className: 'pos-left' },
+            el('div', { className: 'search-bar' },
+              el('i', { className: 'fas fa-barcode', style: { color: 'var(--gray-600)' } }),
+              el('input', {
+                ref: searchInputRef,
+                type: 'text',
+                placeholder: 'Search products by name or scan barcode...',
+                value: searchQuery,
+                onChange: e => handleSearch(e.target.value),
+                onKeyDown: handleSearchKeyDown,
+                style: { flex: 1 }
+              })
+            ),
+            loading && el('div', { style: { textAlign: 'center', color: 'var(--gray-600)' } }, 'Loading...'),
+            !loading && el('div', { className: 'products-grid' },
+              products.map(product =>
+                el('div', {
+                  key: product.id,
+                  className: 'product-tile',
+                  onClick: () => addToCart(product)
+                },
+                  el('div', { className: 'product-tile-name' }, product.name),
+                  el('div', { className: 'product-tile-sku' }, product.sku),
+                  el('div', { className: 'product-tile-price' }, `Â£${product.sell_price.toFixed(2)}`),
+                  el('div', { className: 'product-tile-stock' }, `Stock: ${product.inventory?.[0]?.quantity || 0}`)
+                )
+              )
+            )
+          ),
+          el('div', { className: 'cart-section' },
+            el('div', { className: 'cart-header' }, 'Cart'),
+            el('div', { className: 'cart-items' },
+              cart.length === 0 ?
+                el('div', { style: { textAlign: 'center', color: 'var(--gray-500)', padding: 20 } }, 'No items') :
+                cart.map(item =>
+                  el('div', { key: item.product_id, className: 'cart-item' },
+                    el('div', { className: 'cart-item-info' },
+                      el('div', { className: 'cart-item-name' }, item.product_name),
+                      el('div', { className: 'cart-item-price' }, `Â£${(item.unit_price * item.quantity).toFixed(2)}`)
+                    ),
+                    el('div', { className: 'cart-qty-controls' },
+                      el('button', {
+                        className: 'cart-qty-btn',
+                        onClick: () => updateCartQty(item.product_id, item.quantity - 1)
+                      }, '-'),
+                      el('span', { style: { width: 24, textAlign: 'center' } }, item.quantity),
+                      el('button', {
+                        className: 'cart-qty-btn',
+                        onClick: () => updateCartQty(item.product_id, item.quantity + 1)
+                      }, '+')
+                    ),
+                    el('button', {
+                      className: 'cart-item-remove',
+                      onClick: () => removeFromCart(item.product_id)
+                    }, 'Remove')
+                  )
+                )
+            ),
+            el('div', { className: 'cart-footer' },
+              el('div', { className: 'form-group' },
+                el('label', null, 'Discount (Â£)'),
+                el('input', {
+                  type: 'number',
+                  min: 0,
+                  step: 0.01,
+                  value: discountAmount,
+                  onChange: e => setDiscountAmount(Math.max(0, parseFloat(e.target.value) || 0))
+                })
+              ),
+              el('div', { className: 'cart-summary' },
+                el('span', { className: 'cart-summary-label' }, 'Subtotal'),
+                el('span', { className: 'cart-summary-value' }, `Â£${subtotal.toFixed(2)}`)
+              ),
+              el('div', { className: 'cart-summary' },
+                el('span', { className: 'cart-summary-label' }, 'Discount'),
+                el('span', { className: 'cart-summary-value' }, `-Â£${discountAmount.toFixed(2)}`)
+              ),
+              el('div', { className: 'cart-total' },
+                el('span', null, 'Total'),
+                el('span', null, `Â£${total.toFixed(2)}`)
+              ),
+              el('div', { className: 'payment-methods' },
+                el('button', {
+                  className: `payment-btn ${paymentMethod === 'cash' ? 'active' : ''}`,
+                  onClick: () => setPaymentMethod('cash')
+                }, 'Cash'),
+                el('button', {
+                  className: `payment-btn ${paymentMethod === 'card' ? 'active' : ''}`,
+                  onClick: () => setPaymentMethod('card')
+                }, 'Card')
+              ),
+              el('button', {
+                className: 'btn btn-success',
+                style: { width: '100%' },
+                onClick: handleCheckout,
+                disabled: checkoutLoading || cart.length === 0
+              }, checkoutLoading ? 'Processing...' : 'Complete Sale')
+            )
+          )
+        )
+      );
+    }
+
+    // App Component
+    function App() {
+      const [user, setUser] = useState(null);
+      const [stores, setStores] = useState([]);
+      const [currentStore, setCurrentStore] = useState(null);
+      const [page, setPage] = useState('dashboard');
+      const [toasts, setToasts] = useState([]);
+      const [permissions, setPermissions] = useState({});
+      const [loading, setLoading] = useState(true);
+
+      useEffect(() => {
+        const loadUser = async () => {
+          try {
+            const userData = await api('/auth/me');
+            setUser(userData);
+            setStores(userData.stores || []);
+            if (userData.stores?.length > 0) {
+              setCurrentStore(userData.stores[0].id);
+            }
+            const perms = await api('/permissions');
+            setPermissions(perms);
+          } catch (err) {
+            console.error('Failed to load user:', err);
+          } finally {
+            setLoading(false);
+          }
+        };
+        if (localStorage.getItem('pp_token')) {
+          loadUser();
+        } else {
+          setLoading(false);
+        }
+      }, []);
+
+      const showToast = (message, type = 'info') => {
+        const id = Date.now();
+        setToasts(prev => [...prev, { id, message, type }]);
+        setTimeout(() => {
+          setToasts(prev => prev.filter(t => t.id !== id));
+        }, 3000);
+      };
+
+      const handleLogout = () => {
+        authToken = null;
+        localStorage.removeItem('pp_token');
+        setUser(null);
+      };
+
+      const handleLoginSuccess = (userData) => {
+        setUser(userData);
+        setStores(userData.stores || []);
+        if (userData.stores?.length > 0) {
+          setCurrentStore(userData.stores[0].id);
+        }
+        setPage('dashboard');
+      };
+
+      if (loading) {
+        return el('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' } }, 'Loading...');
+      }
+
+      if (!user) {
+        return el(LoginPage, { onLoginSuccess: handleLoginSuccess });
+      }
+
+      const appContext = {
+        user,
+        stores,
+        currentStore,
+        setCurrentStore,
+        page,
+        setPage,
+        showToast,
+        toasts,
+        logout: handleLogout,
+        permissions
+      };
+
+      return el(AppContext.Provider, { value: appContext },
+        el('div', { className: 'main-layout' },
+          el('div', { className: 'sidebar' },
+            el('div', { className: 'sidebar-header' },
+              el('div', { className: 'logo' },
+                el('i', { className: 'fas fa-leaf' }),
+                'PeacePlanet'
+              )
+            ),
+            el('div', { className: 'sidebar-nav' },
+              el('div', {
+                className: `nav-item ${page === 'dashboard' ? 'active' : ''}`,
+                onClick: () => setPage('dashboard')
+              },
+                el('i', { className: 'fas fa-home' }),
+                'Dashboard'
+              ),
+              el('div', {
+                className: `nav-item ${page === 'pos' ? 'active' : ''}`,
+                onClick: () => setPage('pos')
+              },
+                el('i', { className: 'fas fa-cash-register' }),
+                'POS'
+              ),
+              el('div', {
+                className: `nav-item ${page === 'search' ? 'active' : ''}`,
+                onClick: () => setPage('search')
+              },
+                el('i', { className: 'fas fa-search' }),
+                'Search'
+              ),
+              el('div', {
+                className: `nav-item ${page === 'products' ? 'active' : ''}`,
+                onClick: () => setPage('products')
+              },
+                el('i', { className: 'fas fa-boxes-stacked' }),
+                'Inventory'
+              ),
+              el('div', {
+                className: `nav-item ${page === 'repairs' ? 'active' : ''}`,
+                onClick: () => setPage('repairs')
+              },
+                el('i', { className: 'fas fa-screwdriver-wrench' }),
+                'Repairs'
+              ),
+              el('div', {
+                className: `nav-item ${page === 'customers' ? 'active' : ''}`,
+                onClick: () => setPage('customers')
+              },
+                el('i', { className: 'fas fa-users' }),
+                'Customers'
+              ),
+              el('div', {
+                className: `nav-item ${page === 'sales' ? 'active' : ''}`,
+                onClick: () => setPage('sales')
+              },
+                el('i', { className: 'fas fa-receipt' }),
+                'Sales'
+              ),
+              (user.role === 'admin' || user.role === 'manager') && el('div', {
+                className: `nav-item ${page === 'purchase-orders' ? 'active' : ''}`,
+                onClick: () => setPage('purchase-orders')
+              },
+                el('i', { className: 'fas fa-file-invoice' }),
+                'Purchase Orders'
+              ),
+              (user.role === 'admin' || user.role === 'manager') && el('div', {
+                className: `nav-item ${page === 'transfers' ? 'active' : ''}`,
+                onClick: () => setPage('transfers')
+              },
+                el('i', { className: 'fas fa-boxes' }),
+                'Transfers'
+              ),
+              permissions.canViewReports && el('div', {
+                className: `nav-item ${page === 'reports' ? 'active' : ''}`,
+                onClick: () => setPage('reports')
+              },
+                el('i', { className: 'fas fa-chart-bar' }),
+                'Reports'
+              ),
+              user.role === 'admin' && el('div', {
+                className: `nav-item ${page === 'staff' ? 'active' : ''}`,
+                onClick: () => setPage('staff')
+              },
+                el('i', { className: 'fas fa-user-shield' }),
+                'Staff'
+              )
+            ),
+            el('div', { className: 'sidebar-footer' },
+              el('div', { className: 'user-info' },
+                el('div', null,
+                  el('div', { className: 'user-name' }, user.first_name || 'User'),
+                  el('div', { className: 'user-role' }, user.role.toUpperCase())
+                )
+              ),
+              el('button', {
+                className: 'logout-btn',
+                onClick: handleLogout
+              }, 'Sign Out')
+            )
+          ),
+          el('div', { className: 'content' },
+            el('div', { className: 'store-selector' },
+              stores.map(store =>
+                el('button', {
+                  key: store.id,
+                  className: `store-pill ${currentStore === store.id ? 'active' : ''}`,
+                  onClick: () => setCurrentStore(store.id)
+                }, store.name)
+              )
+            ),
+            page === 'dashboard' && el(DashboardPage, { user, currentStore, showToast }),
+            page === 'pos' && el(POSPage, { currentStore, showToast }),
+            page === 'search' && el(SearchPage, { currentStore, user, showToast, permissions }),
+            page === 'products' && el(ProductsPage, { currentStore, user, showToast, permissions }),
+            page === 'repairs' && el(RepairsPage, { currentStore, user, showToast, permissions }),
+            page === 'customers' && el(CustomersPage, { showToast }),
+            page === 'sales' && el(SalesPage, { currentStore, user, showToast, permissions }),
+            page === 'purchase-orders' && el(PurchaseOrdersPage, { currentStore, user, showToast, stores }),
+            page === 'transfers' && el(TransfersPage, { currentStore, stores, showToast, user }),
+            page === 'reports' && el(ReportsPage, { currentStore, stores, user, showToast }),
+            page === 'staff' && el(StaffPage, { showToast })
+          )
+        ),
+        el('div', { className: 'toast-container' },
+          toasts.map(toast =>
+            el('div', { key: toast.id, className: `toast ${toast.type}` },
+              el('i', { className: `fas fa-${toast.type === 'success' ? 'check-circle' : toast.type === 'error' ? 'exclamation-circle' : 'info-circle'}` }),
+              toast.message
+            )
+          )
+        )
+      );
+    }
+
+    // ââ Search Page â quick product lookup with fuzzy synonym matching ââ
+    const SYNONYMS = {
+      screen: ['lcd', 'oled', 'display', 'digitizer', 'screen', 'amoled', 'tft', 'incell'],
+      lcd: ['screen', 'oled', 'display', 'lcd', 'amoled', 'tft', 'incell'],
+      oled: ['screen', 'lcd', 'display', 'oled', 'amoled'],
+      display: ['screen', 'lcd', 'oled', 'display', 'amoled', 'digitizer'],
+      amoled: ['screen', 'lcd', 'oled', 'display', 'amoled'],
+      digitizer: ['screen', 'lcd', 'display', 'digitizer', 'touch'],
+      battery: ['batt', 'battery'],
+      charger: ['charger', 'adapter', 'charging'],
+      cable: ['cable', 'cord', 'lead'],
+      case: ['case', 'cover', 'bumper'],
+      cover: ['case', 'cover', 'bumper'],
+      protector: ['protector', 'tempered', 'glass', 'film'],
+      tempered: ['protector', 'tempered', 'glass'],
+      camera: ['camera', 'lens'],
+      speaker: ['speaker', 'earpiece', 'loudspeaker'],
+      port: ['port', 'connector', 'charging port', 'dock'],
+      flex: ['flex', 'ribbon'],
+      back: ['back', 'rear', 'housing', 'back glass'],
+      housing: ['back', 'rear', 'housing'],
+      button: ['button', 'key', 'power button', 'volume'],
+    };
+
+    function SearchPage({ currentStore, user, showToast, permissions }) {
+      const [query, setQuery] = useState('');
+      const [results, setResults] = useState([]);
+      const [loading, setLoading] = useState(false);
+      const [totalResults, setTotalResults] = useState(0);
+      const searchTimeout = useRef(null);
+      const inputRef = useRef(null);
+
+      useEffect(() => { if (inputRef.current) inputRef.current.focus(); }, []);
+
+      const doSearch = (searchText) => {
+        setQuery(searchText);
+        if (searchTimeout.current) clearTimeout(searchTimeout.current);
+        if (searchText.length < 2) { setResults([]); setTotalResults(0); return; }
+
+        searchTimeout.current = setTimeout(async () => {
+          setLoading(true);
+          try {
+            // Build synonym-expanded searches: if user types "screen", also search "lcd", "oled" etc.
+            const words = searchText.trim().toLowerCase().split(/\s+/);
+            const expandedQueries = [searchText]; // Always include original
+
+            // Find synonym words and create expanded queries
+            for (const word of words) {
+              if (SYNONYMS[word]) {
+                for (const syn of SYNONYMS[word]) {
+                  if (syn !== word) {
+                    const expanded = words.map(w => w === word ? syn : w).join(' ');
+                    expandedQueries.push(expanded);
+                  }
+                }
+              }
+            }
+
+            // Run up to 5 unique queries and merge results
+            const uniqueQueries = [...new Set(expandedQueries)].slice(0, 6);
+            const allProducts = new Map();
+
+            for (const q of uniqueQueries) {
+              const resp = await api('/products?search=' + encodeURIComponent(q) + '&store_id=' + currentStore + '&limit=30');
+              const prods = resp.products || resp || [];
+              for (const p of prods) {
+                if (!allProducts.has(p.id)) allProducts.set(p.id, p);
+              }
+            }
+
+            // Sort: exact name matches first, then by name
+            const sorted = Array.from(allProducts.values()).sort((a, b) => {
+              const aMatch = a.name.toLowerCase().includes(searchText.toLowerCase()) ? 0 : 1;
+              const bMatch = b.name.toLowerCase().includes(searchText.toLowerCase()) ? 0 : 1;
+              if (aMatch !== bMatch) return aMatch - bMatch;
+              return a.name.localeCompare(b.name);
+            });
+
+            setResults(sorted);
+            setTotalResults(sorted.length);
+          } catch (err) {
+            showToast(err.message, 'error');
+          } finally { setLoading(false); }
+        }, 300);
+      };
+
+      const isAdmin = user?.role === 'admin';
+
+      return el('div', { className: 'page-content' },
+        el('h1', { style: { marginBottom: 16 } }, 'Product Search'),
+        el('div', { style: { marginBottom: 20 } },
+          el('input', {
+            ref: inputRef,
+            type: 'text',
+            value: query,
+            onChange: e => doSearch(e.target.value),
+            placeholder: 'Type to search... e.g. "f 15 screen" or "s 24 oled" or "charger"',
+            style: { width: '100%', padding: '14px 18px', fontSize: 18, borderRadius: 12, border: '2px solid #333', background: '#1a1a2e', color: '#fff' },
+            autoFocus: true
+          }),
+          el('div', { style: { marginTop: 8, fontSize: 13, color: '#666' } },
+            'Shortcuts: f = iPhone, s = Samsung, h = Huawei, g = Google, x = Xiaomi  â¢  "screen" also finds LCD, OLED, Display'
+          )
+        ),
+
+        loading && el('div', { style: { padding: 20, textAlign: 'center', color: '#888' } }, 'Searching...'),
+
+        !loading && query.length >= 2 && el('div', { style: { marginBottom: 12, color: '#888', fontSize: 14 } },
+          totalResults + ' product' + (totalResults !== 1 ? 's' : '') + ' found'
+        ),
+
+        !loading && results.length > 0 && el('div', { style: { display: 'grid', gap: 8 } },
+          results.map(p =>
+            el('div', { key: p.id, style: { background: '#1a1a2e', borderRadius: 12, padding: '16px 20px', display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', gap: 16, border: '1px solid #252545' } },
+              el('div', null,
+                el('div', { style: { fontWeight: 700, fontSize: 16, marginBottom: 4 } }, p.name),
+                el('div', { style: { display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 13, color: '#888' } },
+                  p.sku && el('span', null, 'SKU: ' + p.sku),
+                  p.category_name && el('span', null, p.category_name)
+                )
+              ),
+              el('div', { style: { textAlign: 'right' } },
+                el('div', { style: { fontSize: 22, fontWeight: 700, color: '#22c55e' } }, 'Â£' + (p.sell_price || 0).toFixed(2)),
+                isAdmin && el('div', { style: { fontSize: 13, color: '#888', marginTop: 2 } }, 'Cost: Â£' + (p.cost_price || 0).toFixed(2)),
+                el('div', { style: { fontSize: 13, marginTop: 4, color: (p.stock_quantity || 0) > 0 ? '#22c55e' : '#ef4444', fontWeight: 600 } },
+                  (p.stock_quantity || 0) > 0 ? 'In Stock: ' + p.stock_quantity : 'Out of Stock'
+                )
+              )
+            )
+          )
+        ),
+
+        !loading && query.length >= 2 && results.length === 0 && el('div', { style: { padding: 40, textAlign: 'center', color: '#666' } },
+          el('div', { style: { fontSize: 48, marginBottom: 16 } }, 'ð'),
+          el('div', { style: { fontSize: 18 } }, 'No products found for "' + query + '"'),
+          el('div', { style: { marginTop: 8, fontSize: 14 } }, 'Try a different search â e.g. "f 15 screen" or "s charger"')
+        ),
+
+        !loading && query.length < 2 && el('div', { style: { padding: 40, textAlign: 'center', color: '#555' } },
+          el('div', { style: { fontSize: 48, marginBottom: 16 } }, 'â¡'),
+          el('div', { style: { fontSize: 18 } }, 'Quick Product Search'),
+          el('div', { style: { marginTop: 8, fontSize: 14, maxWidth: 400, margin: '8px auto', lineHeight: 1.6 } },
+            'Start typing to find products instantly. Use shortcuts like "f" for iPhone, "s" for Samsung. Words like "screen", "lcd", and "oled" are interchangeable.'
+          )
+        )
+      );
+    }
+
+    // Products Page
+    function ProductsPage({ currentStore, user, showToast, permissions }) {
+      const [products, setProducts] = useState([]);
+      const [searchQuery, setSearchQuery] = useState('');
+      const [categoryFilter, setCategoryFilter] = useState('');
+      const [categories, setCategories] = useState([]);
+      const [page, setPage] = useState(1);
+      const [total, setTotal] = useState(0);
+      const [loading, setLoading] = useState(false);
+      const [selectedProduct, setSelectedProduct] = useState(null);
+      const [showForm, setShowForm] = useState(false);
+      const [showStockModal, setShowStockModal] = useState(false);
+      const [stockForm, setStockForm] = useState({ quantity: 0, adjustment_type: 'set', notes: '' });
+
+      const limit = 50;
+
+      useEffect(() => {
+        loadCategories();
+      }, []);
+
+      useEffect(() => {
+        loadProducts();
+      }, [searchQuery, categoryFilter, page, currentStore]);
+
+      const loadCategories = async () => {
+        try {
+          const cats = await api('/products/categories/list');
+          setCategories(cats || []);
+        } catch (err) {
+          showToast(err.message, 'error');
+        }
+      };
+
+      const loadProducts = async () => {
+        setLoading(true);
+        try {
+          const params = new URLSearchParams({
+            store_id: currentStore,
+            page,
+            limit,
+            ...(searchQuery && { search: searchQuery }),
+            ...(categoryFilter && { category_id: categoryFilter })
+          });
+          const result = await api(`/products?${params}`);
+          setProducts(result.products || []);
+          setTotal(result.total || 0);
+        } catch (err) {
+          showToast(err.message, 'error');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const handleStockAdjustment = async () => {
+        if (!selectedProduct) return;
+        try {
+          await api(`/products/${selectedProduct.id}/stock`, {
+            method: 'POST',
+            body: JSON.stringify({
+              store_id: currentStore,
+              quantity: stockForm.quantity,
+              adjustment_type: stockForm.adjustment_type,
+              notes: stockForm.notes
+            })
+          });
+          showToast('Stock adjusted', 'success');
+          setShowStockModal(false);
+          setStockForm({ quantity: 0, adjustment_type: 'set', notes: '' });
+          loadProducts();
+        } catch (err) {
+          showToast(err.message, 'error');
+        }
+      };
+
+      const getStockBadge = (stock) => {
+        if (stock > 5) return el('span', { className: 'badge badge-success' }, `${stock} in stock`);
+        if (stock > 0) return el('span', { className: 'badge badge-warning' }, `${stock} in stock`);
+        return el('span', { className: 'badge badge-danger' }, 'Out of stock');
+      };
+
+      return el('div', { className: 'page-content' },
+        el('div', { className: 'flex-between', style: { marginBottom: 24 } },
+          el('h1', null, 'Inventory'),
+          (user.role === 'admin' || user.role === 'manager') && el('button', {
+            className: 'btn btn-primary',
+            onClick: () => setShowForm(true)
+          }, '+ Add Product')
+        ),
+        el('div', { className: 'search-bar', style: { marginBottom: 16 } },
+          el('i', { className: 'fas fa-search', style: { color: 'var(--gray-600)' } }),
+          el('input', {
+            type: 'text',
+            placeholder: 'Search products...',
+            value: searchQuery,
+            onChange: e => { setSearchQuery(e.target.value); setPage(1); }
+          }),
+          el('select', {
+            value: categoryFilter,
+            onChange: e => { setCategoryFilter(e.target.value); setPage(1); },
+            style: { width: 200 }
+          },
+            el('option', { value: '' }, 'All Categories'),
+            categories.map(cat =>
+              el('option', { key: cat.id, value: cat.id }, cat.name)
+            )
+          )
+        ),
+        loading ? el('div', null, 'Loading...') :
+          el('div', null,
+            el('table', { className: 'table' },
+              el('thead', null,
+                el('tr', null,
+                  el('th', null, 'Product Name'),
+                  el('th', null, 'SKU'),
+                  el('th', null, 'Category'),
+                  permissions.canSeeCostPrices && el('th', null, 'Cost'),
+                  el('th', null, 'Sell Price'),
+                  el('th', null, 'Stock'),
+                  el('th', null, 'Actions')
+                )
+              ),
+              el('tbody', null,
+                products.map(product =>
+                  el('tr', { key: product.id, onClick: () => setSelectedProduct(product) },
+                    el('td', null, product.name),
+                    el('td', null, product.sku),
+                    el('td', null, product.category?.name || '-'),
+                    permissions.canSeeCostPrices && el('td', null, `Â£${product.cost_price?.toFixed(2) || '0.00'}`),
+                    el('td', null, `Â£${product.sell_price?.toFixed(2) || '0.00'}`),
+                    el('td', null, getStockBadge(product.inventory?.[0]?.quantity || 0)),
+                    el('td', null,
+                      el('button', {
+                        className: 'btn btn-small btn-secondary',
+                        onClick: (e) => { e.stopPropagation(); setSelectedProduct(product); setShowStockModal(true); }
+                      }, 'Adjust Stock')
+                    )
+                  )
+                )
+              )
+            ),
+            el('div', { className: 'pagination' },
+              el('button', {
+                onClick: () => setPage(Math.max(1, page - 1)),
+                disabled: page === 1
+              }, 'Previous'),
+              el('span', null, `Page ${page}`),
+              el('button', {
+                onClick: () => setPage(page + 1),
+                disabled: (page * limit) >= total
+              }, 'Next')
+            )
+          ),
+        showStockModal && selectedProduct && el('div', { className: 'modal-overlay', onClick: e => { if (e.target === e.currentTarget) setShowStockModal(false); } },
+          el('div', { className: 'modal-card' },
+            el('div', { className: 'modal-header' },
+              el('h2', null, 'Adjust Stock'),
+              el('button', { className: 'modal-close', onClick: () => setShowStockModal(false) }, 'Ã')
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Adjustment Type'),
+              el('select', {
+                value: stockForm.adjustment_type,
+                onChange: e => setStockForm({ ...stockForm, adjustment_type: e.target.value })
+              },
+                el('option', { value: 'set' }, 'Set to'),
+                el('option', { value: 'add' }, 'Add'),
+                el('option', { value: 'remove' }, 'Remove')
+              )
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Quantity'),
+              el('input', {
+                type: 'number',
+                value: stockForm.quantity,
+                onChange: e => setStockForm({ ...stockForm, quantity: parseInt(e.target.value) || 0 })
+              })
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Notes'),
+              el('textarea', {
+                value: stockForm.notes,
+                onChange: e => setStockForm({ ...stockForm, notes: e.target.value }),
+                rows: 3
+              })
+            ),
+            el('div', { style: { display: 'flex', gap: 12 } },
+              el('button', { className: 'btn btn-success', onClick: handleStockAdjustment }, 'Save'),
+              el('button', { className: 'btn btn-secondary', onClick: () => setShowStockModal(false) }, 'Cancel')
+            )
+          )
+        )
+      );
+    }
+
+    // Repairs Page
+    function RepairsPage({ currentStore, user, showToast, permissions }) {
+      const [repairs, setRepairs] = useState([]);
+      const [searchQuery, setSearchQuery] = useState('');
+      const [statusFilter, setStatusFilter] = useState('');
+      const [loading, setLoading] = useState(false);
+      const [selectedRepair, setSelectedRepair] = useState(null);
+      const [showForm, setShowForm] = useState(false);
+      const [showDetail, setShowDetail] = useState(false);
+      const [showQuickTicket, setShowQuickTicket] = useState(false);
+      const [quickData, setQuickData] = useState({ customer_name: '', customer_phone: '', device_model: '', issue_description: '' });
+      const [formData, setFormData] = useState({
+        customer_name: '', customer_phone: '', customer_email: '',
+        device_type: '', device_brand: '', device_model: '', imei: '',
+        issue_description: '', estimated_cost: 0, priority: 'normal',
+        assigned_to: '', notes: ''
+      });
+
+      const statuses = ['checked_in', 'diagnosing', 'awaiting_parts', 'in_repair', 'ready', 'completed', 'collected'];
+
+      useEffect(() => {
+        loadRepairs();
+      }, [searchQuery, statusFilter, currentStore]);
+
+      const loadRepairs = async () => {
+        setLoading(true);
+        try {
+          const params = new URLSearchParams({ store_id: currentStore, limit: 100 });
+          if (searchQuery) params.append('search', searchQuery);
+          if (statusFilter) params.append('status', statusFilter);
+          const result = await api(`/repairs?${params}`);
+          setRepairs(result || []);
+        } catch (err) {
+          showToast(err.message, 'error');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const handleCreateRepair = async () => {
+        try {
+          const data = { ...formData, store_id: currentStore };
+          const result = await api('/repairs', { method: 'POST', body: JSON.stringify(data) });
+          showToast(`Repair created: ${result.ticket_number}`, 'success');
+          setShowForm(false);
+          setFormData({
+            customer_name: '', customer_phone: '', customer_email: '',
+            device_type: '', device_brand: '', device_model: '', imei: '',
+            issue_description: '', estimated_cost: 0, priority: 'normal',
+            assigned_to: '', notes: ''
+          });
+          loadRepairs();
+        } catch (err) {
+          showToast(err.message, 'error');
+        }
+      };
+
+      const handleQuickTicket = async () => {
+        if (!quickData.customer_name || !quickData.issue_description) {
+          showToast('Name and issue are required', 'error');
+          return;
+        }
+        try {
+          const data = {
+            store_id: currentStore,
+            customer_name: quickData.customer_name,
+            customer_phone: quickData.customer_phone,
+            device_model: quickData.device_model,
+            issue_description: quickData.issue_description,
+            priority: 'normal'
+          };
+          const result = await api('/repairs', { method: 'POST', body: JSON.stringify(data) });
+          showToast(`Quick ticket created: ${result.ticket_number}`, 'success');
+          printQuickTicket(result.ticket_number, quickData);
+          setShowQuickTicket(false);
+          setQuickData({ customer_name: '', customer_phone: '', device_model: '', issue_description: '' });
+          loadRepairs();
+        } catch (err) {
+          showToast(err.message, 'error');
+        }
+      };
+
+      const printQuickTicket = (ticketNumber, data) => {
+        const now = new Date().toLocaleString('en-GB');
+        const html = `<!DOCTYPE html><html><head><style>
+          body { font-family: 'Courier New', monospace; width: 280px; margin: 0 auto; font-size: 12px; }
+          .center { text-align: center; }
+          .line { border-top: 1px dashed #000; margin: 8px 0; }
+          .big { font-size: 18px; font-weight: bold; letter-spacing: 2px; }
+          .ticket-num { font-size: 22px; font-weight: bold; margin: 8px 0; }
+          table { width: 100%; }
+          td { padding: 3px 0; vertical-align: top; }
+          .label { font-weight: bold; width: 70px; }
+          @media print { body { margin: 0; } }
+        </style></head><body>
+          <div class="center">
+            <div class="big">PEACEPLANET</div>
+            <div>Phone Repairs</div>
+          </div>
+          <div class="line"></div>
+          <div class="center"><div class="ticket-num">${ticketNumber}</div></div>
+          <div class="line"></div>
+          <table>
+            <tr><td class="label">Name:</td><td>${data.customer_name}</td></tr>
+            <tr><td class="label">Phone:</td><td>${data.customer_phone || 'N/A'}</td></tr>
+            <tr><td class="label">Device:</td><td>${data.device_model || 'N/A'}</td></tr>
+            <tr><td class="label">Issue:</td><td>${data.issue_description}</td></tr>
+          </table>
+          <div class="line"></div>
+          <div>Date: ${now}</div>
+          <div class="line"></div>
+          <div class="center" style="margin-top:8px;">
+            <strong>Please keep this ticket.</strong><br>
+            You will need it to collect your device.<br><br>
+            Thank you for choosing PeacePlanet!
+          </div>
+          <script>window.onload=function(){window.print();}</script>
+        </body></html>`;
+        const win = window.open('', '_blank', 'width=350,height=500');
+        win.document.write(html);
+        win.document.close();
+      };
+
+      const handleQuickTicket = async () => {
+        if (!quickData.customer_name || !quickData.issue_description) {
+          showToast('Name and issue are required', 'error');
+          return;
+        }
+        try {
+          const data = {
+            store_id: currentStore,
+            customer_name: quickData.customer_name,
+            customer_phone: quickData.customer_phone,
+            device_model: quickData.device_model,
+            issue_description: quickData.issue_description,
+            priority: 'normal'
+          };
+          const result = await api('/repairs', { method: 'POST', body: JSON.stringify(data) });
+          showToast('Quick ticket created: ' + result.ticket_number, 'success');
+          printQuickTicket(result.ticket_number, quickData);
+          setShowQuickTicket(false);
+          setQuickData({ customer_name: '', customer_phone: '', device_model: '', issue_description: '' });
+          loadRepairs();
+        } catch (err) {
+          showToast(err.message, 'error');
+        }
+      };
+
+      const printQuickTicket = (ticketNumber, data) => {
+        const now = new Date().toLocaleString('en-GB');
+        const html = '<!DOCTYPE html><html><head><style>' +
+          'body { font-family: Courier New, monospace; width: 280px; margin: 0 auto; font-size: 12px; }' +
+          '.center { text-align: center; }' +
+          '.line { border-top: 1px dashed #000; margin: 8px 0; }' +
+          '.big { font-size: 18px; font-weight: bold; letter-spacing: 2px; }' +
+          '.ticket-num { font-size: 22px; font-weight: bold; margin: 8px 0; }' +
+          'table { width: 100%; } td { padding: 3px 0; vertical-align: top; }' +
+          '.label { font-weight: bold; width: 70px; }' +
+          '@media print { body { margin: 0; } }' +
+          '</style></head><body>' +
+          '<div class="center"><div class="big">PEACEPLANET</div><div>Phone Repairs</div></div>' +
+          '<div class="line"></div>' +
+          '<div class="center"><div class="ticket-num">' + ticketNumber + '</div></div>' +
+          '<div class="line"></div>' +
+          '<table>' +
+          '<tr><td class="label">Name:</td><td>' + data.customer_name + '</td></tr>' +
+          '<tr><td class="label">Phone:</td><td>' + (data.customer_phone || 'N/A') + '</td></tr>' +
+          '<tr><td class="label">Device:</td><td>' + (data.device_model || 'N/A') + '</td></tr>' +
+          '<tr><td class="label">Issue:</td><td>' + data.issue_description + '</td></tr>' +
+          '</table>' +
+          '<div class="line"></div>' +
+          '<div>Date: ' + now + '</div>' +
+          '<div class="line"></div>' +
+          '<div class="center" style="margin-top:8px;">' +
+          '<strong>Please keep this ticket.</strong><br>' +
+          'You will need it to collect your device.<br><br>' +
+          'Thank you for choosing PeacePlanet!' +
+          '</div>' +
+          '<script>window.onload=function(){window.print();}<\/script>' +
+          '</body></html>';
+        const win = window.open('', '_blank', 'width=350,height=500');
+        win.document.write(html);
+        win.document.close();
+      };
+
+      const getStatusBadge = (status) => {
+        const badgeClass = {
+          'checked_in': 'badge-primary',
+          'diagnosing': 'badge-primary',
+          'awaiting_parts': 'badge-warning',
+          'in_repair': 'badge-primary',
+          'ready': 'badge-success',
+          'completed': 'badge-success',
+          'collected': 'badge-success'
+        }[status] || 'badge-primary';
+        return el('span', { className: `badge ${badgeClass}` }, status.replace(/_/g, ' '));
+      };
+
+      return el('div', { className: 'page-content' },
+        el('div', { className: 'flex-between', style: { marginBottom: 24 } },
+          el('h1', null, 'Repairs'),
+          el('div', { style: { display: 'flex', gap: 8 } },
+            el('button', { className: 'btn btn-warning', onClick: () => setShowQuickTicket(true), style: { fontWeight: 'bold' } }, 'Quick Ticket'),
+            el('button', { className: 'btn btn-primary', onClick: () => setShowForm(true) }, '+ New Repair')
+          )
+        ),
+        el('div', { className: 'search-bar', style: { marginBottom: 16 } },
+          el('input', {
+            type: 'text',
+            placeholder: 'Search by customer name, phone, or device...',
+            value: searchQuery,
+            onChange: e => setSearchQuery(e.target.value)
+          }),
+          el('select', {
+            value: statusFilter,
+            onChange: e => setStatusFilter(e.target.value),
+            style: { width: 200 }
+          },
+            el('option', { value: '' }, 'All Statuses'),
+            statuses.map(s => el('option', { key: s, value: s }, s.replace(/_/g, ' ')))
+          )
+        ),
+        loading ? el('div', null, 'Loading...') :
+          el('table', { className: 'table' },
+            el('thead', null,
+              el('tr', null,
+                el('th', null, 'Ticket #'),
+                el('th', null, 'Customer'),
+                el('th', null, 'Device'),
+                el('th', null, 'Status'),
+                el('th', null, 'Cost'),
+                el('th', null, 'Priority')
+              )
+            ),
+            el('tbody', null,
+              repairs.map(repair =>
+                el('tr', { key: repair.id, onClick: () => { setSelectedRepair(repair); setShowDetail(true); } },
+                  el('td', null, repair.ticket_number),
+                  el('td', null, repair.customer_name),
+                  el('td', null, `${repair.device_brand} ${repair.device_model}`),
+                  el('td', null, getStatusBadge(repair.status)),
+                  el('td', null, `Â£${repair.estimated_cost?.toFixed(2) || '0.00'}`),
+                  el('td', null, repair.priority)
+                )
+              )
+            )
+          ),
+        showQuickTicket && el('div', { className: 'modal-overlay', onClick: e => { if (e.target === e.currentTarget) setShowQuickTicket(false); } },
+          el('div', { className: 'modal-card', style: { maxWidth: 420 } },
+            el('div', { className: 'modal-header', style: { background: '#f59e0b', color: '#fff' } },
+              el('h2', null, 'Quick Ticket'),
+              el('button', { className: 'modal-close', onClick: () => setShowQuickTicket(false), style: { color: '#fff' } }, '\u00d7')
+            ),
+            el('p', { style: { color: '#666', fontSize: 13, margin: '0 0 12px' } }, 'Fast check-in \u2014 fill full details later'),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Customer Name *'),
+              el('input', {
+                type: 'text', autoFocus: true, placeholder: 'e.g. John Smith',
+                value: quickData.customer_name,
+                onChange: e => setQuickData({ ...quickData, customer_name: e.target.value })
+              })
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Phone Number'),
+              el('input', {
+                type: 'tel', placeholder: '07...',
+                value: quickData.customer_phone,
+                onChange: e => setQuickData({ ...quickData, customer_phone: e.target.value })
+              })
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Device'),
+              el('input', {
+                type: 'text', placeholder: 'e.g. iPhone 15 Pro Max',
+                value: quickData.device_model,
+                onChange: e => setQuickData({ ...quickData, device_model: e.target.value })
+              })
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Issue *'),
+              el('textarea', {
+                rows: 2, placeholder: 'e.g. Cracked screen, not charging...',
+                value: quickData.issue_description,
+                onChange: e => setQuickData({ ...quickData, issue_description: e.target.value })
+              })
+            ),
+            el('div', { style: { display: 'flex', gap: 12, marginTop: 8 } },
+              el('button', {
+                className: 'btn btn-warning', style: { flex: 1, fontWeight: 'bold', fontSize: 16, padding: '12px 0' },
+                onClick: handleQuickTicket
+              }, 'Create & Print Ticket'),
+              el('button', { className: 'btn btn-secondary', onClick: () => setShowQuickTicket(false) }, 'Cancel')
+            )
+          )
+        ),
+        showQuickTicket && el('div', { className: 'modal-overlay', onClick: e => { if (e.target === e.currentTarget) setShowQuickTicket(false); } },
+          el('div', { className: 'modal-card', style: { maxWidth: 420 } },
+            el('div', { className: 'modal-header', style: { background: '#f59e0b', color: '#fff' } },
+              el('h2', null, 'Quick Ticket'),
+              el('button', { className: 'modal-close', onClick: () => setShowQuickTicket(false), style: { color: '#fff' } }, '\u00d7')
+            ),
+            el('p', { style: { color: '#666', fontSize: 13, margin: '0 0 12px' } }, 'Fast check-in \u2014 fill full details later'),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Customer Name *'),
+              el('input', {
+                type: 'text', autoFocus: true, placeholder: 'e.g. John Smith',
+                value: quickData.customer_name,
+                onChange: e => setQuickData({ ...quickData, customer_name: e.target.value })
+              })
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Phone Number'),
+              el('input', {
+                type: 'tel', placeholder: '07...',
+                value: quickData.customer_phone,
+                onChange: e => setQuickData({ ...quickData, customer_phone: e.target.value })
+              })
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Device'),
+              el('input', {
+                type: 'text', placeholder: 'e.g. iPhone 15 Pro Max',
+                value: quickData.device_model,
+                onChange: e => setQuickData({ ...quickData, device_model: e.target.value })
+              })
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Issue *'),
+              el('textarea', {
+                rows: 2, placeholder: 'e.g. Cracked screen, not charging...',
+                value: quickData.issue_description,
+                onChange: e => setQuickData({ ...quickData, issue_description: e.target.value })
+              })
+            ),
+            el('div', { style: { display: 'flex', gap: 12, marginTop: 8 } },
+              el('button', {
+                className: 'btn btn-warning', style: { flex: 1, fontWeight: 'bold', fontSize: 16, padding: '12px 0' },
+                onClick: handleQuickTicket
+              }, 'Create & Print Ticket'),
+              el('button', { className: 'btn btn-secondary', onClick: () => setShowQuickTicket(false) }, 'Cancel')
+            )
+          )
+        ),
+        showForm && el('div', { className: 'modal-overlay', onClick: e => { if (e.target === e.currentTarget) setShowForm(false); } },
+          el('div', { className: 'modal-card' },
+            el('div', { className: 'modal-header' },
+              el('h2', null, 'Create Repair'),
+              el('button', { className: 'modal-close', onClick: () => setShowForm(false) }, 'Ã')
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Customer Name'),
+              el('input', {
+                type: 'text',
+                value: formData.customer_name,
+                onChange: e => setFormData({ ...formData, customer_name: e.target.value })
+              })
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Phone'),
+              el('input', {
+                type: 'text',
+                value: formData.customer_phone,
+                onChange: e => setFormData({ ...formData, customer_phone: e.target.value })
+              })
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Email'),
+              el('input', {
+                type: 'email',
+                value: formData.customer_email,
+                onChange: e => setFormData({ ...formData, customer_email: e.target.value })
+              })
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Device Type'),
+              el('input', {
+                type: 'text',
+                value: formData.device_type,
+                onChange: e => setFormData({ ...formData, device_type: e.target.value }),
+                placeholder: 'Phone, Tablet, Laptop, etc.'
+              })
+            ),
+            el('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 } },
+              el('div', { className: 'form-group' },
+                el('label', null, 'Brand'),
+                el('input', {
+                  type: 'text',
+                  value: formData.device_brand,
+                  onChange: e => setFormData({ ...formData, device_brand: e.target.value })
+                })
+              ),
+              el('div', { className: 'form-group' },
+                el('label', null, 'Model'),
+                el('input', {
+                  type: 'text',
+                  value: formData.device_model,
+                  onChange: e => setFormData({ ...formData, device_model: e.target.value })
+                })
+              )
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'IMEI/Serial'),
+              el('input', {
+                type: 'text',
+                value: formData.imei,
+                onChange: e => setFormData({ ...formData, imei: e.target.value })
+              })
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Issue Description'),
+              el('textarea', {
+                value: formData.issue_description,
+                onChange: e => setFormData({ ...formData, issue_description: e.target.value }),
+                rows: 4
+              })
+            ),
+            el('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 } },
+              el('div', { className: 'form-group' },
+                el('label', null, 'Estimated Cost (Â£)'),
+                el('input', {
+                  type: 'number',
+                  step: 0.01,
+                  value: formData.estimated_cost,
+                  onChange: e => setFormData({ ...formData, estimated_cost: parseFloat(e.target.value) || 0 })
+                })
+              ),
+              el('div', { className: 'form-group' },
+                el('label', null, 'Priority'),
+                el('select', {
+                  value: formData.priority,
+                  onChange: e => setFormData({ ...formData, priority: e.target.value })
+                },
+                  el('option', { value: 'low' }, 'Low'),
+                  el('option', { value: 'normal' }, 'Normal'),
+                  el('option', { value: 'high' }, 'High'),
+                  el('option', { value: 'urgent' }, 'Urgent')
+                )
+              )
+            ),
+            el('div', { style: { display: 'flex', gap: 12 } },
+              el('button', { className: 'btn btn-success', onClick: handleCreateRepair }, 'Create Repair'),
+              el('button', { className: 'btn btn-secondary', onClick: () => setShowForm(false) }, 'Cancel')
+            )
+          )
+        ),
+        showDetail && selectedRepair && el(RepairDetailModal, { repairId: selectedRepair.id, onClose: () => { setShowDetail(false); loadRepairs(); }, showToast, currentStore })
+      );
+    }
+
+    function RepairDetailModal({ repairId, onClose, showToast, currentStore }) {
+      const [repair, setRepair] = useState(null);
+      const [parts, setParts] = useState([]);
+      const [loadingDetail, setLoadingDetail] = useState(true);
+      const [editing, setEditing] = useState(false);
+      const [editForm, setEditForm] = useState({});
+      const [partSearch, setPartSearch] = useState('');
+      const [partResults, setPartResults] = useState([]);
+      const [searchingParts, setSearchingParts] = useState(false);
+      const [payAmount, setPayAmount] = useState('');
+      const [payMethod, setPayMethod] = useState('cash');
+      const [staffList, setStaffList] = useState([]);
+      const partSearchTimeout = useRef(null);
+      const STATUSES = ['checked_in','diagnosing','awaiting_parts','in_repair','ready','completed','collected'];
+      const statusLabel = s => (s||'').replace(/_/g,' ').replace(/\b\w/g,l=>l.toUpperCase());
+
+      const loadDetail = async () => {
+        try {
+          const d = await api(`/repairs/${repairId}`);
+          setRepair(d);
+          setParts(d.parts || []);
+          setEditForm({
+            status: d.status, diagnosis: d.diagnosis||'', estimated_cost: d.estimated_cost||0,
+            final_cost: d.final_cost||0, priority: d.priority||'normal', assigned_to: d.assigned_to||'',
+            notes: d.notes||'', estimated_completion: d.estimated_completion ? d.estimated_completion.split('T')[0] : ''
+          });
+          setPayAmount(String(Math.max(0, (d.final_cost || d.estimated_cost || 0) - (d.amount_paid || 0))));
+        } catch(e) { showToast(e.message,'error'); }
+        setLoadingDetail(false);
+      };
+
+      useEffect(() => {
+        loadDetail();
+        api('/auth/users').then(d => setStaffList(Array.isArray(d) ? d : d.users || [])).catch(()=>{});
+      }, []);
+
+      const saveEdit = async () => {
+        try {
+          await api(`/repairs/${repair.id}`, { method:'PUT', body: JSON.stringify({
+            ...editForm, estimated_cost: parseFloat(editForm.estimated_cost)||0, final_cost: parseFloat(editForm.final_cost)||0
+          })});
+          showToast('Repair updated!','success');
+          setEditing(false);
+          loadDetail();
+        } catch(e) { showToast(e.message,'error'); }
+      };
+
+      const searchParts = async (q) => {
+        if (q.length < 2) { setPartResults([]); return; }
+        setSearchingParts(true);
+        try {
+          const d = await api(`/products?search=${encodeURIComponent(q)}&store_id=${currentStore}&limit=20`);
+          setPartResults(d.products || (Array.isArray(d) ? d : []));
+        } catch(e) { setPartResults([]); }
+        setSearchingParts(false);
+      };
+
+      const handlePartSearchInput = (val) => {
+        setPartSearch(val);
+        clearTimeout(partSearchTimeout.current);
+        partSearchTimeout.current = setTimeout(() => searchParts(val), 300);
+      };
+
+      const addPart = async (product) => {
+        try {
+          await api(`/repairs/${repair.id}/parts`, { method:'POST', body: JSON.stringify({
+            product_id: product.id, quantity: 1, cost: product.cost_price || product.sell_price || 0
+          })});
+          showToast(`Added: ${product.name}`,'success');
+          setPartSearch(''); setPartResults([]);
+          loadDetail();
+        } catch(e) { showToast(e.message,'error'); }
+      };
+
+      const processPayment = async () => {
+        const amt = parseFloat(payAmount);
+        if (!amt || amt <= 0) { showToast('Enter valid amount','error'); return; }
+        try {
+          const result = await api(`/repairs/${repair.id}/pay`, { method:'POST', body: JSON.stringify({ amount: amt, payment_method: payMethod })});
+          showToast(result.fully_paid ? 'Repair fully paid!' : `Payment received. Â£${result.amount_paid} paid so far.`,'success');
+          loadDetail();
+        } catch(e) { showToast(e.message,'error'); }
+      };
+
+      if (loadingDetail) return el('div', { className:'modal-overlay' }, el('div', { className:'modal-card text-center' }, 'Loading...'));
+      if (!repair) return null;
+
+      const totalDue = repair.final_cost || repair.estimated_cost || 0;
+      const remaining = Math.max(0, totalDue - (repair.amount_paid || 0));
+      const partsCost = parts.reduce((s,p) => s + ((p.cost||0) * (p.quantity||1)), 0);
+      const ef = (k,v) => setEditForm(p=>({...p,[k]:v}));
+
+      return el('div', { className:'modal-overlay', onClick:e=>{if(e.target===e.currentTarget)onClose()} },
+        el('div', { style:{background:'white',borderRadius:16,maxWidth:900,width:'95%',maxHeight:'90vh',overflow:'auto',padding:28} },
+          // Header
+          el('div', { className:'flex-between', style:{marginBottom:20} },
+            el('div', null,
+              el('h2', { style:{fontSize:22,fontWeight:700,margin:0} }, `Repair ${repair.ticket_number}`),
+              el('div', { className:'text-sm text-muted', style:{marginTop:4} }, `${repair.customer_name || 'No customer'} â ${repair.device_brand||''} ${repair.device_model||''}`)
+            ),
+            el('div', { style:{display:'flex',gap:8} },
+              !editing && el('button', { className:'btn btn-primary btn-small', onClick:()=>setEditing(true) }, 'Edit'),
+              el('button', { className:'btn btn-secondary btn-small', onClick:onClose }, 'Close')
+            )
+          ),
+          // Status badges
+          el('div', { style:{display:'flex',gap:8,marginBottom:20,flexWrap:'wrap'} },
+            el('span', { className:'badge badge-primary' }, statusLabel(repair.status)),
+            el('span', { className:'badge', style:{background:repair.priority==='urgent'?'rgba(255,59,48,0.15)':repair.priority==='high'?'rgba(255,159,10,0.15)':'rgba(142,142,147,0.15)',color:repair.priority==='urgent'?'var(--danger)':repair.priority==='high'?'var(--warning)':'var(--gray-600)'} }, (repair.priority||'normal').toUpperCase()),
+            el('span', { className:`badge ${repair.payment_status==='paid'?'badge-success':repair.payment_status==='partial'?'badge-warning':'badge-danger'}` }, (repair.payment_status||'unpaid').toUpperCase())
+          ),
+          // EDIT MODE
+          editing ? el('div', null,
+            el('div', { style:{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12,marginBottom:16} },
+              el('div', { className:'form-group' }, el('label', null, 'Status'),
+                el('select', { value:editForm.status, onChange:e=>ef('status',e.target.value) },
+                  STATUSES.map(s => el('option', { key:s, value:s }, statusLabel(s)))
+                )
+              ),
+              el('div', { className:'form-group' }, el('label', null, 'Priority'),
+                el('select', { value:editForm.priority, onChange:e=>ef('priority',e.target.value) },
+                  el('option',{value:'normal'},'Normal'), el('option',{value:'high'},'High'), el('option',{value:'urgent'},'Urgent')
+                )
+              ),
+              el('div', { className:'form-group' }, el('label', null, 'Assigned To'),
+                el('select', { value:editForm.assigned_to, onChange:e=>ef('assigned_to',e.target.value) },
+                  el('option',{value:''},'Unassigned'),
+                  ...staffList.map(s=>el('option',{key:s.id,value:s.id},`${s.first_name} ${s.last_name}`))
+                )
+              )
+            ),
+            el('div', { className:'form-group' }, el('label', null, 'Diagnosis'),
+              el('textarea', { value:editForm.diagnosis, onChange:e=>ef('diagnosis',e.target.value), rows:3, placeholder:'Enter diagnosis...' })
+            ),
+            el('div', { style:{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12} },
+              el('div', { className:'form-group' }, el('label', null, 'Estimated Cost (Â£)'),
+                el('input', { type:'number', step:'0.01', value:editForm.estimated_cost, onChange:e=>ef('estimated_cost',e.target.value) })
+              ),
+              el('div', { className:'form-group' }, el('label', null, 'Final Cost (Â£)'),
+                el('input', { type:'number', step:'0.01', value:editForm.final_cost, onChange:e=>ef('final_cost',e.target.value) })
+              ),
+              el('div', { className:'form-group' }, el('label', null, 'Est. Completion'),
+                el('input', { type:'date', value:editForm.estimated_completion, onChange:e=>ef('estimated_completion',e.target.value) })
+              )
+            ),
+            el('div', { className:'form-group' }, el('label', null, 'Notes'),
+              el('textarea', { value:editForm.notes, onChange:e=>ef('notes',e.target.value), rows:3, placeholder:'Internal notes...' })
+            ),
+            el('div', { style:{display:'flex',gap:8} },
+              el('button', { className:'btn btn-primary', onClick:saveEdit }, 'Save Changes'),
+              el('button', { className:'btn btn-secondary', onClick:()=>setEditing(false) }, 'Cancel')
+            )
+          )
+          // VIEW MODE
+          : el('div', { style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,marginBottom:20} },
+            el('div', null, el('div', { className:'text-xs text-muted', style:{fontWeight:600,marginBottom:4} }, 'DEVICE'),
+              el('div', { className:'text-sm' }, `${repair.device_type||'Phone'} â ${repair.device_brand||''} ${repair.device_model||''}`),
+              repair.imei && el('div', { className:'text-xs text-muted', style:{marginTop:2} }, `IMEI: ${repair.imei}`)
+            ),
+            el('div', null, el('div', { className:'text-xs text-muted', style:{fontWeight:600,marginBottom:4} }, 'CUSTOMER'),
+              el('div', { className:'text-sm' }, repair.customer_name || 'Walk-in'),
+              repair.customer_phone && el('div', { className:'text-xs text-muted', style:{marginTop:2} }, repair.customer_phone)
+            ),
+            el('div', null, el('div', { className:'text-xs text-muted', style:{fontWeight:600,marginBottom:4} }, 'ISSUE'),
+              el('div', { className:'text-sm' }, repair.issue_description)
+            ),
+            repair.diagnosis && el('div', null, el('div', { className:'text-xs text-muted', style:{fontWeight:600,marginBottom:4} }, 'DIAGNOSIS'),
+              el('div', { className:'text-sm' }, repair.diagnosis)
+            ),
+            el('div', null, el('div', { className:'text-xs text-muted', style:{fontWeight:600,marginBottom:4} }, 'COSTS'),
+              el('div', { className:'text-sm' }, `Estimated: Â£${(repair.estimated_cost||0).toFixed(2)} â Final: Â£${(repair.final_cost||0).toFixed(2)}`),
+              el('div', { className:'text-xs text-muted', style:{marginTop:2} }, `Paid: Â£${(repair.amount_paid||0).toFixed(2)} â Remaining: Â£${remaining.toFixed(2)}`)
+            ),
+            el('div', null, el('div', { className:'text-xs text-muted', style:{fontWeight:600,marginBottom:4} }, 'ASSIGNED TO'),
+              el('div', { className:'text-sm' }, repair.assigned_to_name || 'Unassigned')
+            ),
+            repair.notes && el('div', { style:{gridColumn:'1 / -1'} }, el('div', { className:'text-xs text-muted', style:{fontWeight:600,marginBottom:4} }, 'NOTES'),
+              el('div', { className:'text-sm', style:{whiteSpace:'pre-wrap'} }, repair.notes)
+            )
+          ),
+
+          // PARTS SECTION
+          el('div', { className:'border-top' },
+            el('h3', { style:{fontSize:16,fontWeight:700,marginBottom:12} }, `Parts Used (${parts.length})`),
+            repair.status !== 'completed' && repair.status !== 'collected' && el('div', { style:{marginBottom:12} },
+              el('div', { style:{position:'relative'} },
+                el('input', {
+                  type:'text', placeholder:'Scan barcode / SKU or type product name to search...',
+                  value: partSearch, onChange: e => handlePartSearchInput(e.target.value),
+                  onKeyDown: e => { if(e.key==='Enter') { e.preventDefault(); searchParts(partSearch); } },
+                  style:{ width:'100%',padding:'12px 16px 12px 40px',border:'1px solid var(--gray-300)',borderRadius:8,fontSize:15 }
+                }),
+                el('i', { className:'fas fa-barcode', style:{position:'absolute',left:14,top:'50%',transform:'translateY(-50%)',color:'var(--gray-400)',fontSize:16} })
+              ),
+              searchingParts && el('div', { className:'text-xs text-muted', style:{marginTop:4} }, 'Searching...'),
+              partResults.length > 0 && el('div', { style:{border:'1px solid var(--gray-200)',borderRadius:8,marginTop:4,maxHeight:200,overflow:'auto',background:'white',boxShadow:'0 4px 12px rgba(0,0,0,0.1)'} },
+                partResults.map(p => el('div', {
+                  key: p.id, onClick: () => addPart(p),
+                  style:{padding:'10px 14px',cursor:'pointer',borderBottom:'1px solid var(--gray-100)',display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14}
+                },
+                  el('div', null,
+                    el('div', { style:{fontWeight:600} }, p.name),
+                    el('div', { className:'text-xs text-muted' }, `SKU: ${p.sku || 'N/A'} â Â£${(p.cost_price||p.sell_price||0).toFixed(2)}`)
+                  ),
+                  el('button', { className:'btn btn-primary btn-small', onClick:e=>{e.stopPropagation();addPart(p)} }, '+ Add')
+                ))
+              ),
+              partResults.length === 0 && partSearch.length >= 2 && !searchingParts && el('div', { className:'text-xs text-muted', style:{marginTop:4} }, 'No products found.')
+            ),
+            parts.length > 0 ? el('table', { className:'table' },
+              el('thead', null, el('tr', null,
+                el('th', null, 'Part'), el('th', null, 'SKU'), el('th', null, 'Qty'), el('th', null, 'Cost'), el('th', null, 'Deducted')
+              )),
+              el('tbody', null,
+                parts.map(p => el('tr', { key: p.id },
+                  el('td', null, p.product_name),
+                  el('td', null, p.sku || 'â'),
+                  el('td', null, p.quantity),
+                  el('td', null, `Â£${((p.cost||0) * (p.quantity||1)).toFixed(2)}`),
+                  el('td', null, p.is_deducted ? el('span',{className:'badge badge-success'},'Yes') : el('span',{className:'text-xs text-muted'},'No'))
+                ))
+              )
+            ) : el('div', { className:'text-sm text-muted', style:{padding:'12px 0'} }, 'No parts added yet.'),
+            parts.length > 0 && el('div', { style:{textAlign:'right',fontSize:14,fontWeight:600,marginTop:8} }, `Parts Total: Â£${partsCost.toFixed(2)}`)
+          ),
+
+          // PAYMENT SECTION
+          remaining > 0 && el('div', { className:'border-top' },
+            el('h3', { style:{fontSize:16,fontWeight:700,marginBottom:12} }, 'Take Payment'),
+            el('div', { style:{display:'flex',gap:12,alignItems:'flex-end'} },
+              el('div', { className:'form-group', style:{flex:1,marginBottom:0} },
+                el('label', null, 'Amount (Â£)'),
+                el('input', { type:'number', step:'0.01', value:payAmount, onChange:e=>setPayAmount(e.target.value) })
+              ),
+              el('div', { className:'form-group', style:{flex:1,marginBottom:0} },
+                el('label', null, 'Method'),
+                el('select', { value:payMethod, onChange:e=>setPayMethod(e.target.value) },
+                  el('option',{value:'cash'},'Cash'), el('option',{value:'card'},'Card'), el('option',{value:'bank_transfer'},'Bank Transfer')
+                )
+              ),
+              el('button', { className:'btn btn-success', onClick:processPayment, style:{marginBottom:0,height:42} }, `Pay Â£${parseFloat(payAmount||0).toFixed(2)}`)
+            )
+          ),
+
+          // Created date
+          el('div', { className:'border-top text-xs text-muted' },
+            `Created: ${repair.created_at ? new Date(repair.created_at).toLocaleString() : 'N/A'}`,
+            repair.completed_at ? ` â Completed: ${new Date(repair.completed_at).toLocaleString()}` : ''
+          )
+        )
+      );
+    }
+
+    // Customers Page
+    function CustomersPage({ showToast }) {
+      const [customers, setCustomers] = useState([]);
+      const [searchQuery, setSearchQuery] = useState('');
+      const [loading, setLoading] = useState(false);
+      const [showForm, setShowForm] = useState(false);
+      const [showDetail, setShowDetail] = useState(false);
+      const [selectedCustomer, setSelectedCustomer] = useState(null);
+      const [formData, setFormData] = useState({ first_name: '', last_name: '', email: '', phone: '', address: '', notes: '' });
+
+      useEffect(() => {
+        loadCustomers();
+      }, [searchQuery]);
+
+      const loadCustomers = async () => {
+        setLoading(true);
+        try {
+          const params = searchQuery ? `?search=${encodeURIComponent(searchQuery)}` : '';
+          const result = await api(`/customers${params}`);
+          setCustomers(result || []);
+        } catch (err) {
+          showToast(err.message, 'error');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const handleCreateCustomer = async () => {
+        try {
+          const result = await api('/customers', { method: 'POST', body: JSON.stringify(formData) });
+          showToast('Customer created', 'success');
+          setShowForm(false);
+          setFormData({ first_name: '', last_name: '', email: '', phone: '', address: '', notes: '' });
+          loadCustomers();
+        } catch (err) {
+          showToast(err.message, 'error');
+        }
+      };
+
+      return el('div', { className: 'page-content' },
+        el('div', { className: 'flex-between', style: { marginBottom: 24 } },
+          el('h1', null, 'Customers'),
+          el('button', { className: 'btn btn-primary', onClick: () => setShowForm(true) }, '+ Add Customer')
+        ),
+        el('input', {
+          type: 'text',
+          placeholder: 'Search customers...',
+          value: searchQuery,
+          onChange: e => setSearchQuery(e.target.value),
+          style: { width: '100%', marginBottom: 16 }
+        }),
+        loading ? el('div', null, 'Loading...') :
+          el('table', { className: 'table' },
+            el('thead', null,
+              el('tr', null,
+                el('th', null, 'Name'),
+                el('th', null, 'Phone'),
+                el('th', null, 'Email'),
+                el('th', null, 'Repairs'),
+                el('th', null, 'Actions')
+              )
+            ),
+            el('tbody', null,
+              customers.map(cust =>
+                el('tr', { key: cust.id },
+                  el('td', null, `${cust.first_name} ${cust.last_name}`),
+                  el('td', null, cust.phone || '-'),
+                  el('td', null, cust.email || '-'),
+                  el('td', null, cust.repairs?.length || 0),
+                  el('td', null,
+                    el('button', {
+                      className: 'btn btn-small btn-secondary',
+                      onClick: () => { setSelectedCustomer(cust); setShowDetail(true); }
+                    }, 'View')
+                  )
+                )
+              )
+            )
+          ),
+        showForm && el('div', { className: 'modal-overlay', onClick: e => { if (e.target === e.currentTarget) setShowForm(false); } },
+          el('div', { className: 'modal-card' },
+            el('div', { className: 'modal-header' },
+              el('h2', null, 'Add Customer'),
+              el('button', { className: 'modal-close', onClick: () => setShowForm(false) }, 'Ã')
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'First Name'),
+              el('input', {
+                type: 'text',
+                value: formData.first_name,
+                onChange: e => setFormData({ ...formData, first_name: e.target.value })
+              })
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Last Name'),
+              el('input', {
+                type: 'text',
+                value: formData.last_name,
+                onChange: e => setFormData({ ...formData, last_name: e.target.value })
+              })
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Email'),
+              el('input', {
+                type: 'email',
+                value: formData.email,
+                onChange: e => setFormData({ ...formData, email: e.target.value })
+              })
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Phone'),
+              el('input', {
+                type: 'text',
+                value: formData.phone,
+                onChange: e => setFormData({ ...formData, phone: e.target.value })
+              })
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Address'),
+              el('input', {
+                type: 'text',
+                value: formData.address,
+                onChange: e => setFormData({ ...formData, address: e.target.value })
+              })
+            ),
+            el('div', { style: { display: 'flex', gap: 12 } },
+              el('button', { className: 'btn btn-success', onClick: handleCreateCustomer }, 'Create'),
+              el('button', { className: 'btn btn-secondary', onClick: () => setShowForm(false) }, 'Cancel')
+            )
+          )
+        ),
+        showDetail && selectedCustomer && el('div', { className: 'modal-overlay', onClick: e => { if (e.target === e.currentTarget) setShowDetail(false); } },
+          el('div', { className: 'modal-card' },
+            el('div', { className: 'modal-header' },
+              el('h2', null, `${selectedCustomer.first_name} ${selectedCustomer.last_name}`),
+              el('button', { className: 'modal-close', onClick: () => setShowDetail(false) }, 'Ã')
+            ),
+            el('div', { style: { marginBottom: 20 } },
+              el('div', null, el('strong', null, 'Email: '), selectedCustomer.email || '-'),
+              el('div', null, el('strong', null, 'Phone: '), selectedCustomer.phone || '-'),
+              el('div', null, el('strong', null, 'Address: '), selectedCustomer.address || '-')
+            )
+          )
+        )
+      );
+    }
+
+    // Sales Page
+    function SalesPage({ currentStore, user, showToast, permissions }) {
+      const [sales, setSales] = useState([]);
+      const [loading, setLoading] = useState(false);
+      const [dateFrom, setDateFrom] = useState(new Date().toISOString().split('T')[0]);
+      const [dateTo, setDateTo] = useState(new Date().toISOString().split('T')[0]);
+      const [searchQuery, setSearchQuery] = useState('');
+      const [showDetail, setShowDetail] = useState(false);
+      const [selectedSale, setSelectedSale] = useState(null);
+
+      useEffect(() => {
+        loadSales();
+      }, [dateFrom, dateTo, searchQuery, currentStore]);
+
+      const loadSales = async () => {
+        setLoading(true);
+        try {
+          const params = new URLSearchParams({
+            store_id: currentStore,
+            date_from: dateFrom,
+            date_to: dateTo,
+            limit: 100
+          });
+          if (searchQuery) params.append('search', searchQuery);
+          const result = await api(`/sales?${params}`);
+          setSales(result || []);
+        } catch (err) {
+          showToast(err.message, 'error');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const handleRefund = async (saleId) => {
+        if (!confirm('Refund this sale?')) return;
+        try {
+          await api(`/sales/${saleId}/refund`, { method: 'POST' });
+          showToast('Sale refunded', 'success');
+          loadSales();
+        } catch (err) {
+          showToast(err.message, 'error');
+        }
+      };
+
+      return el('div', { className: 'page-content' },
+        el('h1', { style: { marginBottom: 24 } }, 'Sales'),
+        el('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 12, marginBottom: 24 } },
+          el('div', { className: 'form-group' },
+            el('label', null, 'From'),
+            el('input', { type: 'date', value: dateFrom, onChange: e => setDateFrom(e.target.value) })
+          ),
+          el('div', { className: 'form-group' },
+            el('label', null, 'To'),
+            el('input', { type: 'date', value: dateTo, onChange: e => setDateTo(e.target.value) })
+          ),
+          el('div', { className: 'form-group', style: { gridColumn: 'span 2' } },
+            el('label', null, 'Search Receipt #'),
+            el('input', {
+              type: 'text',
+              value: searchQuery,
+              onChange: e => setSearchQuery(e.target.value),
+              placeholder: 'PP20260410...'
+            })
+          )
+        ),
+        loading ? el('div', null, 'Loading...') :
+          el('table', { className: 'table' },
+            el('thead', null,
+              el('tr', null,
+                el('th', null, 'Receipt #'),
+                el('th', null, 'Date'),
+                el('th', null, 'Items'),
+                el('th', null, 'Total'),
+                el('th', null, 'Method'),
+                el('th', null, 'Status'),
+                el('th', null, 'Actions')
+              )
+            ),
+            el('tbody', null,
+              sales.map(sale =>
+                el('tr', { key: sale.id },
+                  el('td', null, sale.receipt_number),
+                  el('td', null, new Date(sale.created_at).toLocaleDateString()),
+                  el('td', null, sale.items?.length || 0),
+                  el('td', null, `Â£${sale.total?.toFixed(2) || '0.00'}`),
+                  el('td', null, sale.payment_method || '-'),
+                  el('td', null, el('span', { className: `badge ${sale.is_refunded ? 'badge-danger' : 'badge-success'}` }, sale.is_refunded ? 'Refunded' : 'Completed')),
+                  el('td', null,
+                    el('button', {
+                      className: 'btn btn-small btn-secondary',
+                      onClick: () => { setSelectedSale(sale); setShowDetail(true); }
+                    }, 'View'),
+                    !sale.is_refunded && permissions.canRefund && el('button', {
+                      className: 'btn btn-small btn-danger',
+                      onClick: () => handleRefund(sale.id),
+                      style: { marginLeft: 8 }
+                    }, 'Refund')
+                  )
+                )
+              )
+            )
+          ),
+        showDetail && selectedSale && el('div', { className: 'modal-overlay', onClick: e => { if (e.target === e.currentTarget) setShowDetail(false); } },
+          el('div', { className: 'modal-card' },
+            el('div', { className: 'modal-header' },
+              el('h2', null, `Receipt #${selectedSale.receipt_number}`),
+              el('button', { className: 'modal-close', onClick: () => setShowDetail(false) }, 'Ã')
+            ),
+            el('table', { className: 'table', style: { marginBottom: 20 } },
+              el('thead', null,
+                el('tr', null,
+                  el('th', null, 'Product'),
+                  el('th', null, 'Qty'),
+                  el('th', null, 'Price'),
+                  el('th', null, 'Total')
+                )
+              ),
+              el('tbody', null,
+                selectedSale.items?.map((item, i) =>
+                  el('tr', { key: i },
+                    el('td', null, item.product?.name || '-'),
+                    el('td', null, item.quantity),
+                    el('td', null, `Â£${item.unit_price?.toFixed(2) || '0.00'}`),
+                    el('td', null, `Â£${(item.quantity * item.unit_price)?.toFixed(2) || '0.00'}`)
+                  )
+                )
+              )
+            ),
+            el('div', { style: { textAlign: 'right' } },
+              el('div', null, el('strong', null, `Total: Â£${selectedSale.total?.toFixed(2)}`))
+            )
+          )
+        )
+      );
+    }
+
+    // Purchase Orders Page
+    function PurchaseOrdersPage({ currentStore, user, showToast, stores }) {
+      const [pos, setPos] = useState([]);
+      const [loading, setLoading] = useState(false);
+      const [showForm, setShowForm] = useState(false);
+      const [showDetail, setShowDetail] = useState(false);
+      const [selectedPO, setSelectedPO] = useState(null);
+      const [formData, setFormData] = useState({ supplier_name:'', invoice_reference:'', store_id:currentStore, items:[], notes:'' });
+      const [productSearch, setProductSearch] = useState('');
+      const [productResults, setProductResults] = useState([]);
+      const [searchingProducts, setSearchingProducts] = useState(false);
+      const searchTimeout = useRef(null);
+
+      useEffect(() => { loadPOs(); }, [currentStore]);
+      useEffect(() => { setFormData(f => ({...f, store_id: currentStore})); }, [currentStore]);
+
+      const loadPOs = async () => {
+        setLoading(true);
+        try {
+          const result = await api(`/purchase-orders?store_id=${currentStore}`);
+          setPos(Array.isArray(result) ? result : result.purchase_orders || []);
+        } catch (err) { showToast(err.message, 'error'); }
+        setLoading(false);
+      };
+
+      const searchProducts = async (q) => {
+        if (q.length < 2) { setProductResults([]); return; }
+        setSearchingProducts(true);
+        try {
+          const d = await api(`/products?search=${encodeURIComponent(q)}&limit=20`);
+          setProductResults(d.products || (Array.isArray(d) ? d : []));
+        } catch(e) { setProductResults([]); }
+        setSearchingProducts(false);
+      };
+
+      const handleProductSearch = (val) => {
+        setProductSearch(val);
+        clearTimeout(searchTimeout.current);
+        searchTimeout.current = setTimeout(() => searchProducts(val), 300);
+      };
+
+      const addItemToPO = (product) => {
+        const existing = formData.items.find(i => i.product_id === product.id);
+        if (existing) {
+          setFormData({...formData, items: formData.items.map(i => i.product_id === product.id ? {...i, quantity: i.quantity + 1} : i)});
+        } else {
+          setFormData({...formData, items: [...formData.items, { product_id: product.id, product_name: product.name, sku: product.sku, quantity: 1, cost_price: product.cost_price || 0 }]});
+        }
+        setProductSearch(''); setProductResults([]);
+      };
+
+      const updateItemQty = (idx, qty) => {
+        if (qty <= 0) { setFormData({...formData, items: formData.items.filter((_,i)=>i!==idx)}); return; }
+        setFormData({...formData, items: formData.items.map((item,i) => i===idx ? {...item, quantity: qty} : item)});
+      };
+
+      const updateItemCost = (idx, cost) => {
+        setFormData({...formData, items: formData.items.map((item,i) => i===idx ? {...item, cost_price: parseFloat(cost)||0} : item)});
+      };
+
+      const handleCreatePO = async () => {
+        if (!formData.supplier_name || formData.items.length === 0) { showToast('Add supplier and items','error'); return; }
+        try {
+          await api('/purchase-orders', { method:'POST', body: JSON.stringify(formData) });
+          showToast('Purchase order created!','success');
+          setShowForm(false);
+          setFormData({ supplier_name:'', invoice_reference:'', store_id:currentStore, items:[], notes:'' });
+          loadPOs();
+        } catch (err) { showToast(err.message, 'error'); }
+      };
+
+      const receiveStock = async (poId) => {
+        try {
+          await api(`/purchase-orders/${poId}/receive`, { method:'POST' });
+          showToast('Stock received!','success');
+          loadPOs();
+          setShowDetail(false);
+        } catch(err) { showToast(err.message, 'error'); }
+      };
+
+      const viewPODetail = async (po) => {
+        try {
+          const detail = await api(`/purchase-orders/${po.id}`);
+          setSelectedPO(detail);
+          setShowDetail(true);
+        } catch(err) { showToast(err.message, 'error'); }
+      };
+
+      const poTotal = formData.items.reduce((s,i) => s + (i.quantity * i.cost_price), 0);
+
+      return el('div', { className:'page-content' },
+        el('div', { className:'flex-between', style:{marginBottom:24} },
+          el('h1', null, 'Purchase Orders'),
+          el('button', { className:'btn btn-primary', onClick:()=>setShowForm(true) }, '+ New PO')
+        ),
+        loading ? el('div', null, 'Loading...') :
+        pos.length === 0 ? el('div', { className:'card text-center text-muted' }, 'No purchase orders yet.') :
+        el('table', { className:'table' },
+          el('thead', null, el('tr', null,
+            el('th', null, 'PO #'), el('th', null, 'Date'), el('th', null, 'Supplier'), el('th', null, 'Items'), el('th', null, 'Total'), el('th', null, 'Status')
+          )),
+          el('tbody', null,
+            pos.map(po => el('tr', { key:po.id, onClick:()=>viewPODetail(po), style:{cursor:'pointer'} },
+              el('td', { style:{fontWeight:600,fontFamily:'monospace'} }, po.po_number || '-'),
+              el('td', null, po.created_at ? new Date(po.created_at).toLocaleDateString() : '-'),
+              el('td', null, po.supplier_name),
+              el('td', null, po.item_count || po.items?.length || 0),
+              el('td', null, `Â£${(po.total_cost || 0).toFixed(2)}`),
+              el('td', null, el('span', { className:`badge ${po.status==='received'?'badge-success':po.status==='cancelled'?'badge-danger':'badge-primary'}` }, po.status || 'draft'))
+            ))
+          )
+        ),
+
+        // CREATE PO FORM
+        showForm && el('div', { className:'modal-overlay', onClick:e=>{if(e.target===e.currentTarget)setShowForm(false)} },
+          el('div', { style:{background:'white',borderRadius:16,maxWidth:800,width:'95%',maxHeight:'90vh',overflow:'auto',padding:28} },
+            el('div', { className:'flex-between', style:{marginBottom:20} },
+              el('h2', null, 'New Purchase Order'),
+              el('button', { className:'btn btn-secondary btn-small', onClick:()=>setShowForm(false) }, 'Ã')
+            ),
+            el('div', { style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16} },
+              el('div', { className:'form-group' }, el('label', null, 'Supplier Name *'),
+                el('input', { type:'text', value:formData.supplier_name, onChange:e=>setFormData({...formData, supplier_name:e.target.value}), placeholder:'e.g. MobileSentrix, TechPoint' })
+              ),
+              el('div', { className:'form-group' }, el('label', null, 'Invoice Reference'),
+                el('input', { type:'text', value:formData.invoice_reference, onChange:e=>setFormData({...formData, invoice_reference:e.target.value}), placeholder:'Invoice # or reference' })
+              )
+            ),
+            el('div', { className:'form-group' }, el('label', null, 'Receiving Store'),
+              el('select', { value:formData.store_id, onChange:e=>setFormData({...formData, store_id:e.target.value}) },
+                (stores||[]).map(s => el('option', { key:s.id, value:s.id }, s.name))
+              )
+            ),
+            // Product search
+            el('div', { style:{marginBottom:16} },
+              el('label', { style:{display:'block',marginBottom:6,fontSize:13,fontWeight:600,color:'var(--gray-600)'} }, 'Add Products'),
+              el('div', { style:{position:'relative'} },
+                el('input', { type:'text', placeholder:'Scan barcode / SKU or search product...', value:productSearch,
+                  onChange:e=>handleProductSearch(e.target.value),
+                  onKeyDown:e=>{if(e.key==='Enter'){e.preventDefault();searchProducts(productSearch)}},
+                  style:{width:'100%',padding:'12px 16px 12px 40px',border:'1px solid var(--gray-300)',borderRadius:8,fontSize:15}
+                }),
+                el('i', { className:'fas fa-barcode', style:{position:'absolute',left:14,top:'50%',transform:'translateY(-50%)',color:'var(--gray-400)'} })
+              ),
+              searchingProducts && el('div', { className:'text-xs text-muted', style:{marginTop:4} }, 'Searching...'),
+              productResults.length > 0 && el('div', { style:{border:'1px solid var(--gray-200)',borderRadius:8,marginTop:4,maxHeight:200,overflow:'auto',background:'white',boxShadow:'0 4px 12px rgba(0,0,0,0.1)'} },
+                productResults.map(p => el('div', { key:p.id, onClick:()=>addItemToPO(p),
+                  style:{padding:'10px 14px',cursor:'pointer',borderBottom:'1px solid var(--gray-100)',display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14}
+                },
+                  el('div', null,
+                    el('div', { style:{fontWeight:600} }, p.name),
+                    el('div', { className:'text-xs text-muted' }, `SKU: ${p.sku||'N/A'} â Cost: Â£${(p.cost_price||0).toFixed(2)}`)
+                  ),
+                  el('button', { className:'btn btn-primary btn-small', onClick:e=>{e.stopPropagation();addItemToPO(p)} }, '+ Add')
+                ))
+              )
+            ),
+            // PO Items list
+            formData.items.length > 0 && el('div', { style:{background:'var(--gray-50)',borderRadius:8,padding:16,marginBottom:16} },
+              el('table', { className:'table', style:{marginBottom:8} },
+                el('thead', null, el('tr', null,
+                  el('th', null, 'Product'), el('th', null, 'SKU'), el('th', {style:{width:80}}, 'Qty'), el('th', {style:{width:100}}, 'Cost Â£'), el('th', {style:{width:80}}, 'Total'), el('th', {style:{width:40}}, '')
+                )),
+                el('tbody', null,
+                  formData.items.map((item,i) => el('tr', { key:i },
+                    el('td', { style:{fontWeight:600} }, item.product_name),
+                    el('td', { className:'text-xs text-muted' }, item.sku || 'â'),
+                    el('td', null, el('input', { type:'number', min:1, value:item.quantity, onChange:e=>updateItemQty(i, parseInt(e.target.value)||0),
+                      style:{width:60,padding:'4px 8px',border:'1px solid var(--gray-300)',borderRadius:4,textAlign:'center'} })),
+                    el('td', null, el('input', { type:'number', step:'0.01', value:item.cost_price, onChange:e=>updateItemCost(i, e.target.value),
+                      style:{width:80,padding:'4px 8px',border:'1px solid var(--gray-300)',borderRadius:4,textAlign:'right'} })),
+                    el('td', { style:{fontWeight:600} }, `Â£${(item.quantity * item.cost_price).toFixed(2)}`),
+                    el('td', null, el('button', { onClick:()=>setFormData({...formData, items:formData.items.filter((_,idx)=>idx!==i)}),
+                      style:{background:'none',border:'none',color:'var(--danger)',cursor:'pointer',fontSize:16} }, 'Ã'))
+                  ))
+                )
+              ),
+              el('div', { style:{textAlign:'right',fontWeight:700,fontSize:16} }, `Total: Â£${poTotal.toFixed(2)}`)
+            ),
+            el('div', { className:'form-group' }, el('label', null, 'Notes'),
+              el('textarea', { value:formData.notes, onChange:e=>setFormData({...formData, notes:e.target.value}), rows:2, placeholder:'Optional notes...' })
+            ),
+            el('div', { style:{display:'flex',gap:12} },
+              el('button', { className:'btn btn-success', onClick:handleCreatePO }, 'Create & Save PO'),
+              el('button', { className:'btn btn-secondary', onClick:()=>setShowForm(false) }, 'Cancel')
+            )
+          )
+        ),
+
+        // PO DETAIL MODAL
+        showDetail && selectedPO && el('div', { className:'modal-overlay', onClick:e=>{if(e.target===e.currentTarget)setShowDetail(false)} },
+          el('div', { style:{background:'white',borderRadius:16,maxWidth:700,width:'95%',maxHeight:'90vh',overflow:'auto',padding:28} },
+            el('div', { className:'flex-between', style:{marginBottom:20} },
+              el('div', null,
+                el('h2', { style:{margin:0} }, `PO ${selectedPO.po_number}`),
+                el('div', { className:'text-sm text-muted' }, `${selectedPO.supplier_name} â ${new Date(selectedPO.created_at).toLocaleDateString()}`)
+              ),
+              el('button', { className:'btn btn-secondary btn-small', onClick:()=>setShowDetail(false) }, 'Ã')
+            ),
+            el('div', { style:{display:'flex',gap:8,marginBottom:16} },
+              el('span', { className:`badge ${selectedPO.status==='received'?'badge-success':'badge-primary'}` }, selectedPO.status),
+              selectedPO.invoice_reference && el('span', { className:'text-sm text-muted' }, `Ref: ${selectedPO.invoice_reference}`)
+            ),
+            (selectedPO.items || []).length > 0 && el('table', { className:'table' },
+              el('thead', null, el('tr', null,
+                el('th', null, 'Product'), el('th', null, 'SKU'), el('th', null, 'Ordered'), el('th', null, 'Received'), el('th', null, 'Cost'), el('th', null, 'Total')
+              )),
+              el('tbody', null,
+                (selectedPO.items||[]).map((item,i) => el('tr', { key:i },
+                  el('td', { style:{fontWeight:600} }, item.product_name || `Product ${item.product_id}`),
+                  el('td', null, item.sku || 'â'),
+                  el('td', null, item.quantity_ordered || item.quantity),
+                  el('td', null, item.quantity_received || 0),
+                  el('td', null, `Â£${(item.cost_price||0).toFixed(2)}`),
+                  el('td', { style:{fontWeight:600} }, `Â£${((item.quantity_ordered||item.quantity||0) * (item.cost_price||0)).toFixed(2)}`)
+                ))
+              )
+            ),
+            el('div', { style:{textAlign:'right',fontWeight:700,fontSize:16,marginTop:8} }, `Total: Â£${(selectedPO.total_cost||0).toFixed(2)}`),
+            selectedPO.status !== 'received' && selectedPO.status !== 'cancelled' && el('div', { className:'border-top', style:{display:'flex',gap:12} },
+              el('button', { className:'btn btn-success', onClick:()=>receiveStock(selectedPO.id) }, 'Receive Stock'),
+              el('button', { className:'btn btn-secondary', onClick:()=>setShowDetail(false) }, 'Close')
+            )
+          )
+        )
+      );
+    }
+
+    // Transfers Page
+    function TransfersPage({ currentStore, stores, showToast, user }) {
+      const [transfers, setTransfers] = useState([]);
+      const [loading, setLoading] = useState(false);
+      const [showForm, setShowForm] = useState(false);
+      const [fromStore, setFromStore] = useState(currentStore);
+      const [toStore, setToStore] = useState('');
+      const [quantity, setQuantity] = useState(1);
+      const [notes, setNotes] = useState('');
+      const [productSearch, setProductSearch] = useState('');
+      const [searchResults, setSearchResults] = useState([]);
+      const [selectedProduct, setSelectedProduct] = useState(null);
+      const [submitting, setSubmitting] = useState(false);
+      const searchTimeout = useRef(null);
+
+      useEffect(() => { loadTransfers(); }, [currentStore]);
+
+      useEffect(() => {
+        if (!showForm) return;
+        setFromStore(currentStore);
+        const otherStores = (stores || []).filter(s => s.id !== currentStore);
+        if (otherStores.length > 0 && !toStore) setToStore(otherStores[0].id);
+      }, [showForm, currentStore, stores]);
+
+      const loadTransfers = async () => {
+        setLoading(true);
+        try {
+          const result = await api('/transfers?store_id=' + currentStore);
+          setTransfers(result || []);
+        } catch (err) { showToast(err.message, 'error'); }
+        finally { setLoading(false); }
+      };
+
+      const searchProducts = (query) => {
+        setProductSearch(query);
+        setSelectedProduct(null);
+        if (searchTimeout.current) clearTimeout(searchTimeout.current);
+        if (query.length < 2) { setSearchResults([]); return; }
+        searchTimeout.current = setTimeout(async () => {
+          try {
+            const results = await api('/products?search=' + encodeURIComponent(query) + '&store_id=' + fromStore + '&limit=15');
+            setSearchResults(results.products || results || []);
+          } catch (err) { setSearchResults([]); }
+        }, 300);
+      };
+
+      const selectProduct = (product) => {
+        setSelectedProduct(product);
+        setProductSearch(product.name + (product.sku ? ' (' + product.sku + ')' : ''));
+        setSearchResults([]);
+      };
+
+      const handleSubmit = async () => {
+        if (!selectedProduct) { showToast('Select a product first', 'error'); return; }
+        if (!fromStore || !toStore) { showToast('Select both stores', 'error'); return; }
+        if (fromStore === toStore) { showToast('From and To store must be different', 'error'); return; }
+        if (quantity < 1) { showToast('Quantity must be at least 1', 'error'); return; }
+
+        setSubmitting(true);
+        try {
+          await api('/transfers', {
+            method: 'POST',
+            body: JSON.stringify({
+              product_id: selectedProduct.id,
+              from_store_id: fromStore,
+              to_store_id: toStore,
+              quantity: parseInt(quantity),
+              notes: notes
+            })
+          });
+          showToast('Transfer created successfully', 'success');
+          setShowForm(false);
+          resetForm();
+          loadTransfers();
+        } catch (err) {
+          showToast(err.message, 'error');
+        } finally { setSubmitting(false); }
+      };
+
+      const receiveTransfer = async (id) => {
+        try {
+          await api('/transfers/' + id + '/receive', { method: 'POST' });
+          showToast('Transfer received â stock updated', 'success');
+          loadTransfers();
+        } catch (err) { showToast(err.message, 'error'); }
+      };
+
+      const resetForm = () => {
+        setProductSearch('');
+        setSelectedProduct(null);
+        setSearchResults([]);
+        setQuantity(1);
+        setNotes('');
+        const otherStores = (stores || []).filter(s => s.id !== currentStore);
+        setToStore(otherStores.length > 0 ? otherStores[0].id : '');
+      };
+
+      const getStoreName = (id) => { const s = (stores || []).find(st => st.id === id); return s ? s.name.replace('PeacePlanet - ', '') : '-'; };
+
+      const statusBadge = (status) => {
+        const colors = { pending: '#f59e0b', in_transit: '#3b82f6', received: '#22c55e', cancelled: '#ef4444' };
+        return el('span', { style: { padding: '4px 10px', borderRadius: 12, fontSize: 12, fontWeight: 600, background: (colors[status] || '#666') + '22', color: colors[status] || '#666' } }, (status || 'pending').replace('_', ' '));
+      };
+
+      return el('div', { className: 'page-content' },
+        el('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 } },
+          el('h1', { style: { margin: 0 } }, 'Stock Transfers'),
+          !showForm && el('button', { className: 'btn btn-primary', onClick: () => { resetForm(); setShowForm(true); } }, '+ New Transfer')
+        ),
+
+        showForm && el('div', { className: 'card', style: { marginBottom: 24, padding: 24 } },
+          el('h3', { style: { marginBottom: 16 } }, 'New Stock Transfer'),
+
+          el('div', { className: 'form-group', style: { marginBottom: 16, position: 'relative' } },
+            el('label', null, 'Search Product (scan barcode or type)'),
+            el('input', {
+              type: 'text',
+              value: productSearch,
+              onChange: e => searchProducts(e.target.value),
+              placeholder: 'Type product name or scan SKU...',
+              autoFocus: true,
+              style: { width: '100%' }
+            }),
+            searchResults.length > 0 && el('div', { style: { position: 'absolute', top: '100%', left: 0, right: 0, background: '#1a1a2e', border: '1px solid #333', borderRadius: 8, maxHeight: 250, overflowY: 'auto', zIndex: 100 } },
+              searchResults.map(p =>
+                el('div', { key: p.id, onClick: () => selectProduct(p), style: { padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid #222', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+                  onMouseEnter: e => e.currentTarget.style.background = '#252545',
+                  onMouseLeave: e => e.currentTarget.style.background = 'transparent'
+                },
+                  el('div', null,
+                    el('div', { style: { fontWeight: 600 } }, p.name),
+                    el('div', { style: { fontSize: 12, color: '#888' } }, p.sku || 'No SKU')
+                  ),
+                  el('div', { style: { textAlign: 'right' } },
+                    el('div', { style: { fontWeight: 600 } }, 'Â£' + (p.sell_price || 0).toFixed(2)),
+                    el('div', { style: { fontSize: 12, color: (p.stock || p.quantity || 0) > 0 ? '#22c55e' : '#ef4444' } }, 'Stock: ' + (p.stock || p.quantity || 0))
+                  )
+                )
+              )
+            ),
+            selectedProduct && el('div', { style: { marginTop: 8, padding: '8px 12px', background: '#1e3a5f', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+              el('span', null, selectedProduct.name + ' â Stock: ' + (selectedProduct.stock || selectedProduct.quantity || 0)),
+              el('button', { onClick: () => { setSelectedProduct(null); setProductSearch(''); }, style: { background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 16 } }, 'â')
+            )
+          ),
+
+          el('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 16 } },
+            el('div', { className: 'form-group' },
+              el('label', null, 'From Store'),
+              el('select', { value: fromStore, onChange: e => { setFromStore(e.target.value); setSelectedProduct(null); setProductSearch(''); } },
+                (stores || []).map(s => el('option', { key: s.id, value: s.id }, s.name.replace('PeacePlanet - ', '')))
+              )
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'To Store'),
+              el('select', { value: toStore, onChange: e => setToStore(e.target.value) },
+                (stores || []).filter(s => s.id !== fromStore).map(s => el('option', { key: s.id, value: s.id }, s.name.replace('PeacePlanet - ', '')))
+              )
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Quantity'),
+              el('input', { type: 'number', min: 1, value: quantity, onChange: e => setQuantity(e.target.value), style: { width: '100%' } })
+            )
+          ),
+
+          el('div', { className: 'form-group', style: { marginBottom: 16 } },
+            el('label', null, 'Notes (optional)'),
+            el('input', { type: 'text', value: notes, onChange: e => setNotes(e.target.value), placeholder: 'e.g. Restock for weekend', style: { width: '100%' } })
+          ),
+
+          el('div', { style: { display: 'flex', gap: 12 } },
+            el('button', { className: 'btn btn-primary', onClick: handleSubmit, disabled: submitting || !selectedProduct },
+              submitting ? 'Creating...' : 'Create Transfer'),
+            el('button', { className: 'btn btn-secondary', onClick: () => setShowForm(false) }, 'Cancel')
+          )
+        ),
+
+        loading ? el('div', null, 'Loading...') :
+          transfers.length === 0 ? el('div', { className: 'card', style: { padding: 32, textAlign: 'center', color: '#888' } }, 'No transfers yet. Click "+ New Transfer" to move stock between stores.') :
+          el('table', { className: 'table' },
+            el('thead', null,
+              el('tr', null,
+                el('th', null, 'Date'),
+                el('th', null, 'Product'),
+                el('th', null, 'From'),
+                el('th', null, 'To'),
+                el('th', null, 'Qty'),
+                el('th', null, 'Status'),
+                el('th', null, 'Actions')
+              )
+            ),
+            el('tbody', null,
+              transfers.map(t =>
+                el('tr', { key: t.id },
+                  el('td', null, t.created_at ? new Date(t.created_at).toLocaleDateString('en-GB') : '-'),
+                  el('td', null,
+                    el('div', { style: { fontWeight: 600 } }, t.product_name || '-'),
+                    el('div', { style: { fontSize: 12, color: '#888' } }, t.sku || '')
+                  ),
+                  el('td', null, getStoreName(t.from_store_id)),
+                  el('td', null, getStoreName(t.to_store_id)),
+                  el('td', null, t.quantity),
+                  el('td', null, statusBadge(t.status)),
+                  el('td', null,
+                    t.status === 'pending' && el('button', { className: 'btn btn-success', style: { padding: '4px 12px', fontSize: 12 }, onClick: () => receiveTransfer(t.id) }, 'Receive')
+                  )
+                )
+              )
+            )
+          )
+      );
+    }
+
+    // Reports Page
+    function ReportsPage({ currentStore, stores, user, showToast }) {
+      const [loading, setLoading] = useState(false);
+      const [stats, setStats] = useState(null);
+      const [dateFrom, setDateFrom] = useState(new Date(Date.now() - 30*24*60*60*1000).toISOString().split('T')[0]);
+      const [dateTo, setDateTo] = useState(new Date().toISOString().split('T')[0]);
+
+      useEffect(() => {
+        loadReport();
+      }, [dateFrom, dateTo, currentStore]);
+
+      const loadReport = async () => {
+        setLoading(true);
+        try {
+          const result = await api(`/sales/reports/summary?store_id=${currentStore}&date_from=${dateFrom}&date_to=${dateTo}`);
+          setStats(result);
+        } catch (err) {
+          showToast(err.message, 'error');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      return el('div', { className: 'page-content' },
+        el('h1', { style: { marginBottom: 24 } }, 'Reports'),
+        el('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 } },
+          el('div', { className: 'form-group' },
+            el('label', null, 'From'),
+            el('input', { type: 'date', value: dateFrom, onChange: e => setDateFrom(e.target.value) })
+          ),
+          el('div', { className: 'form-group' },
+            el('label', null, 'To'),
+            el('input', { type: 'date', value: dateTo, onChange: e => setDateTo(e.target.value) })
+          )
+        ),
+        loading ? el('div', null, 'Loading...') : stats && el('div', null,
+          el('div', { className: 'stat-cards' },
+            el('div', { className: 'stat-card' },
+              el('div', { className: 'stat-label' }, 'Total Revenue'),
+              el('div', { className: 'stat-value' }, `Â£${(stats.total_revenue || 0).toFixed(2)}`)
+            ),
+            el('div', { className: 'stat-card' },
+              el('div', { className: 'stat-label' }, 'Transactions'),
+              el('div', { className: 'stat-value' }, stats.total_transactions || 0)
+            ),
+            el('div', { className: 'stat-card' },
+              el('div', { className: 'stat-label' }, 'Avg Transaction'),
+              el('div', { className: 'stat-value' }, `Â£${(stats.total_revenue / (stats.total_transactions || 1)).toFixed(2)}`)
+            ),
+            el('div', { className: 'stat-card' },
+              el('div', { className: 'stat-label' }, 'Payment Methods'),
+              el('div', { className: 'text-sm' },
+                el('div', null, `Cash: Â£${(stats.cash_total || 0).toFixed(2)}`),
+                el('div', null, `Card: Â£${(stats.card_total || 0).toFixed(2)}`)
+              )
+            )
+          )
+        )
+      );
+    }
+
+    // Staff Page
+    function StaffPage({ showToast }) {
+      const [staff, setStaff] = useState([]);
+      const [loading, setLoading] = useState(false);
+      const [showForm, setShowForm] = useState(false);
+      const [formData, setFormData] = useState({ first_name: '', last_name: '', email: '', password: '', role: 'cashier', is_active: true });
+
+      useEffect(() => {
+        loadStaff();
+      }, []);
+
+      const loadStaff = async () => {
+        setLoading(true);
+        try {
+          const result = await api('/auth/users');
+          setStaff(result || []);
+        } catch (err) {
+          showToast(err.message, 'error');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const handleCreateStaff = async () => {
+        try {
+          await api('/auth/users', {
+            method: 'POST',
+            body: JSON.stringify(formData)
+          });
+          showToast('Staff member added', 'success');
+          setShowForm(false);
+          setFormData({ first_name: '', last_name: '', email: '', password: '', role: 'cashier', is_active: true });
+          loadStaff();
+        } catch (err) {
+          showToast(err.message, 'error');
+        }
+      };
+
+      return el('div', { className: 'page-content' },
+        el('div', { className: 'flex-between', style: { marginBottom: 24 } },
+          el('h1', null, 'Staff'),
+          el('button', { className: 'btn btn-primary', onClick: () => setShowForm(true) }, '+ Add Staff')
+        ),
+        loading ? el('div', null, 'Loading...') :
+          el('table', { className: 'table' },
+            el('thead', null,
+              el('tr', null,
+                el('th', null, 'Name'),
+                el('th', null, 'Email'),
+                el('th', null, 'Role'),
+                el('th', null, 'Status')
+              )
+            ),
+            el('tbody', null,
+              staff.map(s =>
+                el('tr', { key: s.id },
+                  el('td', null, `${s.first_name} ${s.last_name}`),
+                  el('td', null, s.email),
+                  el('td', null, el('span', { className: 'badge badge-primary' }, s.role)),
+                  el('td', null, el('span', { className: `badge ${s.is_active ? 'badge-success' : 'badge-danger'}` }, s.is_active ? 'Active' : 'Inactive'))
+                )
+              )
+            )
+          ),
+        showForm && el('div', { className: 'modal-overlay', onClick: e => { if (e.target === e.currentTarget) setShowForm(false); } },
+          el('div', { className: 'modal-card' },
+            el('div', { className: 'modal-header' },
+              el('h2', null, 'Add Staff Member'),
+              el('button', { className: 'modal-close', onClick: () => setShowForm(false) }, 'Ã')
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'First Name'),
+              el('input', {
+                type: 'text',
+                value: formData.first_name,
+                onChange: e => setFormData({ ...formData, first_name: e.target.value })
+              })
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Last Name'),
+              el('input', {
+                type: 'text',
+                value: formData.last_name,
+                onChange: e => setFormData({ ...formData, last_name: e.target.value })
+              })
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Email'),
+              el('input', {
+                type: 'email',
+                value: formData.email,
+                onChange: e => setFormData({ ...formData, email: e.target.value })
+              })
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Password'),
+              el('input', {
+                type: 'password',
+                value: formData.password,
+                onChange: e => setFormData({ ...formData, password: e.target.value })
+              })
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Role'),
+              el('select', {
+                value: formData.role,
+                onChange: e => setFormData({ ...formData, role: e.target.value })
+              },
+                el('option', { value: 'admin' }, 'Admin'),
+                el('option', { value: 'manager' }, 'Manager'),
+                el('option', { value: 'cashier' }, 'Cashier')
+              )
+            ),
+            el('div', { style: { display: 'flex', gap: 12 } },
+              el('button', { className: 'btn btn-success', onClick: handleCreateStaff }, 'Add'),
+              el('button', { className: 'btn btn-secondary', onClick: () => setShowForm(false) }, 'Cancel')
+            )
+          )
+        )
+      );
+    }
+
+    // Render
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(el(App));
+  </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PeacePlanet POS</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary: #007aff;
+      --success: #30d158;
+      --warning: #ff9f0a;
+      --danger: #ff3b30;
+      --gray-50: #f9f9f9;
+      --gray-100: #f2f2f7;
+      --gray-200: #e5e5ea;
+      --gray-300: #d1d1d6;
+      --gray-400: #c7c7cc;
+      --gray-500: #a1a1a6;
+      --gray-600: #8e8e93;
+      --gray-700: #72777c;
+      --gray-800: #3c3c43;
+      --gray-900: #1c1c1e;
+      --sidebar-bg: rgba(28, 28, 30, 0.96);
+    }
+
+    html, body {
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", sans-serif;
+      background: var(--gray-50);
+      color: var(--gray-900);
+    }
+
+    #root {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Login Page */
+    .login-container {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 20px;
+    }
+
+    .login-card {
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .login-card h1 {
+      font-size: 28px;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+
+    .login-card p {
+      color: var(--gray-600);
+      text-align: center;
+      margin-bottom: 32px;
+      font-size: 14px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--gray-800);
+    }
+
+    input[type="email"],
+    input[type="password"],
+    input[type="text"],
+    input[type="number"],
+    input[type="date"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid var(--gray-300);
+      border-radius: 8px;
+      font-size: 16px;
+      font-family: inherit;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input[type="email"]:focus,
+    input[type="password"]:focus,
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    input[type="date"]:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-family: inherit;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      width: 100%;
+    }
+
+    .btn-primary:hover {
+      background: #0051d5;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+    }
+
+    .btn-secondary {
+      background: var(--gray-200);
+      color: var(--gray-900);
+    }
+
+    .btn-secondary:hover {
+      background: var(--gray-300);
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+
+    .btn-success:hover {
+      background: #27c342;
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #dd2d23;
+    }
+
+    .btn-small {
+      padding: 8px 16px;
+      font-size: 14px;
+    }
+
+    .btn-icon {
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: var(--gray-200);
+      color: var(--gray-900);
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .btn-icon:hover {
+      background: var(--gray-300);
+    }
+
+    .error-message {
+      color: var(--danger);
+      font-size: 14px;
+      margin-top: 8px;
+    }
+
+    /* Main Layout */
+    .main-layout {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 280px;
+      background: var(--sidebar-bg);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
+      overflow-y: auto;
+    }
+
+    .sidebar-header {
+      padding: 24px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .logo {
+      font-size: 20px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      padding: 16px 0;
+      overflow-y: auto;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 20px;
+      cursor: pointer;
+      color: rgba(255, 255, 255, 0.7);
+      transition: all 0.2s;
+      font-size: 15px;
+      border-left: 3px solid transparent;
+    }
+
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+
+    .nav-item.active {
+      background: rgba(0, 122, 255, 0.2);
+      color: #00d4ff;
+      border-left-color: #00d4ff;
+    }
+
+    .nav-item i {
+      width: 20px;
+      text-align: center;
+    }
+
+    .sidebar-footer {
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 12px;
+    }
+
+    .user-name {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .user-role {
+      font-size: 12px;
+      background: rgba(0, 122, 255, 0.3);
+      color: #00d4ff;
+      padding: 4px 8px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+
+    .monitor-btn {
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .monitor-btn:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    .logout-btn {
+      background: rgba(255, 59, 48, 0.2);
+      color: #ff9500;
+      border: 1px solid rgba(255, 59, 48, 0.3);
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .logout-btn:hover {
+      background: rgba(255, 59, 48, 0.3);
+    }
+
+    /* Content Area */
+    .content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .store-selector {
+      background: white;
+      border-bottom: 1px solid var(--gray-200);
+      padding: 12px 24px;
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+
+    .store-pill {
+      padding: 8px 16px;
+      border-radius: 20px;
+      border: 1px solid var(--gray-300);
+      background: white;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--gray-700);
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+
+    .store-pill:hover {
+      border-color: var(--primary);
+    }
+
+    .store-pill.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .page-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+    }
+
+    /* Toast */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: white;
+      padding: 16px 20px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 300px;
+      pointer-events: auto;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    .toast.success {
+      border-left: 4px solid var(--success);
+    }
+
+    .toast.error {
+      border-left: 4px solid var(--danger);
+    }
+
+    .toast.info {
+      border-left: 4px solid var(--primary);
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-card {
+      background: white;
+      border-radius: 16px;
+      max-width: 600px;
+      width: 95%;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 28px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .modal-header h2 {
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--gray-500);
+      transition: color 0.2s;
+    }
+
+    .modal-close:hover {
+      color: var(--gray-900);
+    }
+
+    /* Cards */
+    .card {
+      background: white;
+      border-radius: 12px;
+      border: 1px solid var(--gray-200);
+      padding: 20px;
+      margin-bottom: 16px;
+      transition: all 0.2s;
+    }
+
+    .card:hover {
+      border-color: var(--gray-300);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Stat Cards */
+    .stat-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid var(--gray-200);
+    }
+
+    .stat-label {
+      font-size: 14px;
+      color: var(--gray-600);
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--gray-900);
+      margin-bottom: 4px;
+    }
+
+    .stat-change {
+      font-size: 12px;
+      color: var(--gray-500);
+    }
+
+    /* POS Layout */
+    .pos-container {
+      display: grid;
+      grid-template-columns: 1fr 350px;
+      gap: 20px;
+      height: calc(100vh - 140px);
+    }
+
+    .pos-left {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .search-bar {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .search-bar input {
+      flex: 1;
+    }
+
+    .search-bar button {
+      padding: 12px 16px;
+      background: var(--gray-200);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 12px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .product-tile {
+      background: white;
+      border: 1px solid var(--gray-200);
+      border-radius: 12px;
+      padding: 16px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+
+    .product-tile:hover {
+      border-color: var(--primary);
+      box-shadow: 0 4px 12px rgba(0, 122, 255, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .product-tile-name {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .product-tile-sku {
+      font-size: 12px;
+      color: var(--gray-600);
+      margin-bottom: 8px;
+    }
+
+    .product-tile-price {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 8px;
+    }
+
+    .product-tile-stock {
+      font-size: 12px;
+      background: var(--gray-100);
+      padding: 4px 8px;
+      border-radius: 6px;
+      color: var(--gray-700);
+    }
+
+    /* Cart */
+    .cart-section {
+      background: white;
+      border: 1px solid var(--gray-200);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .cart-header {
+      background: var(--gray-50);
+      padding: 16px;
+      border-bottom: 1px solid var(--gray-200);
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .cart-items {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      min-height: 0;
+    }
+
+    .cart-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      background: var(--gray-50);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+
+    .cart-item-info {
+      flex: 1;
+    }
+
+    .cart-item-name {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .cart-item-price {
+      color: var(--gray-600);
+      font-size: 12px;
+    }
+
+    .cart-qty-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin: 0 8px;
+    }
+
+    .cart-qty-btn {
+      width: 24px;
+      height: 24px;
+      padding: 0;
+      border: 1px solid var(--gray-300);
+      background: white;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .cart-item-remove {
+      background: none;
+      border: none;
+      color: var(--danger);
+      cursor: pointer;
+      padding: 4px 8px;
+    }
+
+    .cart-footer {
+      background: var(--gray-50);
+      padding: 16px;
+      border-top: 1px solid var(--gray-200);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .cart-summary {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .cart-summary-label {
+      color: var(--gray-600);
+    }
+
+    .cart-summary-value {
+      font-weight: 600;
+    }
+
+    .cart-total {
+      display: flex;
+      justify-content: space-between;
+      font-size: 18px;
+      font-weight: 700;
+      padding-top: 12px;
+      border-top: 1px solid var(--gray-200);
+    }
+
+    .payment-methods {
+      display: flex;
+      gap: 8px;
+    }
+
+    .payment-btn {
+      flex: 1;
+      padding: 10px;
+      border: 2px solid var(--gray-300);
+      background: white;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .payment-btn.active {
+      border-color: var(--primary);
+      background: rgba(0, 122, 255, 0.1);
+      color: var(--primary);
+    }
+
+    /* Tables */
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border: 1px solid var(--gray-200);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .table thead {
+      background: var(--gray-50);
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    .table th {
+      padding: 14px 16px;
+      text-align: left;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--gray-700);
+    }
+
+    .table td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--gray-200);
+      font-size: 14px;
+    }
+
+    .table tbody tr:hover {
+      background: var(--gray-50);
+      cursor: pointer;
+    }
+
+    .table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Badge */
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge-success {
+      background: rgba(48, 209, 88, 0.15);
+      color: var(--success);
+    }
+
+    .badge-warning {
+      background: rgba(255, 159, 10, 0.15);
+      color: var(--warning);
+    }
+
+    .badge-danger {
+      background: rgba(255, 59, 48, 0.15);
+      color: var(--danger);
+    }
+
+    .badge-primary {
+      background: rgba(0, 122, 255, 0.15);
+      color: var(--primary);
+    }
+
+    /* Pagination */
+    .pagination {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .pagination button {
+      padding: 8px 12px;
+      border: 1px solid var(--gray-300);
+      background: white;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .pagination button:hover:not(:disabled) {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .pagination button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Checkbox & Radio */
+    input[type="checkbox"],
+    input[type="radio"] {
+      cursor: pointer;
+      width: 18px;
+      height: 18px;
+      accent-color: var(--primary);
+    }
+
+    /* Utility */
+    .flex {
+      display: flex;
+      gap: 12px;
+    }
+
+    .flex-between {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .flex-col {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .mb-16 {
+      margin-bottom: 16px;
+    }
+
+    .mb-24 {
+      margin-bottom: 24px;
+    }
+
+    .text-center {
+      text-align: center;
+    }
+
+    .text-muted {
+      color: var(--gray-600);
+    }
+
+    .text-sm {
+      font-size: 14px;
+    }
+
+    .text-xs {
+      font-size: 12px;
+    }
+
+    .border-top {
+      border-top: 1px solid var(--gray-200);
+      padding-top: 16px;
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+
+  <script type="text/babel">
+    const { useState, useEffect, useContext, createContext, useCallback, useRef } = React;
+    const el = React.createElement;
+
+    const AppContext = createContext();
+
+    // API Helper
+    const API_BASE = '/api';
+    let authToken = localStorage.getItem('pp_token');
+
+    async function api(path, options = {}) {
+      const headers = { 'Content-Type': 'application/json' };
+      if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+      const res = await fetch(`${API_BASE}${path}`, { ...options, headers: { ...headers, ...options.headers } });
+      if (res.status === 401) {
+        authToken = null;
+        localStorage.removeItem('pp_token');
+        window.location.reload();
+      }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Request failed');
+      return data;
+    }
+
+    // Login Page
+    function LoginPage({ onLoginSuccess }) {
+      const [email, setEmail] = useState('');
+      const [password, setPassword] = useState('');
+      const [error, setError] = useState('');
+      const [loading, setLoading] = useState(false);
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+        setLoading(true);
+        try {
+          const result = await api('/auth/login', {
+            method: 'POST',
+            body: JSON.stringify({ email, password })
+          });
+          authToken = result.token;
+          localStorage.setItem('pp_token', result.token);
+          onLoginSuccess(result.user);
+        } catch (err) {
+          setError(err.message || 'Login failed');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      return el('div', { className: 'login-container' },
+        el('div', { className: 'login-card' },
           el('h1', null, '🌍 PeacePlanet POS'),
           el('p', null, 'Point of Sale System'),
           el('form', { onSubmit: handleSubmit },
