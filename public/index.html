@@ -4,100 +4,901 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PeacePlanet POS</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    :root {
-      --primary: #007aff; --primary-dark: #0055d4; --primary-light: #e8f2ff;
-      --success: #30d158; --success-dark: #248a3d; --warning: #ff9f0a; --danger: #ff3b30;
-      --gray-50: #fbfbfd; --gray-100: #f5f5f7; --gray-200: #e8e8ed;
-      --gray-300: #d2d2d7; --gray-400: #aeaeb2; --gray-500: #8e8e93;
-      --gray-600: #636366; --gray-700: #48484a; --gray-800: #2c2c2e;
-      --gray-900: #1c1c1e;
-      --sidebar-width: 260px;
-      --radius: 12px; --radius-lg: 16px; --radius-sm: 8px;
-      --shadow-sm: 0 1px 2px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06);
-      --shadow: 0 2px 8px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06);
-      --shadow-lg: 0 8px 32px rgba(0,0,0,0.08), 0 16px 48px rgba(0,0,0,0.06);
-      --blur: blur(20px) saturate(180%);
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif; background: var(--gray-100); color: var(--gray-900); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; letter-spacing: -0.01em; }
-    .login-page { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(180deg, #000000 0%, #1c1c1e 100%); }
-    .login-card { background: rgba(255,255,255,0.95); backdrop-filter: var(--blur); border-radius: 20px; padding: 48px 40px; width: 380px; box-shadow: var(--shadow-lg); text-align: center; }
-    .login-card h1 { color: var(--gray-900); margin-bottom: 4px; font-size: 32px; font-weight: 700; letter-spacing: -0.02em; }
-    .login-card .subtitle { color: var(--gray-500); margin-bottom: 36px; font-size: 15px; font-weight: 400; }
-    .app-layout { display: flex; min-height: 100vh; }
-    .sidebar { width: var(--sidebar-width); background: rgba(28,28,30,0.96); backdrop-filter: var(--blur); color: white; position: fixed; height: 100vh; overflow-y: auto; z-index: 100; display: flex; flex-direction: column; border-right: 1px solid rgba(255,255,255,0.08); }
-    .sidebar-header { padding: 24px 20px 20px; }
-    .sidebar-header h2 { font-size: 20px; color: white; font-weight: 700; letter-spacing: -0.02em; }
-    .sidebar-header .store-name { font-size: 12px; color: var(--gray-500); margin-top: 2px; font-weight: 500; letter-spacing: 0.02em; text-transform: uppercase; }
-    .sidebar-nav { flex: 1; padding: 8px 12px; }
-    .nav-item { display: flex; align-items: center; padding: 9px 12px; color: rgba(255,255,255,0.55); cursor: pointer; transition: all 0.2s ease; font-size: 14px; font-weight: 500; border-radius: 10px; margin-bottom: 2px; }
-    .nav-item:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.85); }
-    .nav-item.active { background: rgba(255,255,255,0.12); color: #fff; }
-    .nav-item i { width: 22px; margin-right: 10px; text-align: center; font-size: 15px; }
-    .sidebar-footer { padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.08); }
-    .sidebar-footer .user-info { margin-bottom: 12px; }
-    .sidebar-footer .user-name { font-size: 13px; color: rgba(255,255,255,0.6); font-weight: 500; }
-    .sidebar-footer .user-role { font-size: 11px; color: rgba(255,255,255,0.35); margin-top: 2px; font-weight: 600; letter-spacing: 0.05em; }
-    .sidebar-footer .monitor-btn { display: flex; align-items: center; gap: 6px; font-size: 12px; color: rgba(255,255,255,0.55); cursor: pointer; padding: 8px 12px; background: rgba(255,255,255,0.06); border-radius: 8px; border: none; margin-bottom: 8px; transition: all 0.15s; font-family: inherit; font-weight: 500; }
-    .sidebar-footer .monitor-btn:hover { background: rgba(0,122,255,0.2); color: rgba(255,255,255,0.9); }
-    .sidebar-footer .logout-btn { font-size: 12px; color: rgba(255,255,255,0.35); cursor: pointer; font-weight: 500; transition: color 0.15s; }
-    .sidebar-footer .logout-btn:hover { color: var(--danger); }
-    .main-content { margin-left: var(--sidebar-width); flex: 1; padding: 28px 32px; min-height: 100vh; }
-    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
-    .page-header h1 { font-size: 28px; color: var(--gray-900); font-weight: 700; letter-spacing: -0.03em; }
-    .card { background: rgba(255,255,255,0.8); backdrop-filter: var(--blur); border-radius: var(--radius-lg); box-shadow: var(--shadow); padding: 24px; margin-bottom: 20px; border: 1px solid rgba(0,0,0,0.04); }
-    .card h3 { font-size: 17px; color: var(--gray-900); font-weight: 600; letter-spacing: -0.01em; margin-bottom: 16px; }
-    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px; }
-    .stat-card { background: rgba(255,255,255,0.8); backdrop-filter: var(--blur); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); border: 1px solid rgba(0,0,0,0.04); transition: transform 0.2s ease, box-shadow 0.2s ease; }
-    .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
-    .stat-card .stat-label { font-size: 13px; color: var(--gray-500); margin-bottom: 6px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.03em; }
-    .stat-card .stat-value { font-size: 32px; font-weight: 700; color: var(--gray-900); letter-spacing: -0.03em; }
-    .stat-card .stat-icon { float: right; font-size: 22px; color: var(--primary); opacity: 0.6; }
-    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border: none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; letter-spacing: -0.01em; }
-    .btn-primary { background: var(--primary); color: white; }
-    .btn-primary:hover { background: var(--primary-dark); transform: scale(1.02); }
-    .btn-success { background: var(--success-dark); color: white; }
-    .btn-secondary { background: var(--gray-200); color: var(--gray-700); }
-    .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 6px; }
-    .btn-lg { padding: 14px 28px; font-size: 16px; border-radius: var(--radius); }
-    .form-group { margin-bottom: 18px; }
-    .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--gray-600); margin-bottom: 6px; letter-spacing: -0.01em; }
-    .form-control { width: 100%; padding: 10px 14px; border: 1px solid var(--gray-300); border-radius: var(--radius-sm); font-size: 15px; color: var(--gray-900); transition: all 0.2s ease; background: rgba(255,255,255,0.9); font-family: inherit; }
-    .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(0,122,255,0.15); }
-    select.form-control { appearance: none; background: rgba(255,255,255,0.9) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238e8e93' d='M6 8L1 3h10z'/%3E%3C/svg%3E") no-repeat right 12px center/12px; padding-right: 36px; }
-    textarea.form-control { resize: vertical; min-height: 80px; }
-    table { width: 100%; border-collapse: separate; border-spacing: 0; }
-    th { text-align: left; padding: 12px 16px; font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--gray-500); letter-spacing: 0.05em; border-bottom: 1px solid var(--gray-200); background: transparent; }
-    td { padding: 14px 16px; font-size: 14px; border-bottom: 1px solid rgba(0,0,0,0.04); }
-    tr:hover td { background: rgba(0,122,255,0.03); }
-    .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; letter-spacing: 0.01em; }
-    .badge-success { background: rgba(48,209,88,0.15); color: var(--success-dark); }
-    .badge-info { background: rgba(0,122,255,0.1); color: var(--primary-dark); }
-    .badge-role { background: rgba(0,122,255,0.2); color: var(--primary-dark); padding: 4px 12px; font-size: 12px; }
-    .alert { padding: 14px 18px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 14px; font-weight: 500; }
-    .alert-success { background: rgba(48,209,88,0.12); color: var(--success-dark); border: none; }
-    .alert-danger { background: rgba(255,59,48,0.1); color: #c0291f; border: none; }
-    .store-selector { display: flex; gap: 8px; flex-wrap: wrap; }
-    .store-pill { padding: 7px 16px; border-radius: 20px; border: none; background: rgba(142,142,147,0.1); cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s ease; color: var(--gray-600); }
-    .store-pill.active { background: var(--primary); color: white; box-shadow: 0 2px 8px rgba(0,122,255,0.3); }
-    .transfer-form { background: rgba(255,255,255,0.5); padding: 20px; border-radius: var(--radius); margin-bottom: 24px; }
-    .transfer-form .form-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 12px; }
-    @media (max-width: 768px) {
-      .sidebar { width: 64px; }
-      .sidebar .nav-text, .sidebar-header h2, .sidebar-header .store-name { display: none; }
-      .main-content { margin-left: 64px; padding: 16px; }
+
+    :root {
+      --primary: #007aff;
+      --success: #30d158;
+      --warning: #ff9f0a;
+      --danger: #ff3b30;
+      --gray-50: #f9f9f9;
+      --gray-100: #f2f2f7;
+      --gray-200: #e5e5ea;
+      --gray-300: #d1d1d6;
+      --gray-400: #c7c7cc;
+      --gray-500: #a1a1a6;
+      --gray-600: #8e8e93;
+      --gray-700: #72777c;
+      --gray-800: #3c3c43;
+      --gray-900: #1c1c1e;
+      --sidebar-bg: rgba(28, 28, 30, 0.96);
+    }
+
+    html, body {
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", sans-serif;
+      background: var(--gray-50);
+      color: var(--gray-900);
+    }
+
+    #root {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Login Page */
+    .login-container {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 20px;
+    }
+
+    .login-card {
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .login-card h1 {
+      font-size: 28px;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+
+    .login-card p {
+      color: var(--gray-600);
+      text-align: center;
+      margin-bottom: 32px;
+      font-size: 14px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--gray-800);
+    }
+
+    input[type="email"],
+    input[type="password"],
+    input[type="text"],
+    input[type="number"],
+    input[type="date"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid var(--gray-300);
+      border-radius: 8px;
+      font-size: 16px;
+      font-family: inherit;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input[type="email"]:focus,
+    input[type="password"]:focus,
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    input[type="date"]:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-family: inherit;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      width: 100%;
+    }
+
+    .btn-primary:hover {
+      background: #0051d5;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+    }
+
+    .btn-secondary {
+      background: var(--gray-200);
+      color: var(--gray-900);
+    }
+
+    .btn-secondary:hover {
+      background: var(--gray-300);
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+
+    .btn-success:hover {
+      background: #27c342;
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #dd2d23;
+    }
+
+    .btn-small {
+      padding: 8px 16px;
+      font-size: 14px;
+    }
+
+    .btn-icon {
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: var(--gray-200);
+      color: var(--gray-900);
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .btn-icon:hover {
+      background: var(--gray-300);
+    }
+
+    .error-message {
+      color: var(--danger);
+      font-size: 14px;
+      margin-top: 8px;
+    }
+
+    /* Main Layout */
+    .main-layout {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 280px;
+      background: var(--sidebar-bg);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
+      overflow-y: auto;
+    }
+
+    .sidebar-header {
+      padding: 24px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .logo {
+      font-size: 20px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      padding: 16px 0;
+      overflow-y: auto;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 20px;
+      cursor: pointer;
+      color: rgba(255, 255, 255, 0.7);
+      transition: all 0.2s;
+      font-size: 15px;
+      border-left: 3px solid transparent;
+    }
+
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+
+    .nav-item.active {
+      background: rgba(0, 122, 255, 0.2);
+      color: #00d4ff;
+      border-left-color: #00d4ff;
+    }
+
+    .nav-item i {
+      width: 20px;
+      text-align: center;
+    }
+
+    .sidebar-footer {
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 12px;
+    }
+
+    .user-name {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .user-role {
+      font-size: 12px;
+      background: rgba(0, 122, 255, 0.3);
+      color: #00d4ff;
+      padding: 4px 8px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+
+    .monitor-btn {
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .monitor-btn:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    .logout-btn {
+      background: rgba(255, 59, 48, 0.2);
+      color: #ff9500;
+      border: 1px solid rgba(255, 59, 48, 0.3);
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .logout-btn:hover {
+      background: rgba(255, 59, 48, 0.3);
+    }
+
+    /* Content Area */
+    .content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .store-selector {
+      background: white;
+      border-bottom: 1px solid var(--gray-200);
+      padding: 12px 24px;
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+
+    .store-pill {
+      padding: 8px 16px;
+      border-radius: 20px;
+      border: 1px solid var(--gray-300);
+      background: white;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--gray-700);
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+
+    .store-pill:hover {
+      border-color: var(--primary);
+    }
+
+    .store-pill.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .page-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+    }
+
+    /* Toast */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: white;
+      padding: 16px 20px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 300px;
+      pointer-events: auto;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    .toast.success {
+      border-left: 4px solid var(--success);
+    }
+
+    .toast.error {
+      border-left: 4px solid var(--danger);
+    }
+
+    .toast.info {
+      border-left: 4px solid var(--primary);
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-card {
+      background: white;
+      border-radius: 16px;
+      max-width: 600px;
+      width: 95%;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 28px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .modal-header h2 {
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--gray-500);
+      transition: color 0.2s;
+    }
+
+    .modal-close:hover {
+      color: var(--gray-900);
+    }
+
+    /* Cards */
+    .card {
+      background: white;
+      border-radius: 12px;
+      border: 1px solid var(--gray-200);
+      padding: 20px;
+      margin-bottom: 16px;
+      transition: all 0.2s;
+    }
+
+    .card:hover {
+      border-color: var(--gray-300);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Stat Cards */
+    .stat-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid var(--gray-200);
+    }
+
+    .stat-label {
+      font-size: 14px;
+      color: var(--gray-600);
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--gray-900);
+      margin-bottom: 4px;
+    }
+
+    .stat-change {
+      font-size: 12px;
+      color: var(--gray-500);
+    }
+
+    /* POS Layout */
+    .pos-container {
+      display: grid;
+      grid-template-columns: 1fr 350px;
+      gap: 20px;
+      height: calc(100vh - 140px);
+    }
+
+    .pos-left {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .search-bar {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .search-bar input {
+      flex: 1;
+    }
+
+    .search-bar button {
+      padding: 12px 16px;
+      background: var(--gray-200);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 12px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .product-tile {
+      background: white;
+      border: 1px solid var(--gray-200);
+      border-radius: 12px;
+      padding: 16px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+
+    .product-tile:hover {
+      border-color: var(--primary);
+      box-shadow: 0 4px 12px rgba(0, 122, 255, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .product-tile-name {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .product-tile-sku {
+      font-size: 12px;
+      color: var(--gray-600);
+      margin-bottom: 8px;
+    }
+
+    .product-tile-price {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 8px;
+    }
+
+    .product-tile-stock {
+      font-size: 12px;
+      background: var(--gray-100);
+      padding: 4px 8px;
+      border-radius: 6px;
+      color: var(--gray-700);
+    }
+
+    /* Cart */
+    .cart-section {
+      background: white;
+      border: 1px solid var(--gray-200);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .cart-header {
+      background: var(--gray-50);
+      padding: 16px;
+      border-bottom: 1px solid var(--gray-200);
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .cart-items {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      min-height: 0;
+    }
+
+    .cart-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      background: var(--gray-50);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+
+    .cart-item-info {
+      flex: 1;
+    }
+
+    .cart-item-name {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .cart-item-price {
+      color: var(--gray-600);
+      font-size: 12px;
+    }
+
+    .cart-qty-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin: 0 8px;
+    }
+
+    .cart-qty-btn {
+      width: 24px;
+      height: 24px;
+      padding: 0;
+      border: 1px solid var(--gray-300);
+      background: white;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .cart-item-remove {
+      background: none;
+      border: none;
+      color: var(--danger);
+      cursor: pointer;
+      padding: 4px 8px;
+    }
+
+    .cart-footer {
+      background: var(--gray-50);
+      padding: 16px;
+      border-top: 1px solid var(--gray-200);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .cart-summary {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .cart-summary-label {
+      color: var(--gray-600);
+    }
+
+    .cart-summary-value {
+      font-weight: 600;
+    }
+
+    .cart-total {
+      display: flex;
+      justify-content: space-between;
+      font-size: 18px;
+      font-weight: 700;
+      padding-top: 12px;
+      border-top: 1px solid var(--gray-200);
+    }
+
+    .payment-methods {
+      display: flex;
+      gap: 8px;
+    }
+
+    .payment-btn {
+      flex: 1;
+      padding: 10px;
+      border: 2px solid var(--gray-300);
+      background: white;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .payment-btn.active {
+      border-color: var(--primary);
+      background: rgba(0, 122, 255, 0.1);
+      color: var(--primary);
+    }
+
+    /* Tables */
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border: 1px solid var(--gray-200);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .table thead {
+      background: var(--gray-50);
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    .table th {
+      padding: 14px 16px;
+      text-align: left;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--gray-700);
+    }
+
+    .table td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--gray-200);
+      font-size: 14px;
+    }
+
+    .table tbody tr:hover {
+      background: var(--gray-50);
+      cursor: pointer;
+    }
+
+    .table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Badge */
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge-success {
+      background: rgba(48, 209, 88, 0.15);
+      color: var(--success);
+    }
+
+    .badge-warning {
+      background: rgba(255, 159, 10, 0.15);
+      color: var(--warning);
+    }
+
+    .badge-danger {
+      background: rgba(255, 59, 48, 0.15);
+      color: var(--danger);
+    }
+
+    .badge-primary {
+      background: rgba(0, 122, 255, 0.15);
+      color: var(--primary);
+    }
+
+    /* Pagination */
+    .pagination {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .pagination button {
+      padding: 8px 12px;
+      border: 1px solid var(--gray-300);
+      background: white;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .pagination button:hover:not(:disabled) {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .pagination button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Checkbox & Radio */
+    input[type="checkbox"],
+    input[type="radio"] {
+      cursor: pointer;
+      width: 18px;
+      height: 18px;
+      accent-color: var(--primary);
+    }
+
+    /* Utility */
+    .flex {
+      display: flex;
+      gap: 12px;
+    }
+
+    .flex-between {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .flex-col {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .mb-16 {
+      margin-bottom: 16px;
+    }
+
+    .mb-24 {
+      margin-bottom: 24px;
+    }
+
+    .text-center {
+      text-align: center;
+    }
+
+    .text-muted {
+      color: var(--gray-600);
+    }
+
+    .text-sm {
+      font-size: 14px;
+    }
+
+    .text-xs {
+      font-size: 12px;
+    }
+
+    .border-top {
+      border-top: 1px solid var(--gray-200);
+      padding-top: 16px;
+      margin-top: 16px;
     }
   </style>
 </head>
 <body>
   <div id="root"></div>
+
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/react.production.min.js"></script>
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+
   <script type="text/babel">
-    const { useState, useEffect, useRef, createContext, useContext } = React;
+    const { useState, useEffect, useContext, createContext, useCallback, useRef } = React;
+    const el = React.createElement;
+
+    const AppContext = createContext();
+
+    // API Helper
     const API_BASE = '/api';
     let authToken = localStorage.getItem('pp_token');
 
@@ -105,93 +906,18 @@
       const headers = { 'Content-Type': 'application/json' };
       if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
       const res = await fetch(`${API_BASE}${path}`, { ...options, headers: { ...headers, ...options.headers } });
-      if (res.status === 401) { authToken = null; localStorage.removeItem('pp_token'); window.location.reload(); }
+      if (res.status === 401) {
+        authToken = null;
+        localStorage.removeItem('pp_token');
+        window.location.reload();
+      }
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Request failed');
       return data;
     }
 
-    const AppContext = createContext();
-
-    function App() {
-      const [user, setUser] = useState(null);
-      const [currentStore, setCurrentStore] = useState(null);
-      const [stores, setStores] = useState([]);
-      const [page, setPage] = useState('dashboard');
-      const [loading, setLoading] = useState(true);
-      const [toast, setToast] = useState(null);
-      const [permissions, setPermissions] = useState({});
-
-      const showToast = (msg, type = 'success') => {
-        setToast({ msg, type });
-        setTimeout(() => setToast(null), 3000);
-      };
-
-      useEffect(() => {
-        if (authToken) {
-          api('/auth/me').then(u => {
-            setUser(u);
-            setStores(u.stores || []);
-            setCurrentStore(u.stores?.[0] || null);
-            return api('/permissions');
-          }).then(perms => {
-            setPermissions(perms || {});
-            setLoading(false);
-          }).catch(err => {
-            console.error('Load error:', err);
-            setLoading(false);
-            localStorage.removeItem('pp_token');
-          });
-        } else {
-          setLoading(false);
-        }
-      }, []);
-
-      const login = async (email, password) => {
-        const data = await api('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
-        authToken = data.token;
-        localStorage.setItem('pp_token', data.token);
-        setUser(data.user);
-        setStores(data.user.stores || []);
-        setCurrentStore(data.user.stores?.[0] || null);
-        const perms = await api('/permissions');
-        setPermissions(perms || {});
-      };
-
-      const logout = () => {
-        authToken = null;
-        localStorage.removeItem('pp_token');
-        setUser(null);
-        setPermissions({});
-        setPage('dashboard');
-      };
-
-      if (loading) return React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' } }, 'Loading...');
-      if (!user) return React.createElement(LoginPage, { onLogin: login });
-
-      return React.createElement(AppContext.Provider, {
-        value: { user, stores, currentStore, setCurrentStore, page, setPage, showToast, toast, logout, permissions }
-      },
-        React.createElement('div', { className: 'app-layout' },
-          React.createElement(Sidebar, null),
-          React.createElement('div', { className: 'main-content' },
-            toast && React.createElement('div', { className: `alert alert-${toast.type}`, style: { position: 'fixed', top: 16, right: 16, zIndex: 9999, minWidth: 300 } }, toast.msg),
-            React.createElement(StoreSelector, null),
-            page === 'dashboard' && React.createElement(DashboardPage, null),
-            page === 'pos' && React.createElement(POSPage, null),
-            page === 'products' && React.createElement(ProductsPage, null),
-            page === 'repairs' && React.createElement(RepairsPage, null),
-            page === 'customers' && React.createElement(CustomersPage, null),
-            page === 'sales' && React.createElement(SalesPage, null),
-            page === 'transfers' && React.createElement(TransfersPage, null),
-            page === 'staff' && React.createElement(StaffPage, null),
-            page === 'reports' && React.createElement(ReportsPage, null),
-          )
-        )
-      );
-    }
-
-    function LoginPage({ onLogin }) {
+    // Login Page
+    function LoginPage({ onLoginSuccess }) {
       const [email, setEmail] = useState('');
       const [password, setPassword] = useState('');
       const [error, setError] = useState('');
@@ -201,748 +927,1965 @@
         e.preventDefault();
         setError('');
         setLoading(true);
-        try { await onLogin(email, password); }
-        catch (err) { setError(err.message); }
-        setLoading(false);
+        try {
+          const result = await api('/auth/login', {
+            method: 'POST',
+            body: JSON.stringify({ email, password })
+          });
+          authToken = result.token;
+          localStorage.setItem('pp_token', result.token);
+          onLoginSuccess(result.user);
+        } catch (err) {
+          setError(err.message || 'Login failed');
+        } finally {
+          setLoading(false);
+        }
       };
 
-      return React.createElement('div', { className: 'login-page' },
-        React.createElement('div', { className: 'login-card' },
-          React.createElement('h1', null, '☮ PeacePlanet'),
-          React.createElement('p', { className: 'subtitle' }, 'Point of Sale System'),
-          error && React.createElement('div', { className: 'alert alert-danger' }, error),
-          React.createElement('form', { onSubmit: handleSubmit },
-            React.createElement('div', { className: 'form-group' },
-              React.createElement('label', null, 'Email'),
-              React.createElement('input', { className: 'form-control', type: 'email', value: email, onChange: e => setEmail(e.target.value), placeholder: 'admin@peaceplanet.com', required: true })
+      return el('div', { className: 'login-container' },
+        el('div', { className: 'login-card' },
+          el('h1', null, '🌍 PeacePlanet POS'),
+          el('p', null, 'Point of Sale System'),
+          el('form', { onSubmit: handleSubmit },
+            el('div', { className: 'form-group' },
+              el('label', null, 'Email'),
+              el('input', {
+                type: 'email',
+                value: email,
+                onChange: e => setEmail(e.target.value),
+                placeholder: 'your@email.com',
+                required: true
+              })
             ),
-            React.createElement('div', { className: 'form-group' },
-              React.createElement('label', null, 'Password'),
-              React.createElement('input', { className: 'form-control', type: 'password', value: password, onChange: e => setPassword(e.target.value), placeholder: 'Enter password', required: true })
+            el('div', { className: 'form-group' },
+              el('label', null, 'Password'),
+              el('input', {
+                type: 'password',
+                value: password,
+                onChange: e => setPassword(e.target.value),
+                placeholder: '••••••••',
+                required: true
+              })
             ),
-            React.createElement('button', { className: 'btn btn-primary btn-lg', type: 'submit', style: { width: '100%' }, disabled: loading },
-              loading ? 'Signing in...' : 'Sign In'
-            )
+            error && el('div', { className: 'error-message' }, error),
+            el('button', {
+              type: 'submit',
+              className: 'btn btn-primary',
+              disabled: loading
+            }, loading ? 'Signing in...' : 'Sign In')
           )
         )
       );
     }
 
-    function Sidebar() {
-      const { user, page, setPage, logout, permissions, currentStore } = useContext(AppContext);
-      const navItems = [
-        { id: 'dashboard', icon: 'fas fa-home', label: 'Dashboard' },
-        { id: 'pos', icon: 'fas fa-cash-register', label: 'POS' },
-        { id: 'products', icon: 'fas fa-boxes-stacked', label: 'Inventory' },
-        { id: 'repairs', icon: 'fas fa-screwdriver-wrench', label: 'Repairs' },
-        { id: 'customers', icon: 'fas fa-users', label: 'Customers' },
-        { id: 'sales', icon: 'fas fa-receipt', label: 'Sales' },
-      ];
-
-      if (['admin', 'manager'].includes(user?.role)) {
-        navItems.push({ id: 'transfers', icon: 'fas fa-boxes', label: 'Transfers' });
-      }
-
-      if (permissions.canViewReports !== false) {
-        navItems.push({ id: 'reports', icon: 'fas fa-chart-bar', label: 'Reports' });
-      }
-
-      if (permissions.canManageStaff !== false && user?.role === 'admin') {
-        navItems.push({ id: 'staff', icon: 'fas fa-user-shield', label: 'Staff' });
-      }
-
-      const openMonitorMode = () => {
-        if (currentStore?.id) window.open(`/monitor/${currentStore.id}`, '_blank');
-      };
-
-      return React.createElement('div', { className: 'sidebar' },
-        React.createElement('div', { className: 'sidebar-header' },
-          React.createElement('h2', null, '☮ PeacePlanet'),
-          React.createElement('div', { className: 'store-name' }, 'POS System')
-        ),
-        React.createElement('nav', { className: 'sidebar-nav' },
-          navItems.map(item =>
-            React.createElement('div', {
-              key: item.id, className: `nav-item ${page === item.id ? 'active' : ''}`,
-              onClick: () => setPage(item.id)
-            },
-              React.createElement('i', { className: item.icon }),
-              React.createElement('span', { className: 'nav-text' }, item.label)
-            )
-          )
-        ),
-        React.createElement('div', { className: 'sidebar-footer' },
-          React.createElement('div', { className: 'user-info' },
-            React.createElement('div', { className: 'user-name' }, `${user?.first_name} ${user?.last_name}`),
-            React.createElement('div', { className: 'user-role' }, user?.role?.toUpperCase())
-          ),
-          (['admin', 'manager'].includes(user?.role)) && React.createElement('button', {
-            className: 'monitor-btn',
-            onClick: openMonitorMode,
-            title: 'Monitor Mode'
-          },
-            React.createElement('i', { className: 'fas fa-tv' }), ' Monitor'
-          ),
-          React.createElement('div', { className: 'logout-btn', onClick: logout }, 'Sign Out')
-        )
-      );
-    }
-
-    function StoreSelector() {
-      const { stores, currentStore, setCurrentStore } = useContext(AppContext);
-      return React.createElement('div', { style: { marginBottom: 20 } },
-        React.createElement('div', { className: 'store-selector' },
-          stores.map(s =>
-            React.createElement('div', {
-              key: s.id,
-              className: `store-pill ${currentStore?.id === s.id ? 'active' : ''}`,
-              onClick: () => setCurrentStore(s)
-            }, s.name.replace('PeacePlanet - ', ''))
-          )
-        )
-      );
-    }
-
-    function DashboardPage() {
-      const { currentStore } = useContext(AppContext);
+    // Dashboard Page
+    function DashboardPage({ user, currentStore, showToast }) {
       const [stats, setStats] = useState(null);
+      const [summary, setSummary] = useState(null);
+      const [loading, setLoading] = useState(true);
 
       useEffect(() => {
-        if (!currentStore) return;
-        api(`/stores/${currentStore.id}`).then(d => setStats(d.stats)).catch(() => {});
-      }, [currentStore]);
+        const loadData = async () => {
+          try {
+            const [storeStats, salesSummary] = await Promise.all([
+              api(`/stores/${currentStore}`),
+              api(`/sales/reports/summary?store_id=${currentStore}&date=${new Date().toISOString().split('T')[0]}`)
+            ]);
+            setStats(storeStats);
+            setSummary(salesSummary);
+          } catch (err) {
+            showToast(err.message, 'error');
+          } finally {
+            setLoading(false);
+          }
+        };
+        loadData();
+      }, [currentStore, showToast]);
 
-      if (!stats) return React.createElement('div', null, 'Loading...');
+      if (loading) return el('div', { className: 'page-content' }, 'Loading...');
 
-      return React.createElement('div', null,
-        React.createElement('div', { className: 'page-header' }, React.createElement('h1', null, 'Dashboard')),
-        React.createElement('div', { className: 'stat-grid' },
-          React.createElement('div', { className: 'stat-card' },
-            React.createElement('i', { className: 'fas fa-sterling-sign stat-icon' }),
-            React.createElement('div', { className: 'stat-label' }, "Today's Sales"),
-            React.createElement('div', { className: 'stat-value' }, `£${(stats.today_sales || 0).toFixed(2)}`)
+      return el('div', { className: 'page-content' },
+        el('h1', { style: { marginBottom: 24 } }, 'Dashboard'),
+        el('div', { className: 'stat-cards' },
+          el('div', { className: 'stat-card' },
+            el('div', { className: 'stat-label' }, "Today's Sales"),
+            el('div', { className: 'stat-value' }, `£${(summary?.total_revenue || 0).toFixed(2)}`)
+          ),
+          el('div', { className: 'stat-card' },
+            el('div', { className: 'stat-label' }, 'Transactions'),
+            el('div', { className: 'stat-value' }, summary?.total_transactions || 0)
+          ),
+          el('div', { className: 'stat-card' },
+            el('div', { className: 'stat-label' }, 'Products in Stock'),
+            el('div', { className: 'stat-value' }, stats?.products_in_stock || 0)
+          ),
+          el('div', { className: 'stat-card' },
+            el('div', { className: 'stat-label' }, 'Active Repairs'),
+            el('div', { className: 'stat-value' }, stats?.active_repairs || 0)
           )
-        )
-      );
-    }
-
-    function POSPage() {
-      return React.createElement('div', null,
-        React.createElement('div', { className: 'page-header' }, React.createElement('h1', null, 'POS'))
-      );
-    }
-
-    function ProductsPage() {
-      const { permissions } = useContext(AppContext);
-      return React.createElement('div', null,
-        React.createElement('div', { className: 'page-header' },
-          React.createElement('h1', null, 'Inventory'),
-          permissions.canManageStock !== false && React.createElement('button', { className: 'btn btn-primary' }, '+ Add')
         ),
-        React.createElement('div', { className: 'card' },
-          React.createElement('table', null,
-            React.createElement('thead', null, React.createElement('tr', null,
-              React.createElement('th', null, 'Product'),
-              permissions.canSeeCostPrices !== false && React.createElement('th', null, 'Cost'),
-              React.createElement('th', null, 'Price'),
-              React.createElement('th', null, 'Stock')
-            )),
-            React.createElement('tbody', null,
-              React.createElement('tr', null,
-                React.createElement('td', null, 'Sample Product'),
-                permissions.canSeeCostPrices !== false && React.createElement('td', null, '£10.00'),
-                React.createElement('td', null, '£25.00'),
-                React.createElement('td', null, React.createElement('span', { className: 'badge badge-info' }, '50'))
-              )
+        summary && el('div', { className: 'card' },
+          el('h3', null, 'Payment Breakdown'),
+          el('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 } },
+            el('div', null,
+              el('div', { className: 'text-sm text-muted' }, 'Cash'),
+              el('div', { style: { fontSize: 20, fontWeight: 700 } }, `£${(summary.cash_total || 0).toFixed(2)}`)
+            ),
+            el('div', null,
+              el('div', { className: 'text-sm text-muted' }, 'Card'),
+              el('div', { style: { fontSize: 20, fontWeight: 700 } }, `£${(summary.card_total || 0).toFixed(2)}`)
             )
           )
         )
       );
     }
 
-    function RepairsPage() {
-      const { currentStore, showToast, user, stores } = useContext(AppContext);
-      const [repairs, setRepairs] = useState([]);
-      const [loading, setLoading] = useState(true);
-      const [statusFilter, setStatusFilter] = useState('');
-      const [searchQ, setSearchQ] = useState('');
-      const [showCreate, setShowCreate] = useState(false);
-      const [selectedRepair, setSelectedRepair] = useState(null);
-      const [staffList, setStaffList] = useState([]);
+    // POS Page
+    function POSPage({ currentStore, showToast }) {
+      const [searchQuery, setSearchQuery] = useState('');
+      const [products, setProducts] = useState([]);
+      const [cart, setCart] = useState([]);
+      const [discountAmount, setDiscountAmount] = useState(0);
+      const [paymentMethod, setPaymentMethod] = useState('cash');
+      const [loading, setLoading] = useState(false);
+      const [checkoutLoading, setCheckoutLoading] = useState(false);
+      const searchInputRef = useRef(null);
 
-      const STATUSES = ['checked_in','diagnosing','awaiting_parts','in_repair','ready','completed','collected'];
-      const statusLabel = s => (s||'').replace(/_/g,' ').replace(/\b\w/g,l=>l.toUpperCase());
-      const statusColor = s => {
-        const m = {checked_in:'#007aff',diagnosing:'#ff9f0a',awaiting_parts:'#ff3b30',in_repair:'#5856d6',ready:'#30d158',completed:'#248a3d',collected:'#8e8e93'};
-        return m[s] || '#8e8e93';
-      };
-      const priorityColor = p => p==='urgent'?'#ff3b30':p==='high'?'#ff9f0a':'#8e8e93';
+      const searchTimeout = useRef(null);
 
-      const loadRepairs = async () => {
-        if (!currentStore?.id) return;
+      const searchProducts = useCallback(async (query) => {
+        if (!query.trim()) {
+          setProducts([]);
+          return;
+        }
         setLoading(true);
         try {
-          let q = `/repairs?store_id=${currentStore.id}&limit=100`;
-          if (statusFilter) q += `&status=${statusFilter}`;
-          if (searchQ.trim()) q += `&search=${encodeURIComponent(searchQ.trim())}`;
-          const data = await api(q);
-          setRepairs(Array.isArray(data) ? data : []);
-        } catch(e) { showToast(e.message,'danger'); }
-        setLoading(false);
+          const result = await api(`/products?search=${encodeURIComponent(query)}&store_id=${currentStore}&limit=50`);
+          setProducts(result.products || []);
+        } catch (err) {
+          showToast(err.message, 'error');
+        } finally {
+          setLoading(false);
+        }
+      }, [currentStore, showToast]);
+
+      const handleSearch = (value) => {
+        setSearchQuery(value);
+        clearTimeout(searchTimeout.current);
+        searchTimeout.current = setTimeout(() => searchProducts(value), 300);
       };
 
-      const loadStaff = async () => {
-        try { const d = await api('/auth/users'); setStaffList(Array.isArray(d) ? d : d.users || []); } catch(e){}
-      };
-
-      useEffect(() => { loadRepairs(); loadStaff(); }, [currentStore?.id]);
-      useEffect(() => { loadRepairs(); }, [statusFilter]);
-
-      // --- CREATE REPAIR FORM ---
-      const CreateRepairForm = () => {
-        const [form, setForm] = useState({
-          customer_name:'', customer_phone:'', customer_email:'',
-          device_type:'Phone', device_brand:'', device_model:'', imei:'',
-          issue_description:'', estimated_cost:'', priority:'normal',
-          assigned_to:'', notes:'', estimated_completion:''
-        });
-        const [saving, setSaving] = useState(false);
-        const f = (k,v) => setForm(p=>({...p,[k]:v}));
-
-        const handleCreate = async (e) => {
+      const handleSearchKeyDown = (e) => {
+        if (e.key === 'Enter') {
           e.preventDefault();
-          if (!form.issue_description.trim()) { showToast('Issue description required','danger'); return; }
-          setSaving(true);
-          try {
-            const payload = { ...form, store_id: currentStore.id, estimated_cost: parseFloat(form.estimated_cost)||0 };
-            if (!payload.assigned_to) delete payload.assigned_to;
-            if (!payload.estimated_completion) delete payload.estimated_completion;
-            await api('/repairs', { method:'POST', body: JSON.stringify(payload) });
-            showToast('Repair ticket created!');
-            setShowCreate(false);
-            loadRepairs();
-          } catch(e) { showToast(e.message,'danger'); }
-          setSaving(false);
-        };
-
-        const el = React.createElement;
-        const fg = (label, key, type, extra) => el('div', { className:'form-group', style:{flex:extra?.flex||1,...(extra?.style||{})} },
-          el('label', null, label),
-          type === 'textarea'
-            ? el('textarea', { className:'form-control', value:form[key], onChange:e=>f(key,e.target.value), placeholder:extra?.ph||'', rows:3 })
-            : type === 'select'
-              ? el('select', { className:'form-control', value:form[key], onChange:e=>f(key,e.target.value) }, ...(extra?.opts||[]))
-              : el('input', { className:'form-control', type:type||'text', value:form[key], onChange:e=>f(key,e.target.value), placeholder:extra?.ph||'' })
-        );
-
-        return el('div', { className:'card', style:{marginBottom:20} },
-          el('div', { style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16} },
-            el('h3', { style:{margin:0} }, 'New Repair Ticket'),
-            el('button', { className:'btn btn-secondary btn-sm', onClick:()=>setShowCreate(false) }, 'Cancel')
-          ),
-          el('form', { onSubmit: handleCreate },
-            el('h4', { style:{fontSize:14,color:'var(--gray-500)',marginBottom:12,fontWeight:600} }, 'CUSTOMER'),
-            el('div', { style:{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12} },
-              fg('Name','customer_name','text',{ph:'Customer name'}),
-              fg('Phone','customer_phone','text',{ph:'Phone number'}),
-              fg('Email','customer_email','email',{ph:'Email (optional)'})
-            ),
-            el('h4', { style:{fontSize:14,color:'var(--gray-500)',marginBottom:12,marginTop:8,fontWeight:600} }, 'DEVICE'),
-            el('div', { style:{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:12} },
-              fg('Type','device_type','select',{opts:[
-                el('option',{key:'Phone',value:'Phone'},'Phone'),
-                el('option',{key:'Tablet',value:'Tablet'},'Tablet'),
-                el('option',{key:'Laptop',value:'Laptop'},'Laptop'),
-                el('option',{key:'Watch',value:'Watch'},'Watch'),
-                el('option',{key:'Console',value:'Console'},'Console'),
-                el('option',{key:'Other',value:'Other'},'Other')
-              ]}),
-              fg('Brand','device_brand','text',{ph:'e.g. Apple, Samsung'}),
-              fg('Model','device_model','text',{ph:'e.g. iPhone 15 Pro'}),
-              fg('IMEI / Serial','imei','text',{ph:'IMEI or serial number'})
-            ),
-            el('h4', { style:{fontSize:14,color:'var(--gray-500)',marginBottom:12,marginTop:8,fontWeight:600} }, 'REPAIR DETAILS'),
-            fg('Issue Description *','issue_description','textarea',{ph:'Describe the problem...'}),
-            el('div', { style:{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:12} },
-              fg('Estimated Cost (£)','estimated_cost','number',{ph:'0.00'}),
-              fg('Priority','priority','select',{opts:[
-                el('option',{key:'normal',value:'normal'},'Normal'),
-                el('option',{key:'high',value:'high'},'High'),
-                el('option',{key:'urgent',value:'urgent'},'Urgent')
-              ]}),
-              fg('Assigned To','assigned_to','select',{opts:[
-                el('option',{key:'',value:''},'Unassigned'),
-                ...staffList.map(s=>el('option',{key:s.id,value:s.id},`${s.first_name} ${s.last_name}`))
-              ]}),
-              fg('Est. Completion','estimated_completion','date')
-            ),
-            fg('Notes','notes','textarea',{ph:'Internal notes...'}),
-            el('button', { className:'btn btn-primary', type:'submit', disabled:saving },
-              saving ? 'Creating...' : 'Create Repair Ticket'
-            )
-          )
-        );
+          if (products.length > 0) {
+            addToCart(products[0]);
+          }
+        }
       };
 
-      // --- REPAIR DETAIL MODAL ---
-      const RepairDetail = ({ repair: initialRepair, onClose }) => {
-        const [repair, setRepair] = useState(null);
-        const [parts, setParts] = useState([]);
-        const [loadingDetail, setLoadingDetail] = useState(true);
-        const [editing, setEditing] = useState(false);
-        const [editForm, setEditForm] = useState({});
-        const [partSearch, setPartSearch] = useState('');
-        const [partResults, setPartResults] = useState([]);
-        const [searchingParts, setSearchingParts] = useState(false);
-        const [payAmount, setPayAmount] = useState('');
-        const [payMethod, setPayMethod] = useState('cash');
-        const partSearchTimeout = useRef(null);
-
-        const loadDetail = async () => {
-          try {
-            const d = await api(`/repairs/${initialRepair.id}`);
-            setRepair(d);
-            setParts(d.parts || []);
-            setEditForm({
-              status: d.status, diagnosis: d.diagnosis||'', estimated_cost: d.estimated_cost||0,
-              final_cost: d.final_cost||0, priority: d.priority||'normal', assigned_to: d.assigned_to||'',
-              notes: d.notes||'', estimated_completion: d.estimated_completion ? d.estimated_completion.split('T')[0] : ''
-            });
-            setPayAmount(String((d.final_cost || d.estimated_cost || 0) - (d.amount_paid || 0)));
-          } catch(e) { showToast(e.message,'danger'); }
-          setLoadingDetail(false);
-        };
-
-        useEffect(() => { loadDetail(); }, []);
-
-        const saveEdit = async () => {
-          try {
-            await api(`/repairs/${repair.id}`, { method:'PUT', body: JSON.stringify({
-              ...editForm,
-              estimated_cost: parseFloat(editForm.estimated_cost)||0,
-              final_cost: parseFloat(editForm.final_cost)||0,
-            })});
-            showToast('Repair updated!');
-            setEditing(false);
-            loadDetail();
-            loadRepairs();
-          } catch(e) { showToast(e.message,'danger'); }
-        };
-
-        // Parts search with SKU/barcode scan support
-        const searchParts = async (q) => {
-          if (q.length < 2) { setPartResults([]); return; }
-          setSearchingParts(true);
-          try {
-            const d = await api(`/products?search=${encodeURIComponent(q)}&limit=20`);
-            const prods = Array.isArray(d) ? d : d.products || [];
-            setPartResults(prods);
-          } catch(e) { setPartResults([]); }
-          setSearchingParts(false);
-        };
-
-        const handlePartSearchInput = (val) => {
-          setPartSearch(val);
-          clearTimeout(partSearchTimeout.current);
-          partSearchTimeout.current = setTimeout(() => searchParts(val), 300);
-        };
-
-        const addPart = async (product) => {
-          try {
-            await api(`/repairs/${repair.id}/parts`, { method:'POST', body: JSON.stringify({
-              product_id: product.id, quantity: 1, cost: product.cost_price || 0
-            })});
-            showToast(`Added: ${product.name}`);
-            setPartSearch('');
-            setPartResults([]);
-            loadDetail();
-          } catch(e) { showToast(e.message,'danger'); }
-        };
-
-        const processPayment = async () => {
-          const amt = parseFloat(payAmount);
-          if (!amt || amt <= 0) { showToast('Enter a valid amount','danger'); return; }
-          try {
-            const result = await api(`/repairs/${repair.id}/pay`, { method:'POST', body: JSON.stringify({
-              amount: amt, payment_method: payMethod
-            })});
-            showToast(result.fully_paid ? 'Repair fully paid!' : `Payment received. £${result.amount_paid} paid so far.`);
-            loadDetail();
-            loadRepairs();
-          } catch(e) { showToast(e.message,'danger'); }
-        };
-
-        const el = React.createElement;
-        if (loadingDetail) return el('div', { style:{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.5)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000} },
-          el('div', { className:'card', style:{maxWidth:400,textAlign:'center'} }, 'Loading repair details...')
-        );
-        if (!repair) return null;
-
-        const totalDue = repair.final_cost || repair.estimated_cost || 0;
-        const remaining = Math.max(0, totalDue - (repair.amount_paid || 0));
-        const partsCost = parts.reduce((s,p) => s + (p.cost * (p.quantity||1)), 0);
-        const ef = (k,v) => setEditForm(p=>({...p,[k]:v}));
-
-        return el('div', { style:{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.5)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000}, onClick:e=>{if(e.target===e.currentTarget)onClose()} },
-          el('div', { style:{background:'white',borderRadius:16,maxWidth:900,width:'95%',maxHeight:'90vh',overflow:'auto',padding:28} },
-            // Header
-            el('div', { style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:20} },
-              el('div', null,
-                el('h2', { style:{fontSize:22,fontWeight:700,margin:0} }, `Repair ${repair.ticket_number}`),
-                el('div', { style:{fontSize:13,color:'var(--gray-500)',marginTop:4} },
-                  `${repair.customer_name || 'No customer'} • ${repair.device_brand || ''} ${repair.device_model || 'Unknown device'}`
-                )
-              ),
-              el('div', { style:{display:'flex',gap:8} },
-                !editing && el('button', { className:'btn btn-primary btn-sm', onClick:()=>setEditing(true) }, 'Edit'),
-                el('button', { className:'btn btn-secondary btn-sm', onClick:onClose }, 'Close')
-              )
-            ),
-
-            // Status & Priority badges
-            el('div', { style:{display:'flex',gap:8,marginBottom:20} },
-              el('span', { style:{background:statusColor(repair.status)+'20',color:statusColor(repair.status),padding:'4px 12px',borderRadius:20,fontSize:12,fontWeight:600} }, statusLabel(repair.status)),
-              el('span', { style:{background:priorityColor(repair.priority)+'20',color:priorityColor(repair.priority),padding:'4px 12px',borderRadius:20,fontSize:12,fontWeight:600} }, (repair.priority||'normal').toUpperCase()),
-              el('span', { style:{background:repair.payment_status==='paid'?'#30d15820':repair.payment_status==='partial'?'#ff9f0a20':'#ff3b3020',color:repair.payment_status==='paid'?'#248a3d':repair.payment_status==='partial'?'#ff9f0a':'#ff3b30',padding:'4px 12px',borderRadius:20,fontSize:12,fontWeight:600} }, (repair.payment_status||'unpaid').toUpperCase())
-            ),
-
-            // EDIT MODE
-            editing ? el('div', null,
-              el('div', { style:{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12,marginBottom:16} },
-                el('div', { className:'form-group' },
-                  el('label', null, 'Status'),
-                  el('select', { className:'form-control', value:editForm.status, onChange:e=>ef('status',e.target.value) },
-                    STATUSES.map(s => el('option', { key:s, value:s }, statusLabel(s)))
-                  )
-                ),
-                el('div', { className:'form-group' },
-                  el('label', null, 'Priority'),
-                  el('select', { className:'form-control', value:editForm.priority, onChange:e=>ef('priority',e.target.value) },
-                    el('option',{value:'normal'},'Normal'), el('option',{value:'high'},'High'), el('option',{value:'urgent'},'Urgent')
-                  )
-                ),
-                el('div', { className:'form-group' },
-                  el('label', null, 'Assigned To'),
-                  el('select', { className:'form-control', value:editForm.assigned_to, onChange:e=>ef('assigned_to',e.target.value) },
-                    el('option',{value:''},'Unassigned'),
-                    ...staffList.map(s=>el('option',{key:s.id,value:s.id},`${s.first_name} ${s.last_name}`))
-                  )
-                )
-              ),
-              el('div', { className:'form-group' },
-                el('label', null, 'Diagnosis'),
-                el('textarea', { className:'form-control', value:editForm.diagnosis, onChange:e=>ef('diagnosis',e.target.value), rows:3, placeholder:'Enter diagnosis...' })
-              ),
-              el('div', { style:{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12} },
-                el('div', { className:'form-group' },
-                  el('label', null, 'Estimated Cost (£)'),
-                  el('input', { className:'form-control', type:'number', step:'0.01', value:editForm.estimated_cost, onChange:e=>ef('estimated_cost',e.target.value) })
-                ),
-                el('div', { className:'form-group' },
-                  el('label', null, 'Final Cost (£)'),
-                  el('input', { className:'form-control', type:'number', step:'0.01', value:editForm.final_cost, onChange:e=>ef('final_cost',e.target.value) })
-                ),
-                el('div', { className:'form-group' },
-                  el('label', null, 'Est. Completion'),
-                  el('input', { className:'form-control', type:'date', value:editForm.estimated_completion, onChange:e=>ef('estimated_completion',e.target.value) })
-                )
-              ),
-              el('div', { className:'form-group' },
-                el('label', null, 'Notes'),
-                el('textarea', { className:'form-control', value:editForm.notes, onChange:e=>ef('notes',e.target.value), rows:3, placeholder:'Internal notes...' })
-              ),
-              el('div', { style:{display:'flex',gap:8} },
-                el('button', { className:'btn btn-primary', onClick:saveEdit }, 'Save Changes'),
-                el('button', { className:'btn btn-secondary', onClick:()=>setEditing(false) }, 'Cancel')
-              )
-            )
-            // VIEW MODE - show info grid
-            : el('div', { style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,marginBottom:20} },
-              el('div', null,
-                el('div', { style:{fontSize:13,color:'var(--gray-500)',fontWeight:600,marginBottom:4} }, 'DEVICE'),
-                el('div', { style:{fontSize:14} }, `${repair.device_type||'Phone'} — ${repair.device_brand||''} ${repair.device_model||''}`),
-                repair.imei && el('div', { style:{fontSize:13,color:'var(--gray-500)',marginTop:2} }, `IMEI: ${repair.imei}`)
-              ),
-              el('div', null,
-                el('div', { style:{fontSize:13,color:'var(--gray-500)',fontWeight:600,marginBottom:4} }, 'CUSTOMER'),
-                el('div', { style:{fontSize:14} }, repair.customer_name || 'Walk-in'),
-                repair.customer_phone && el('div', { style:{fontSize:13,color:'var(--gray-500)',marginTop:2} }, repair.customer_phone)
-              ),
-              el('div', null,
-                el('div', { style:{fontSize:13,color:'var(--gray-500)',fontWeight:600,marginBottom:4} }, 'ISSUE'),
-                el('div', { style:{fontSize:14} }, repair.issue_description)
-              ),
-              repair.diagnosis && el('div', null,
-                el('div', { style:{fontSize:13,color:'var(--gray-500)',fontWeight:600,marginBottom:4} }, 'DIAGNOSIS'),
-                el('div', { style:{fontSize:14} }, repair.diagnosis)
-              ),
-              el('div', null,
-                el('div', { style:{fontSize:13,color:'var(--gray-500)',fontWeight:600,marginBottom:4} }, 'COSTS'),
-                el('div', { style:{fontSize:14} }, `Estimated: £${(repair.estimated_cost||0).toFixed(2)} • Final: £${(repair.final_cost||0).toFixed(2)}`),
-                el('div', { style:{fontSize:13,color:'var(--gray-500)',marginTop:2} }, `Paid: £${(repair.amount_paid||0).toFixed(2)} • Remaining: £${remaining.toFixed(2)}`)
-              ),
-              el('div', null,
-                el('div', { style:{fontSize:13,color:'var(--gray-500)',fontWeight:600,marginBottom:4} }, 'ASSIGNED TO'),
-                el('div', { style:{fontSize:14} }, repair.assigned_to_name || 'Unassigned')
-              ),
-              repair.notes && el('div', { style:{gridColumn:'1 / -1'} },
-                el('div', { style:{fontSize:13,color:'var(--gray-500)',fontWeight:600,marginBottom:4} }, 'NOTES'),
-                el('div', { style:{fontSize:14,whiteSpace:'pre-wrap'} }, repair.notes)
-              )
-            ),
-
-            // --- PARTS SECTION ---
-            el('div', { style:{borderTop:'1px solid var(--gray-200)',paddingTop:20,marginTop:8} },
-              el('h3', { style:{fontSize:16,fontWeight:700,marginBottom:12} }, `Parts Used (${parts.length})`),
-
-              // Parts scan/search input
-              repair.status !== 'completed' && repair.status !== 'collected' && el('div', { style:{marginBottom:12} },
-                el('div', { style:{position:'relative'} },
-                  el('input', {
-                    className:'form-control',
-                    placeholder:'Scan barcode / SKU or type product name to search...',
-                    value: partSearch,
-                    onChange: e => handlePartSearchInput(e.target.value),
-                    onKeyDown: e => { if(e.key==='Enter') { e.preventDefault(); searchParts(partSearch); } },
-                    style:{ fontSize:15, padding:'12px 16px 12px 40px' }
-                  }),
-                  el('i', { className:'fas fa-barcode', style:{position:'absolute',left:14,top:'50%',transform:'translateY(-50%)',color:'var(--gray-400)',fontSize:16} })
-                ),
-                searchingParts && el('div', { style:{fontSize:13,color:'var(--gray-500)',marginTop:4} }, 'Searching...'),
-                partResults.length > 0 && el('div', { style:{border:'1px solid var(--gray-200)',borderRadius:8,marginTop:4,maxHeight:200,overflow:'auto',background:'white',boxShadow:'var(--shadow)'} },
-                  partResults.map(p => el('div', {
-                    key: p.id,
-                    onClick: () => addPart(p),
-                    style:{padding:'10px 14px',cursor:'pointer',borderBottom:'1px solid var(--gray-100)',display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14,transition:'background 0.15s'}
-                  },
-                    el('div', null,
-                      el('div', { style:{fontWeight:600} }, p.name),
-                      el('div', { style:{fontSize:12,color:'var(--gray-500)'} }, `SKU: ${p.sku || 'N/A'} • Cost: £${(p.cost_price||0).toFixed(2)}`)
-                    ),
-                    el('button', { className:'btn btn-primary btn-sm', onClick:e=>{e.stopPropagation();addPart(p)} }, '+ Add')
-                  ))
-                ),
-                partResults.length === 0 && partSearch.length >= 2 && !searchingParts && el('div', { style:{fontSize:13,color:'var(--gray-500)',marginTop:4} }, 'No products found. Try a different search term.')
-              ),
-
-              // Parts table
-              parts.length > 0 ? el('table', null,
-                el('thead', null, el('tr', null,
-                  el('th', null, 'Part'), el('th', null, 'SKU'), el('th', null, 'Qty'), el('th', null, 'Cost'), el('th', null, 'Deducted')
-                )),
-                el('tbody', null,
-                  parts.map(p => el('tr', { key: p.id },
-                    el('td', null, p.product_name),
-                    el('td', null, p.sku || '—'),
-                    el('td', null, p.quantity),
-                    el('td', null, `£${(p.cost * (p.quantity||1)).toFixed(2)}`),
-                    el('td', null, p.is_deducted ? el('span',{className:'badge badge-success'},'Yes') : el('span',{style:{color:'var(--gray-500)',fontSize:12}},'No'))
-                  ))
-                )
-              ) : el('div', { style:{fontSize:14,color:'var(--gray-500)',padding:'12px 0'} }, 'No parts added yet.'),
-              parts.length > 0 && el('div', { style:{textAlign:'right',fontSize:14,fontWeight:600,marginTop:8} }, `Parts Total: £${partsCost.toFixed(2)}`)
-            ),
-
-            // --- PAYMENT SECTION ---
-            remaining > 0 && el('div', { style:{borderTop:'1px solid var(--gray-200)',paddingTop:20,marginTop:16} },
-              el('h3', { style:{fontSize:16,fontWeight:700,marginBottom:12} }, 'Take Payment'),
-              el('div', { style:{display:'flex',gap:12,alignItems:'flex-end'} },
-                el('div', { className:'form-group', style:{flex:1,marginBottom:0} },
-                  el('label', null, 'Amount (£)'),
-                  el('input', { className:'form-control', type:'number', step:'0.01', value:payAmount, onChange:e=>setPayAmount(e.target.value) })
-                ),
-                el('div', { className:'form-group', style:{flex:1,marginBottom:0} },
-                  el('label', null, 'Method'),
-                  el('select', { className:'form-control', value:payMethod, onChange:e=>setPayMethod(e.target.value) },
-                    el('option',{value:'cash'},'Cash'), el('option',{value:'card'},'Card'), el('option',{value:'bank_transfer'},'Bank Transfer')
-                  )
-                ),
-                el('button', { className:'btn btn-success', onClick:processPayment, style:{marginBottom:0,height:42} }, `Pay £${parseFloat(payAmount||0).toFixed(2)}`)
-              )
-            ),
-
-            // Created date
-            el('div', { style:{borderTop:'1px solid var(--gray-200)',paddingTop:12,marginTop:16,fontSize:12,color:'var(--gray-500)'} },
-              `Created: ${repair.created_at ? new Date(repair.created_at).toLocaleString() : 'N/A'}`,
-              repair.completed_at ? ` • Completed: ${new Date(repair.completed_at).toLocaleString()}` : ''
-            )
-          )
-        );
+      const addToCart = (product) => {
+        setCart(prevCart => {
+          const existing = prevCart.find(item => item.product_id === product.id);
+          if (existing) {
+            return prevCart.map(item =>
+              item.product_id === product.id
+                ? { ...item, quantity: item.quantity + 1 }
+                : item
+            );
+          }
+          return [...prevCart, {
+            product_id: product.id,
+            product_name: product.name,
+            quantity: 1,
+            unit_price: product.sell_price
+          }];
+        });
+        setSearchQuery('');
+        setProducts([]);
+        if (searchInputRef.current) searchInputRef.current.focus();
       };
 
-      // --- MAIN RENDER ---
-      const el = React.createElement;
-
-      return el('div', null,
-        el('div', { className:'page-header' },
-          el('h1', null, 'Repairs'),
-          el('button', { className:'btn btn-primary', onClick:()=>setShowCreate(true) },
-            el('i', { className:'fas fa-plus', style:{marginRight:6} }), 'New Repair'
-          )
-        ),
-
-        // Create form
-        showCreate && el(CreateRepairForm, null),
-
-        // Filters
-        el('div', { style:{display:'flex',gap:12,marginBottom:20} },
-          el('input', { className:'form-control', placeholder:'Search by ticket, device, IMEI, customer...', value:searchQ,
-            onChange:e=>setSearchQ(e.target.value),
-            onKeyDown:e=>{if(e.key==='Enter')loadRepairs()},
-            style:{flex:1,maxWidth:400}
-          }),
-          el('select', { className:'form-control', value:statusFilter, onChange:e=>setStatusFilter(e.target.value), style:{width:180} },
-            el('option',{value:''},'All Statuses'),
-            ...STATUSES.map(s => el('option', { key:s, value:s }, statusLabel(s)))
-          ),
-          el('button', { className:'btn btn-secondary btn-sm', onClick:loadRepairs }, el('i',{className:'fas fa-sync-alt'}))
-        ),
-
-        // Status summary pills
-        el('div', { style:{display:'flex',gap:8,marginBottom:16,flexWrap:'wrap'} },
-          STATUSES.filter(s=>s!=='collected'&&s!=='completed').map(s => {
-            const count = repairs.filter(r=>r.status===s).length;
-            return count > 0 ? el('span', { key:s, style:{background:statusColor(s)+'15',color:statusColor(s),padding:'4px 12px',borderRadius:20,fontSize:12,fontWeight:600,cursor:'pointer'}, onClick:()=>setStatusFilter(statusFilter===s?'':s) },
-              `${statusLabel(s)}: ${count}`
-            ) : null;
-          })
-        ),
-
-        // Repairs table
-        loading ? el('div', { className:'card' }, 'Loading repairs...')
-        : repairs.length === 0 ? el('div', { className:'card' }, el('p', null, 'No repairs found. Create a new repair ticket to get started.'))
-        : el('div', { className:'card', style:{padding:0,overflow:'hidden'} },
-          el('table', null,
-            el('thead', null, el('tr', null,
-              el('th', null, 'Ticket'), el('th', null, 'Customer'), el('th', null, 'Device'),
-              el('th', null, 'Issue'), el('th', null, 'Status'), el('th', null, 'Priority'),
-              el('th', null, 'Cost'), el('th', null, 'Payment')
-            )),
-            el('tbody', null,
-              repairs.map(r => el('tr', {
-                key: r.id,
-                onClick: () => setSelectedRepair(r),
-                style:{cursor:'pointer'}
-              },
-                el('td', { style:{fontWeight:600,fontSize:13,fontFamily:'monospace'} }, r.ticket_number),
-                el('td', null, r.customer_name || 'Walk-in', r.customer_phone ? el('div',{style:{fontSize:11,color:'var(--gray-500)'}},r.customer_phone) : null),
-                el('td', null, `${r.device_brand||''} ${r.device_model||''}`.trim() || r.device_type || 'Unknown'),
-                el('td', { style:{maxWidth:200,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'} }, r.issue_description),
-                el('td', null, el('span', { style:{background:statusColor(r.status)+'20',color:statusColor(r.status),padding:'3px 10px',borderRadius:20,fontSize:11,fontWeight:600} }, statusLabel(r.status))),
-                el('td', null, r.priority !== 'normal' ? el('span', { style:{background:priorityColor(r.priority)+'20',color:priorityColor(r.priority),padding:'3px 10px',borderRadius:20,fontSize:11,fontWeight:600} }, r.priority.toUpperCase()) : '—'),
-                el('td', null, `£${(r.final_cost || r.estimated_cost || 0).toFixed(2)}`),
-                el('td', null, el('span', { style:{fontSize:12,fontWeight:600,color:r.payment_status==='paid'?'#248a3d':r.payment_status==='partial'?'#ff9f0a':'#ff3b30'} }, (r.payment_status||'unpaid').toUpperCase()))
-              ))
+      const updateCartQty = (productId, qty) => {
+        if (qty <= 0) {
+          removeFromCart(productId);
+        } else {
+          setCart(prevCart =>
+            prevCart.map(item =>
+              item.product_id === productId
+                ? { ...item, quantity: qty }
+                : item
             )
-          )
-        ),
+          );
+        }
+      };
 
-        // Detail modal
-        selectedRepair && el(RepairDetail, { repair: selectedRepair, onClose: () => setSelectedRepair(null) })
-      );
-    }
+      const removeFromCart = (productId) => {
+        setCart(prevCart => prevCart.filter(item => item.product_id !== productId));
+      };
 
-    function CustomersPage() {
-      return React.createElement('div', null,
-        React.createElement('div', { className: 'page-header' }, React.createElement('h1', null, 'Customers')),
-        React.createElement('div', { className: 'card' }, React.createElement('p', null, 'Customers list...'))
-      );
-    }
+      const subtotal = cart.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
+      const total = subtotal - discountAmount;
 
-    function SalesPage() {
-      return React.createElement('div', null,
-        React.createElement('div', { className: 'page-header' }, React.createElement('h1', null, 'Sales')),
-        React.createElement('div', { className: 'card' }, React.createElement('p', null, 'Sales history...'))
-      );
-    }
-
-    function TransfersPage() {
-      const { stores, showToast } = useContext(AppContext);
-      const [form, setForm] = useState({ product_id: '', from_store_id: '', to_store_id: '', quantity: 0 });
-      const [transfers, setTransfers] = useState([]);
-
-      useEffect(() => {
-        api('/transfers?limit=50').then(d => setTransfers(d.transfers || [])).catch(() => {});
-      }, []);
-
-      const handleSubmit = async (e) => {
-        e.preventDefault();
+      const handleCheckout = async () => {
+        if (cart.length === 0) {
+          showToast('Cart is empty', 'error');
+          return;
+        }
+        setCheckoutLoading(true);
         try {
-          await api('/transfers', { method: 'POST', body: JSON.stringify(form) });
-          showToast('Transfer created');
-          setForm({ product_id: '', from_store_id: '', to_store_id: '', quantity: 0 });
-        } catch (err) { showToast(err.message, 'danger'); }
+          const saleData = {
+            store_id: currentStore,
+            customer_id: null,
+            items: cart.map(item => ({
+              product_id: item.product_id,
+              quantity: item.quantity,
+              unit_price: item.unit_price,
+              discount: 0
+            })),
+            payment_method: paymentMethod,
+            discount_amount: discountAmount,
+            notes: ''
+          };
+          const result = await api('/sales', {
+            method: 'POST',
+            body: JSON.stringify(saleData)
+          });
+          showToast(`Sale completed! Receipt: ${result.receipt_number}`, 'success');
+          setCart([]);
+          setDiscountAmount(0);
+          setPaymentMethod('cash');
+        } catch (err) {
+          showToast(err.message, 'error');
+        } finally {
+          setCheckoutLoading(false);
+        }
       };
 
-      return React.createElement('div', null,
-        React.createElement('div', { className: 'page-header' }, React.createElement('h1', null, 'Stock Transfers')),
-        React.createElement('div', { className: 'card' },
-          React.createElement('h3', null, 'New Transfer'),
-          React.createElement('form', { className: 'transfer-form', onSubmit: handleSubmit },
-            React.createElement('div', { className: 'form-row' },
-              React.createElement('div', { className: 'form-group', style: { marginBottom: 0 } },
-                React.createElement('label', null, 'Product'),
-                React.createElement('select', { className: 'form-control', onChange: e => setForm({...form, product_id: e.target.value}) },
-                  React.createElement('option', null, 'Select...')
-                )
-              ),
-              React.createElement('div', { className: 'form-group', style: { marginBottom: 0 } },
-                React.createElement('label', null, 'From'),
-                React.createElement('select', { className: 'form-control', onChange: e => setForm({...form, from_store_id: e.target.value}) },
-                  stores.map(s => React.createElement('option', { key: s.id, value: s.id }, s.name))
-                )
-              ),
-              React.createElement('div', { className: 'form-group', style: { marginBottom: 0 } },
-                React.createElement('label', null, 'To'),
-                React.createElement('select', { className: 'form-control', onChange: e => setForm({...form, to_store_id: e.target.value}) },
-                  stores.map(s => React.createElement('option', { key: s.id, value: s.id }, s.name))
-                )
-              ),
-              React.createElement('div', { className: 'form-group', style: { marginBottom: 0 } },
-                React.createElement('label', null, 'Qty'),
-                React.createElement('input', { className: 'form-control', type: 'number', min: 1, onChange: e => setForm({...form, quantity: parseInt(e.target.value) || 0}) })
-              )
+      return el('div', { className: 'page-content' },
+        el('h1', { style: { marginBottom: 16 } }, 'Point of Sale'),
+        el('div', { className: 'pos-container' },
+          el('div', { className: 'pos-left' },
+            el('div', { className: 'search-bar' },
+              el('i', { className: 'fas fa-barcode', style: { color: 'var(--gray-600)' } }),
+              el('input', {
+                ref: searchInputRef,
+                type: 'text',
+                placeholder: 'Search products by name or scan barcode...',
+                value: searchQuery,
+                onChange: e => handleSearch(e.target.value),
+                onKeyDown: handleSearchKeyDown,
+                style: { flex: 1 }
+              })
             ),
-            React.createElement('button', { className: 'btn btn-primary', type: 'submit' }, 'Create')
-          )
-        ),
-        React.createElement('div', { className: 'card' },
-          React.createElement('h3', null, 'Recent Transfers'),
-          React.createElement('table', null,
-            React.createElement('thead', null, React.createElement('tr', null,
-              React.createElement('th', null, 'Product'), React.createElement('th', null, 'From'), React.createElement('th', null, 'To'),
-              React.createElement('th', null, 'Qty'), React.createElement('th', null, 'Status')
-            )),
-            React.createElement('tbody', null,
-              transfers.length === 0 ? React.createElement('tr', null, React.createElement('td', { colSpan: 5, style: { textAlign: 'center' } }, 'No transfers')) :
-              transfers.map(t => React.createElement('tr', { key: t.id },
-                React.createElement('td', null, t.product_id),
-                React.createElement('td', null, t.from_store_id),
-                React.createElement('td', null, t.to_store_id),
-                React.createElement('td', null, t.quantity),
-                React.createElement('td', null, React.createElement('span', { className: 'badge badge-info' }, t.status || 'pending'))
-              ))
+            loading && el('div', { style: { textAlign: 'center', color: 'var(--gray-600)' } }, 'Loading...'),
+            !loading && el('div', { className: 'products-grid' },
+              products.map(product =>
+                el('div', {
+                  key: product.id,
+                  className: 'product-tile',
+                  onClick: () => addToCart(product)
+                },
+                  el('div', { className: 'product-tile-name' }, product.name),
+                  el('div', { className: 'product-tile-sku' }, product.sku),
+                  el('div', { className: 'product-tile-price' }, `£${product.sell_price.toFixed(2)}`),
+                  el('div', { className: 'product-tile-stock' }, `Stock: ${product.inventory?.[0]?.quantity || 0}`)
+                )
+              )
+            )
+          ),
+          el('div', { className: 'cart-section' },
+            el('div', { className: 'cart-header' }, 'Cart'),
+            el('div', { className: 'cart-items' },
+              cart.length === 0 ?
+                el('div', { style: { textAlign: 'center', color: 'var(--gray-500)', padding: 20 } }, 'No items') :
+                cart.map(item =>
+                  el('div', { key: item.product_id, className: 'cart-item' },
+                    el('div', { className: 'cart-item-info' },
+                      el('div', { className: 'cart-item-name' }, item.product_name),
+                      el('div', { className: 'cart-item-price' }, `£${(item.unit_price * item.quantity).toFixed(2)}`)
+                    ),
+                    el('div', { className: 'cart-qty-controls' },
+                      el('button', {
+                        className: 'cart-qty-btn',
+                        onClick: () => updateCartQty(item.product_id, item.quantity - 1)
+                      }, '-'),
+                      el('span', { style: { width: 24, textAlign: 'center' } }, item.quantity),
+                      el('button', {
+                        className: 'cart-qty-btn',
+                        onClick: () => updateCartQty(item.product_id, item.quantity + 1)
+                      }, '+')
+                    ),
+                    el('button', {
+                      className: 'cart-item-remove',
+                      onClick: () => removeFromCart(item.product_id)
+                    }, 'Remove')
+                  )
+                )
+            ),
+            el('div', { className: 'cart-footer' },
+              el('div', { className: 'form-group' },
+                el('label', null, 'Discount (£)'),
+                el('input', {
+                  type: 'number',
+                  min: 0,
+                  step: 0.01,
+                  value: discountAmount,
+                  onChange: e => setDiscountAmount(Math.max(0, parseFloat(e.target.value) || 0))
+                })
+              ),
+              el('div', { className: 'cart-summary' },
+                el('span', { className: 'cart-summary-label' }, 'Subtotal'),
+                el('span', { className: 'cart-summary-value' }, `£${subtotal.toFixed(2)}`)
+              ),
+              el('div', { className: 'cart-summary' },
+                el('span', { className: 'cart-summary-label' }, 'Discount'),
+                el('span', { className: 'cart-summary-value' }, `-£${discountAmount.toFixed(2)}`)
+              ),
+              el('div', { className: 'cart-total' },
+                el('span', null, 'Total'),
+                el('span', null, `£${total.toFixed(2)}`)
+              ),
+              el('div', { className: 'payment-methods' },
+                el('button', {
+                  className: `payment-btn ${paymentMethod === 'cash' ? 'active' : ''}`,
+                  onClick: () => setPaymentMethod('cash')
+                }, 'Cash'),
+                el('button', {
+                  className: `payment-btn ${paymentMethod === 'card' ? 'active' : ''}`,
+                  onClick: () => setPaymentMethod('card')
+                }, 'Card')
+              ),
+              el('button', {
+                className: 'btn btn-success',
+                style: { width: '100%' },
+                onClick: handleCheckout,
+                disabled: checkoutLoading || cart.length === 0
+              }, checkoutLoading ? 'Processing...' : 'Complete Sale')
             )
           )
         )
       );
     }
 
-    function StaffPage() {
-      return React.createElement('div', null,
-        React.createElement('div', { className: 'page-header' }, React.createElement('h1', null, 'Staff')),
-        React.createElement('div', { className: 'card' }, React.createElement('p', null, 'Staff management...'))
+    // App Component
+    function App() {
+      const [user, setUser] = useState(null);
+      const [stores, setStores] = useState([]);
+      const [currentStore, setCurrentStore] = useState(null);
+      const [page, setPage] = useState('dashboard');
+      const [toasts, setToasts] = useState([]);
+      const [permissions, setPermissions] = useState({});
+      const [loading, setLoading] = useState(true);
+
+      useEffect(() => {
+        const loadUser = async () => {
+          try {
+            const userData = await api('/auth/me');
+            setUser(userData);
+            setStores(userData.stores || []);
+            if (userData.stores?.length > 0) {
+              setCurrentStore(userData.stores[0].id);
+            }
+            const perms = await api('/permissions');
+            setPermissions(perms);
+          } catch (err) {
+            console.error('Failed to load user:', err);
+          } finally {
+            setLoading(false);
+          }
+        };
+        if (localStorage.getItem('pp_token')) {
+          loadUser();
+        } else {
+          setLoading(false);
+        }
+      }, []);
+
+      const showToast = (message, type = 'info') => {
+        const id = Date.now();
+        setToasts(prev => [...prev, { id, message, type }]);
+        setTimeout(() => {
+          setToasts(prev => prev.filter(t => t.id !== id));
+        }, 3000);
+      };
+
+      const handleLogout = () => {
+        authToken = null;
+        localStorage.removeItem('pp_token');
+        setUser(null);
+      };
+
+      const handleLoginSuccess = (userData) => {
+        setUser(userData);
+        setStores(userData.stores || []);
+        if (userData.stores?.length > 0) {
+          setCurrentStore(userData.stores[0].id);
+        }
+        setPage('dashboard');
+      };
+
+      if (loading) {
+        return el('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' } }, 'Loading...');
+      }
+
+      if (!user) {
+        return el(LoginPage, { onLoginSuccess: handleLoginSuccess });
+      }
+
+      const appContext = {
+        user,
+        stores,
+        currentStore,
+        setCurrentStore,
+        page,
+        setPage,
+        showToast,
+        toasts,
+        logout: handleLogout,
+        permissions
+      };
+
+      return el(AppContext.Provider, { value: appContext },
+        el('div', { className: 'main-layout' },
+          el('div', { className: 'sidebar' },
+            el('div', { className: 'sidebar-header' },
+              el('div', { className: 'logo' },
+                el('i', { className: 'fas fa-leaf' }),
+                'PeacePlanet'
+              )
+            ),
+            el('div', { className: 'sidebar-nav' },
+              el('div', {
+                className: `nav-item ${page === 'dashboard' ? 'active' : ''}`,
+                onClick: () => setPage('dashboard')
+              },
+                el('i', { className: 'fas fa-home' }),
+                'Dashboard'
+              ),
+              el('div', {
+                className: `nav-item ${page === 'pos' ? 'active' : ''}`,
+                onClick: () => setPage('pos')
+              },
+                el('i', { className: 'fas fa-cash-register' }),
+                'POS'
+              ),
+              el('div', {
+                className: `nav-item ${page === 'products' ? 'active' : ''}`,
+                onClick: () => setPage('products')
+              },
+                el('i', { className: 'fas fa-boxes-stacked' }),
+                'Inventory'
+              ),
+              el('div', {
+                className: `nav-item ${page === 'repairs' ? 'active' : ''}`,
+                onClick: () => setPage('repairs')
+              },
+                el('i', { className: 'fas fa-screwdriver-wrench' }),
+                'Repairs'
+              ),
+              el('div', {
+                className: `nav-item ${page === 'customers' ? 'active' : ''}`,
+                onClick: () => setPage('customers')
+              },
+                el('i', { className: 'fas fa-users' }),
+                'Customers'
+              ),
+              el('div', {
+                className: `nav-item ${page === 'sales' ? 'active' : ''}`,
+                onClick: () => setPage('sales')
+              },
+                el('i', { className: 'fas fa-receipt' }),
+                'Sales'
+              ),
+              (user.role === 'admin' || user.role === 'manager') && el('div', {
+                className: `nav-item ${page === 'purchase-orders' ? 'active' : ''}`,
+                onClick: () => setPage('purchase-orders')
+              },
+                el('i', { className: 'fas fa-file-invoice' }),
+                'Purchase Orders'
+              ),
+              (user.role === 'admin' || user.role === 'manager') && el('div', {
+                className: `nav-item ${page === 'transfers' ? 'active' : ''}`,
+                onClick: () => setPage('transfers')
+              },
+                el('i', { className: 'fas fa-boxes' }),
+                'Transfers'
+              ),
+              permissions.canViewReports && el('div', {
+                className: `nav-item ${page === 'reports' ? 'active' : ''}`,
+                onClick: () => setPage('reports')
+              },
+                el('i', { className: 'fas fa-chart-bar' }),
+                'Reports'
+              ),
+              user.role === 'admin' && el('div', {
+                className: `nav-item ${page === 'staff' ? 'active' : ''}`,
+                onClick: () => setPage('staff')
+              },
+                el('i', { className: 'fas fa-user-shield' }),
+                'Staff'
+              )
+            ),
+            el('div', { className: 'sidebar-footer' },
+              el('div', { className: 'user-info' },
+                el('div', null,
+                  el('div', { className: 'user-name' }, user.first_name || 'User'),
+                  el('div', { className: 'user-role' }, user.role.toUpperCase())
+                )
+              ),
+              el('button', {
+                className: 'logout-btn',
+                onClick: handleLogout
+              }, 'Sign Out')
+            )
+          ),
+          el('div', { className: 'content' },
+            el('div', { className: 'store-selector' },
+              stores.map(store =>
+                el('button', {
+                  key: store.id,
+                  className: `store-pill ${currentStore === store.id ? 'active' : ''}`,
+                  onClick: () => setCurrentStore(store.id)
+                }, store.name)
+              )
+            ),
+            page === 'dashboard' && el(DashboardPage, { user, currentStore, showToast }),
+            page === 'pos' && el(POSPage, { currentStore, showToast }),
+            page === 'products' && el(ProductsPage, { currentStore, user, showToast, permissions }),
+            page === 'repairs' && el(RepairsPage, { currentStore, user, showToast, permissions }),
+            page === 'customers' && el(CustomersPage, { showToast }),
+            page === 'sales' && el(SalesPage, { currentStore, user, showToast, permissions }),
+            page === 'purchase-orders' && el(PurchaseOrdersPage, { currentStore, user, showToast, stores }),
+            page === 'transfers' && el(TransfersPage, { currentStore, stores, showToast }),
+            page === 'reports' && el(ReportsPage, { currentStore, stores, user, showToast }),
+            page === 'staff' && el(StaffPage, { showToast })
+          )
+        ),
+        el('div', { className: 'toast-container' },
+          toasts.map(toast =>
+            el('div', { key: toast.id, className: `toast ${toast.type}` },
+              el('i', { className: `fas fa-${toast.type === 'success' ? 'check-circle' : toast.type === 'error' ? 'exclamation-circle' : 'info-circle'}` }),
+              toast.message
+            )
+          )
+        )
       );
     }
 
-    function ReportsPage() {
-      return React.createElement('div', null,
-        React.createElement('div', { className: 'page-header' }, React.createElement('h1', null, 'Reports')),
-        React.createElement('div', { className: 'card' }, React.createElement('p', null, 'Reports...'))
+    // Products Page
+    function ProductsPage({ currentStore, user, showToast, permissions }) {
+      const [products, setProducts] = useState([]);
+      const [searchQuery, setSearchQuery] = useState('');
+      const [categoryFilter, setCategoryFilter] = useState('');
+      const [categories, setCategories] = useState([]);
+      const [page, setPage] = useState(1);
+      const [total, setTotal] = useState(0);
+      const [loading, setLoading] = useState(false);
+      const [selectedProduct, setSelectedProduct] = useState(null);
+      const [showForm, setShowForm] = useState(false);
+      const [showStockModal, setShowStockModal] = useState(false);
+      const [stockForm, setStockForm] = useState({ quantity: 0, adjustment_type: 'set', notes: '' });
+
+      const limit = 50;
+
+      useEffect(() => {
+        loadCategories();
+      }, []);
+
+      useEffect(() => {
+        loadProducts();
+      }, [searchQuery, categoryFilter, page, currentStore]);
+
+      const loadCategories = async () => {
+        try {
+          const cats = await api('/products/categories/list');
+          setCategories(cats || []);
+        } catch (err) {
+          showToast(err.message, 'error');
+        }
+      };
+
+      const loadProducts = async () => {
+        setLoading(true);
+        try {
+          const params = new URLSearchParams({
+            store_id: currentStore,
+            page,
+            limit,
+            ...(searchQuery && { search: searchQuery }),
+            ...(categoryFilter && { category_id: categoryFilter })
+          });
+          const result = await api(`/products?${params}`);
+          setProducts(result.products || []);
+          setTotal(result.total || 0);
+        } catch (err) {
+          showToast(err.message, 'error');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const handleStockAdjustment = async () => {
+        if (!selectedProduct) return;
+        try {
+          await api(`/products/${selectedProduct.id}/stock`, {
+            method: 'POST',
+            body: JSON.stringify({
+              store_id: currentStore,
+              quantity: stockForm.quantity,
+              adjustment_type: stockForm.adjustment_type,
+              notes: stockForm.notes
+            })
+          });
+          showToast('Stock adjusted', 'success');
+          setShowStockModal(false);
+          setStockForm({ quantity: 0, adjustment_type: 'set', notes: '' });
+          loadProducts();
+        } catch (err) {
+          showToast(err.message, 'error');
+        }
+      };
+
+      const getStockBadge = (stock) => {
+        if (stock > 5) return el('span', { className: 'badge badge-success' }, `${stock} in stock`);
+        if (stock > 0) return el('span', { className: 'badge badge-warning' }, `${stock} in stock`);
+        return el('span', { className: 'badge badge-danger' }, 'Out of stock');
+      };
+
+      return el('div', { className: 'page-content' },
+        el('div', { className: 'flex-between', style: { marginBottom: 24 } },
+          el('h1', null, 'Inventory'),
+          (user.role === 'admin' || user.role === 'manager') && el('button', {
+            className: 'btn btn-primary',
+            onClick: () => setShowForm(true)
+          }, '+ Add Product')
+        ),
+        el('div', { className: 'search-bar', style: { marginBottom: 16 } },
+          el('i', { className: 'fas fa-search', style: { color: 'var(--gray-600)' } }),
+          el('input', {
+            type: 'text',
+            placeholder: 'Search products...',
+            value: searchQuery,
+            onChange: e => { setSearchQuery(e.target.value); setPage(1); }
+          }),
+          el('select', {
+            value: categoryFilter,
+            onChange: e => { setCategoryFilter(e.target.value); setPage(1); },
+            style: { width: 200 }
+          },
+            el('option', { value: '' }, 'All Categories'),
+            categories.map(cat =>
+              el('option', { key: cat.id, value: cat.id }, cat.name)
+            )
+          )
+        ),
+        loading ? el('div', null, 'Loading...') :
+          el('div', null,
+            el('table', { className: 'table' },
+              el('thead', null,
+                el('tr', null,
+                  el('th', null, 'Product Name'),
+                  el('th', null, 'SKU'),
+                  el('th', null, 'Category'),
+                  permissions.canSeeCostPrices && el('th', null, 'Cost'),
+                  el('th', null, 'Sell Price'),
+                  el('th', null, 'Stock'),
+                  el('th', null, 'Actions')
+                )
+              ),
+              el('tbody', null,
+                products.map(product =>
+                  el('tr', { key: product.id, onClick: () => setSelectedProduct(product) },
+                    el('td', null, product.name),
+                    el('td', null, product.sku),
+                    el('td', null, product.category?.name || '-'),
+                    permissions.canSeeCostPrices && el('td', null, `£${product.cost_price?.toFixed(2) || '0.00'}`),
+                    el('td', null, `£${product.sell_price?.toFixed(2) || '0.00'}`),
+                    el('td', null, getStockBadge(product.inventory?.[0]?.quantity || 0)),
+                    el('td', null,
+                      el('button', {
+                        className: 'btn btn-small btn-secondary',
+                        onClick: (e) => { e.stopPropagation(); setSelectedProduct(product); setShowStockModal(true); }
+                      }, 'Adjust Stock')
+                    )
+                  )
+                )
+              )
+            ),
+            el('div', { className: 'pagination' },
+              el('button', {
+                onClick: () => setPage(Math.max(1, page - 1)),
+                disabled: page === 1
+              }, 'Previous'),
+              el('span', null, `Page ${page}`),
+              el('button', {
+                onClick: () => setPage(page + 1),
+                disabled: (page * limit) >= total
+              }, 'Next')
+            )
+          ),
+        showStockModal && selectedProduct && el('div', { className: 'modal-overlay', onClick: e => { if (e.target === e.currentTarget) setShowStockModal(false); } },
+          el('div', { className: 'modal-card' },
+            el('div', { className: 'modal-header' },
+              el('h2', null, 'Adjust Stock'),
+              el('button', { className: 'modal-close', onClick: () => setShowStockModal(false) }, '×')
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Adjustment Type'),
+              el('select', {
+                value: stockForm.adjustment_type,
+                onChange: e => setStockForm({ ...stockForm, adjustment_type: e.target.value })
+              },
+                el('option', { value: 'set' }, 'Set to'),
+                el('option', { value: 'add' }, 'Add'),
+                el('option', { value: 'remove' }, 'Remove')
+              )
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Quantity'),
+              el('input', {
+                type: 'number',
+                value: stockForm.quantity,
+                onChange: e => setStockForm({ ...stockForm, quantity: parseInt(e.target.value) || 0 })
+              })
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Notes'),
+              el('textarea', {
+                value: stockForm.notes,
+                onChange: e => setStockForm({ ...stockForm, notes: e.target.value }),
+                rows: 3
+              })
+            ),
+            el('div', { style: { display: 'flex', gap: 12 } },
+              el('button', { className: 'btn btn-success', onClick: handleStockAdjustment }, 'Save'),
+              el('button', { className: 'btn btn-secondary', onClick: () => setShowStockModal(false) }, 'Cancel')
+            )
+          )
+        )
       );
     }
 
-    ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+    // Repairs Page
+    function RepairsPage({ currentStore, user, showToast, permissions }) {
+      const [repairs, setRepairs] = useState([]);
+      const [searchQuery, setSearchQuery] = useState('');
+      const [statusFilter, setStatusFilter] = useState('');
+      const [loading, setLoading] = useState(false);
+      const [selectedRepair, setSelectedRepair] = useState(null);
+      const [showForm, setShowForm] = useState(false);
+      const [showDetail, setShowDetail] = useState(false);
+      const [formData, setFormData] = useState({
+        customer_name: '', customer_phone: '', customer_email: '',
+        device_type: '', device_brand: '', device_model: '', imei: '',
+        issue_description: '', estimated_cost: 0, priority: 'normal',
+        assigned_to: '', notes: ''
+      });
+
+      const statuses = ['checked_in', 'diagnosing', 'awaiting_parts', 'in_repair', 'ready', 'completed', 'collected'];
+
+      useEffect(() => {
+        loadRepairs();
+      }, [searchQuery, statusFilter, currentStore]);
+
+      const loadRepairs = async () => {
+        setLoading(true);
+        try {
+          const params = new URLSearchParams({ store_id: currentStore, limit: 100 });
+          if (searchQuery) params.append('search', searchQuery);
+          if (statusFilter) params.append('status', statusFilter);
+          const result = await api(`/repairs?${params}`);
+          setRepairs(result || []);
+        } catch (err) {
+          showToast(err.message, 'error');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const handleCreateRepair = async () => {
+        try {
+          const data = { ...formData, store_id: currentStore };
+          const result = await api('/repairs', { method: 'POST', body: JSON.stringify(data) });
+          showToast(`Repair created: ${result.ticket_number}`, 'success');
+          setShowForm(false);
+          setFormData({
+            customer_name: '', customer_phone: '', customer_email: '',
+            device_type: '', device_brand: '', device_model: '', imei: '',
+            issue_description: '', estimated_cost: 0, priority: 'normal',
+            assigned_to: '', notes: ''
+          });
+          loadRepairs();
+        } catch (err) {
+          showToast(err.message, 'error');
+        }
+      };
+
+      const getStatusBadge = (status) => {
+        const badgeClass = {
+          'checked_in': 'badge-primary',
+          'diagnosing': 'badge-primary',
+          'awaiting_parts': 'badge-warning',
+          'in_repair': 'badge-primary',
+          'ready': 'badge-success',
+          'completed': 'badge-success',
+          'collected': 'badge-success'
+        }[status] || 'badge-primary';
+        return el('span', { className: `badge ${badgeClass}` }, status.replace(/_/g, ' '));
+      };
+
+      return el('div', { className: 'page-content' },
+        el('div', { className: 'flex-between', style: { marginBottom: 24 } },
+          el('h1', null, 'Repairs'),
+          el('button', { className: 'btn btn-primary', onClick: () => setShowForm(true) }, '+ New Repair')
+        ),
+        el('div', { className: 'search-bar', style: { marginBottom: 16 } },
+          el('input', {
+            type: 'text',
+            placeholder: 'Search by customer name, phone, or device...',
+            value: searchQuery,
+            onChange: e => setSearchQuery(e.target.value)
+          }),
+          el('select', {
+            value: statusFilter,
+            onChange: e => setStatusFilter(e.target.value),
+            style: { width: 200 }
+          },
+            el('option', { value: '' }, 'All Statuses'),
+            statuses.map(s => el('option', { key: s, value: s }, s.replace(/_/g, ' ')))
+          )
+        ),
+        loading ? el('div', null, 'Loading...') :
+          el('table', { className: 'table' },
+            el('thead', null,
+              el('tr', null,
+                el('th', null, 'Ticket #'),
+                el('th', null, 'Customer'),
+                el('th', null, 'Device'),
+                el('th', null, 'Status'),
+                el('th', null, 'Cost'),
+                el('th', null, 'Priority')
+              )
+            ),
+            el('tbody', null,
+              repairs.map(repair =>
+                el('tr', { key: repair.id, onClick: () => { setSelectedRepair(repair); setShowDetail(true); } },
+                  el('td', null, repair.ticket_number),
+                  el('td', null, repair.customer_name),
+                  el('td', null, `${repair.device_brand} ${repair.device_model}`),
+                  el('td', null, getStatusBadge(repair.status)),
+                  el('td', null, `£${repair.estimated_cost?.toFixed(2) || '0.00'}`),
+                  el('td', null, repair.priority)
+                )
+              )
+            )
+          ),
+        showForm && el('div', { className: 'modal-overlay', onClick: e => { if (e.target === e.currentTarget) setShowForm(false); } },
+          el('div', { className: 'modal-card' },
+            el('div', { className: 'modal-header' },
+              el('h2', null, 'Create Repair'),
+              el('button', { className: 'modal-close', onClick: () => setShowForm(false) }, '×')
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Customer Name'),
+              el('input', {
+                type: 'text',
+                value: formData.customer_name,
+                onChange: e => setFormData({ ...formData, customer_name: e.target.value })
+              })
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Phone'),
+              el('input', {
+                type: 'text',
+                value: formData.customer_phone,
+                onChange: e => setFormData({ ...formData, customer_phone: e.target.value })
+              })
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Email'),
+              el('input', {
+                type: 'email',
+                value: formData.customer_email,
+                onChange: e => setFormData({ ...formData, customer_email: e.target.value })
+              })
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Device Type'),
+              el('input', {
+                type: 'text',
+                value: formData.device_type,
+                onChange: e => setFormData({ ...formData, device_type: e.target.value }),
+                placeholder: 'Phone, Tablet, Laptop, etc.'
+              })
+            ),
+            el('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 } },
+              el('div', { className: 'form-group' },
+                el('label', null, 'Brand'),
+                el('input', {
+                  type: 'text',
+                  value: formData.device_brand,
+                  onChange: e => setFormData({ ...formData, device_brand: e.target.value })
+                })
+              ),
+              el('div', { className: 'form-group' },
+                el('label', null, 'Model'),
+                el('input', {
+                  type: 'text',
+                  value: formData.device_model,
+                  onChange: e => setFormData({ ...formData, device_model: e.target.value })
+                })
+              )
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'IMEI/Serial'),
+              el('input', {
+                type: 'text',
+                value: formData.imei,
+                onChange: e => setFormData({ ...formData, imei: e.target.value })
+              })
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Issue Description'),
+              el('textarea', {
+                value: formData.issue_description,
+                onChange: e => setFormData({ ...formData, issue_description: e.target.value }),
+                rows: 4
+              })
+            ),
+            el('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 } },
+              el('div', { className: 'form-group' },
+                el('label', null, 'Estimated Cost (£)'),
+                el('input', {
+                  type: 'number',
+                  step: 0.01,
+                  value: formData.estimated_cost,
+                  onChange: e => setFormData({ ...formData, estimated_cost: parseFloat(e.target.value) || 0 })
+                })
+              ),
+              el('div', { className: 'form-group' },
+                el('label', null, 'Priority'),
+                el('select', {
+                  value: formData.priority,
+                  onChange: e => setFormData({ ...formData, priority: e.target.value })
+                },
+                  el('option', { value: 'low' }, 'Low'),
+                  el('option', { value: 'normal' }, 'Normal'),
+                  el('option', { value: 'high' }, 'High'),
+                  el('option', { value: 'urgent' }, 'Urgent')
+                )
+              )
+            ),
+            el('div', { style: { display: 'flex', gap: 12 } },
+              el('button', { className: 'btn btn-success', onClick: handleCreateRepair }, 'Create Repair'),
+              el('button', { className: 'btn btn-secondary', onClick: () => setShowForm(false) }, 'Cancel')
+            )
+          )
+        ),
+        showDetail && selectedRepair && el(RepairDetailModal, { repairId: selectedRepair.id, onClose: () => { setShowDetail(false); loadRepairs(); }, showToast, currentStore })
+      );
+    }
+
+    function RepairDetailModal({ repairId, onClose, showToast, currentStore }) {
+      const [repair, setRepair] = useState(null);
+      const [parts, setParts] = useState([]);
+      const [loadingDetail, setLoadingDetail] = useState(true);
+      const [editing, setEditing] = useState(false);
+      const [editForm, setEditForm] = useState({});
+      const [partSearch, setPartSearch] = useState('');
+      const [partResults, setPartResults] = useState([]);
+      const [searchingParts, setSearchingParts] = useState(false);
+      const [payAmount, setPayAmount] = useState('');
+      const [payMethod, setPayMethod] = useState('cash');
+      const [staffList, setStaffList] = useState([]);
+      const partSearchTimeout = useRef(null);
+      const STATUSES = ['checked_in','diagnosing','awaiting_parts','in_repair','ready','completed','collected'];
+      const statusLabel = s => (s||'').replace(/_/g,' ').replace(/\b\w/g,l=>l.toUpperCase());
+
+      const loadDetail = async () => {
+        try {
+          const d = await api(`/repairs/${repairId}`);
+          setRepair(d);
+          setParts(d.parts || []);
+          setEditForm({
+            status: d.status, diagnosis: d.diagnosis||'', estimated_cost: d.estimated_cost||0,
+            final_cost: d.final_cost||0, priority: d.priority||'normal', assigned_to: d.assigned_to||'',
+            notes: d.notes||'', estimated_completion: d.estimated_completion ? d.estimated_completion.split('T')[0] : ''
+          });
+          setPayAmount(String(Math.max(0, (d.final_cost || d.estimated_cost || 0) - (d.amount_paid || 0))));
+        } catch(e) { showToast(e.message,'error'); }
+        setLoadingDetail(false);
+      };
+
+      useEffect(() => {
+        loadDetail();
+        api('/auth/users').then(d => setStaffList(Array.isArray(d) ? d : d.users || [])).catch(()=>{});
+      }, []);
+
+      const saveEdit = async () => {
+        try {
+          await api(`/repairs/${repair.id}`, { method:'PUT', body: JSON.stringify({
+            ...editForm, estimated_cost: parseFloat(editForm.estimated_cost)||0, final_cost: parseFloat(editForm.final_cost)||0
+          })});
+          showToast('Repair updated!','success');
+          setEditing(false);
+          loadDetail();
+        } catch(e) { showToast(e.message,'error'); }
+      };
+
+      const searchParts = async (q) => {
+        if (q.length < 2) { setPartResults([]); return; }
+        setSearchingParts(true);
+        try {
+          const d = await api(`/products?search=${encodeURIComponent(q)}&store_id=${currentStore}&limit=20`);
+          setPartResults(d.products || (Array.isArray(d) ? d : []));
+        } catch(e) { setPartResults([]); }
+        setSearchingParts(false);
+      };
+
+      const handlePartSearchInput = (val) => {
+        setPartSearch(val);
+        clearTimeout(partSearchTimeout.current);
+        partSearchTimeout.current = setTimeout(() => searchParts(val), 300);
+      };
+
+      const addPart = async (product) => {
+        try {
+          await api(`/repairs/${repair.id}/parts`, { method:'POST', body: JSON.stringify({
+            product_id: product.id, quantity: 1, cost: product.cost_price || product.sell_price || 0
+          })});
+          showToast(`Added: ${product.name}`,'success');
+          setPartSearch(''); setPartResults([]);
+          loadDetail();
+        } catch(e) { showToast(e.message,'error'); }
+      };
+
+      const processPayment = async () => {
+        const amt = parseFloat(payAmount);
+        if (!amt || amt <= 0) { showToast('Enter valid amount','error'); return; }
+        try {
+          const result = await api(`/repairs/${repair.id}/pay`, { method:'POST', body: JSON.stringify({ amount: amt, payment_method: payMethod })});
+          showToast(result.fully_paid ? 'Repair fully paid!' : `Payment received. £${result.amount_paid} paid so far.`,'success');
+          loadDetail();
+        } catch(e) { showToast(e.message,'error'); }
+      };
+
+      if (loadingDetail) return el('div', { className:'modal-overlay' }, el('div', { className:'modal-card text-center' }, 'Loading...'));
+      if (!repair) return null;
+
+      const totalDue = repair.final_cost || repair.estimated_cost || 0;
+      const remaining = Math.max(0, totalDue - (repair.amount_paid || 0));
+      const partsCost = parts.reduce((s,p) => s + ((p.cost||0) * (p.quantity||1)), 0);
+      const ef = (k,v) => setEditForm(p=>({...p,[k]:v}));
+
+      return el('div', { className:'modal-overlay', onClick:e=>{if(e.target===e.currentTarget)onClose()} },
+        el('div', { style:{background:'white',borderRadius:16,maxWidth:900,width:'95%',maxHeight:'90vh',overflow:'auto',padding:28} },
+          // Header
+          el('div', { className:'flex-between', style:{marginBottom:20} },
+            el('div', null,
+              el('h2', { style:{fontSize:22,fontWeight:700,margin:0} }, `Repair ${repair.ticket_number}`),
+              el('div', { className:'text-sm text-muted', style:{marginTop:4} }, `${repair.customer_name || 'No customer'} — ${repair.device_brand||''} ${repair.device_model||''}`)
+            ),
+            el('div', { style:{display:'flex',gap:8} },
+              !editing && el('button', { className:'btn btn-primary btn-small', onClick:()=>setEditing(true) }, 'Edit'),
+              el('button', { className:'btn btn-secondary btn-small', onClick:onClose }, 'Close')
+            )
+          ),
+          // Status badges
+          el('div', { style:{display:'flex',gap:8,marginBottom:20,flexWrap:'wrap'} },
+            el('span', { className:'badge badge-primary' }, statusLabel(repair.status)),
+            el('span', { className:'badge', style:{background:repair.priority==='urgent'?'rgba(255,59,48,0.15)':repair.priority==='high'?'rgba(255,159,10,0.15)':'rgba(142,142,147,0.15)',color:repair.priority==='urgent'?'var(--danger)':repair.priority==='high'?'var(--warning)':'var(--gray-600)'} }, (repair.priority||'normal').toUpperCase()),
+            el('span', { className:`badge ${repair.payment_status==='paid'?'badge-success':repair.payment_status==='partial'?'badge-warning':'badge-danger'}` }, (repair.payment_status||'unpaid').toUpperCase())
+          ),
+          // EDIT MODE
+          editing ? el('div', null,
+            el('div', { style:{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12,marginBottom:16} },
+              el('div', { className:'form-group' }, el('label', null, 'Status'),
+                el('select', { value:editForm.status, onChange:e=>ef('status',e.target.value) },
+                  STATUSES.map(s => el('option', { key:s, value:s }, statusLabel(s)))
+                )
+              ),
+              el('div', { className:'form-group' }, el('label', null, 'Priority'),
+                el('select', { value:editForm.priority, onChange:e=>ef('priority',e.target.value) },
+                  el('option',{value:'normal'},'Normal'), el('option',{value:'high'},'High'), el('option',{value:'urgent'},'Urgent')
+                )
+              ),
+              el('div', { className:'form-group' }, el('label', null, 'Assigned To'),
+                el('select', { value:editForm.assigned_to, onChange:e=>ef('assigned_to',e.target.value) },
+                  el('option',{value:''},'Unassigned'),
+                  ...staffList.map(s=>el('option',{key:s.id,value:s.id},`${s.first_name} ${s.last_name}`))
+                )
+              )
+            ),
+            el('div', { className:'form-group' }, el('label', null, 'Diagnosis'),
+              el('textarea', { value:editForm.diagnosis, onChange:e=>ef('diagnosis',e.target.value), rows:3, placeholder:'Enter diagnosis...' })
+            ),
+            el('div', { style:{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12} },
+              el('div', { className:'form-group' }, el('label', null, 'Estimated Cost (£)'),
+                el('input', { type:'number', step:'0.01', value:editForm.estimated_cost, onChange:e=>ef('estimated_cost',e.target.value) })
+              ),
+              el('div', { className:'form-group' }, el('label', null, 'Final Cost (£)'),
+                el('input', { type:'number', step:'0.01', value:editForm.final_cost, onChange:e=>ef('final_cost',e.target.value) })
+              ),
+              el('div', { className:'form-group' }, el('label', null, 'Est. Completion'),
+                el('input', { type:'date', value:editForm.estimated_completion, onChange:e=>ef('estimated_completion',e.target.value) })
+              )
+            ),
+            el('div', { className:'form-group' }, el('label', null, 'Notes'),
+              el('textarea', { value:editForm.notes, onChange:e=>ef('notes',e.target.value), rows:3, placeholder:'Internal notes...' })
+            ),
+            el('div', { style:{display:'flex',gap:8} },
+              el('button', { className:'btn btn-primary', onClick:saveEdit }, 'Save Changes'),
+              el('button', { className:'btn btn-secondary', onClick:()=>setEditing(false) }, 'Cancel')
+            )
+          )
+          // VIEW MODE
+          : el('div', { style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,marginBottom:20} },
+            el('div', null, el('div', { className:'text-xs text-muted', style:{fontWeight:600,marginBottom:4} }, 'DEVICE'),
+              el('div', { className:'text-sm' }, `${repair.device_type||'Phone'} — ${repair.device_brand||''} ${repair.device_model||''}`),
+              repair.imei && el('div', { className:'text-xs text-muted', style:{marginTop:2} }, `IMEI: ${repair.imei}`)
+            ),
+            el('div', null, el('div', { className:'text-xs text-muted', style:{fontWeight:600,marginBottom:4} }, 'CUSTOMER'),
+              el('div', { className:'text-sm' }, repair.customer_name || 'Walk-in'),
+              repair.customer_phone && el('div', { className:'text-xs text-muted', style:{marginTop:2} }, repair.customer_phone)
+            ),
+            el('div', null, el('div', { className:'text-xs text-muted', style:{fontWeight:600,marginBottom:4} }, 'ISSUE'),
+              el('div', { className:'text-sm' }, repair.issue_description)
+            ),
+            repair.diagnosis && el('div', null, el('div', { className:'text-xs text-muted', style:{fontWeight:600,marginBottom:4} }, 'DIAGNOSIS'),
+              el('div', { className:'text-sm' }, repair.diagnosis)
+            ),
+            el('div', null, el('div', { className:'text-xs text-muted', style:{fontWeight:600,marginBottom:4} }, 'COSTS'),
+              el('div', { className:'text-sm' }, `Estimated: £${(repair.estimated_cost||0).toFixed(2)} — Final: £${(repair.final_cost||0).toFixed(2)}`),
+              el('div', { className:'text-xs text-muted', style:{marginTop:2} }, `Paid: £${(repair.amount_paid||0).toFixed(2)} — Remaining: £${remaining.toFixed(2)}`)
+            ),
+            el('div', null, el('div', { className:'text-xs text-muted', style:{fontWeight:600,marginBottom:4} }, 'ASSIGNED TO'),
+              el('div', { className:'text-sm' }, repair.assigned_to_name || 'Unassigned')
+            ),
+            repair.notes && el('div', { style:{gridColumn:'1 / -1'} }, el('div', { className:'text-xs text-muted', style:{fontWeight:600,marginBottom:4} }, 'NOTES'),
+              el('div', { className:'text-sm', style:{whiteSpace:'pre-wrap'} }, repair.notes)
+            )
+          ),
+
+          // PARTS SECTION
+          el('div', { className:'border-top' },
+            el('h3', { style:{fontSize:16,fontWeight:700,marginBottom:12} }, `Parts Used (${parts.length})`),
+            repair.status !== 'completed' && repair.status !== 'collected' && el('div', { style:{marginBottom:12} },
+              el('div', { style:{position:'relative'} },
+                el('input', {
+                  type:'text', placeholder:'Scan barcode / SKU or type product name to search...',
+                  value: partSearch, onChange: e => handlePartSearchInput(e.target.value),
+                  onKeyDown: e => { if(e.key==='Enter') { e.preventDefault(); searchParts(partSearch); } },
+                  style:{ width:'100%',padding:'12px 16px 12px 40px',border:'1px solid var(--gray-300)',borderRadius:8,fontSize:15 }
+                }),
+                el('i', { className:'fas fa-barcode', style:{position:'absolute',left:14,top:'50%',transform:'translateY(-50%)',color:'var(--gray-400)',fontSize:16} })
+              ),
+              searchingParts && el('div', { className:'text-xs text-muted', style:{marginTop:4} }, 'Searching...'),
+              partResults.length > 0 && el('div', { style:{border:'1px solid var(--gray-200)',borderRadius:8,marginTop:4,maxHeight:200,overflow:'auto',background:'white',boxShadow:'0 4px 12px rgba(0,0,0,0.1)'} },
+                partResults.map(p => el('div', {
+                  key: p.id, onClick: () => addPart(p),
+                  style:{padding:'10px 14px',cursor:'pointer',borderBottom:'1px solid var(--gray-100)',display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14}
+                },
+                  el('div', null,
+                    el('div', { style:{fontWeight:600} }, p.name),
+                    el('div', { className:'text-xs text-muted' }, `SKU: ${p.sku || 'N/A'} — £${(p.cost_price||p.sell_price||0).toFixed(2)}`)
+                  ),
+                  el('button', { className:'btn btn-primary btn-small', onClick:e=>{e.stopPropagation();addPart(p)} }, '+ Add')
+                ))
+              ),
+              partResults.length === 0 && partSearch.length >= 2 && !searchingParts && el('div', { className:'text-xs text-muted', style:{marginTop:4} }, 'No products found.')
+            ),
+            parts.length > 0 ? el('table', { className:'table' },
+              el('thead', null, el('tr', null,
+                el('th', null, 'Part'), el('th', null, 'SKU'), el('th', null, 'Qty'), el('th', null, 'Cost'), el('th', null, 'Deducted')
+              )),
+              el('tbody', null,
+                parts.map(p => el('tr', { key: p.id },
+                  el('td', null, p.product_name),
+                  el('td', null, p.sku || '—'),
+                  el('td', null, p.quantity),
+                  el('td', null, `£${((p.cost||0) * (p.quantity||1)).toFixed(2)}`),
+                  el('td', null, p.is_deducted ? el('span',{className:'badge badge-success'},'Yes') : el('span',{className:'text-xs text-muted'},'No'))
+                ))
+              )
+            ) : el('div', { className:'text-sm text-muted', style:{padding:'12px 0'} }, 'No parts added yet.'),
+            parts.length > 0 && el('div', { style:{textAlign:'right',fontSize:14,fontWeight:600,marginTop:8} }, `Parts Total: £${partsCost.toFixed(2)}`)
+          ),
+
+          // PAYMENT SECTION
+          remaining > 0 && el('div', { className:'border-top' },
+            el('h3', { style:{fontSize:16,fontWeight:700,marginBottom:12} }, 'Take Payment'),
+            el('div', { style:{display:'flex',gap:12,alignItems:'flex-end'} },
+              el('div', { className:'form-group', style:{flex:1,marginBottom:0} },
+                el('label', null, 'Amount (£)'),
+                el('input', { type:'number', step:'0.01', value:payAmount, onChange:e=>setPayAmount(e.target.value) })
+              ),
+              el('div', { className:'form-group', style:{flex:1,marginBottom:0} },
+                el('label', null, 'Method'),
+                el('select', { value:payMethod, onChange:e=>setPayMethod(e.target.value) },
+                  el('option',{value:'cash'},'Cash'), el('option',{value:'card'},'Card'), el('option',{value:'bank_transfer'},'Bank Transfer')
+                )
+              ),
+              el('button', { className:'btn btn-success', onClick:processPayment, style:{marginBottom:0,height:42} }, `Pay £${parseFloat(payAmount||0).toFixed(2)}`)
+            )
+          ),
+
+          // Created date
+          el('div', { className:'border-top text-xs text-muted' },
+            `Created: ${repair.created_at ? new Date(repair.created_at).toLocaleString() : 'N/A'}`,
+            repair.completed_at ? ` — Completed: ${new Date(repair.completed_at).toLocaleString()}` : ''
+          )
+        )
+      );
+    }
+
+    // Customers Page
+    function CustomersPage({ showToast }) {
+      const [customers, setCustomers] = useState([]);
+      const [searchQuery, setSearchQuery] = useState('');
+      const [loading, setLoading] = useState(false);
+      const [showForm, setShowForm] = useState(false);
+      const [showDetail, setShowDetail] = useState(false);
+      const [selectedCustomer, setSelectedCustomer] = useState(null);
+      const [formData, setFormData] = useState({ first_name: '', last_name: '', email: '', phone: '', address: '', notes: '' });
+
+      useEffect(() => {
+        loadCustomers();
+      }, [searchQuery]);
+
+      const loadCustomers = async () => {
+        setLoading(true);
+        try {
+          const params = searchQuery ? `?search=${encodeURIComponent(searchQuery)}` : '';
+          const result = await api(`/customers${params}`);
+          setCustomers(result || []);
+        } catch (err) {
+          showToast(err.message, 'error');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const handleCreateCustomer = async () => {
+        try {
+          const result = await api('/customers', { method: 'POST', body: JSON.stringify(formData) });
+          showToast('Customer created', 'success');
+          setShowForm(false);
+          setFormData({ first_name: '', last_name: '', email: '', phone: '', address: '', notes: '' });
+          loadCustomers();
+        } catch (err) {
+          showToast(err.message, 'error');
+        }
+      };
+
+      return el('div', { className: 'page-content' },
+        el('div', { className: 'flex-between', style: { marginBottom: 24 } },
+          el('h1', null, 'Customers'),
+          el('button', { className: 'btn btn-primary', onClick: () => setShowForm(true) }, '+ Add Customer')
+        ),
+        el('input', {
+          type: 'text',
+          placeholder: 'Search customers...',
+          value: searchQuery,
+          onChange: e => setSearchQuery(e.target.value),
+          style: { width: '100%', marginBottom: 16 }
+        }),
+        loading ? el('div', null, 'Loading...') :
+          el('table', { className: 'table' },
+            el('thead', null,
+              el('tr', null,
+                el('th', null, 'Name'),
+                el('th', null, 'Phone'),
+                el('th', null, 'Email'),
+                el('th', null, 'Repairs'),
+                el('th', null, 'Actions')
+              )
+            ),
+            el('tbody', null,
+              customers.map(cust =>
+                el('tr', { key: cust.id },
+                  el('td', null, `${cust.first_name} ${cust.last_name}`),
+                  el('td', null, cust.phone || '-'),
+                  el('td', null, cust.email || '-'),
+                  el('td', null, cust.repairs?.length || 0),
+                  el('td', null,
+                    el('button', {
+                      className: 'btn btn-small btn-secondary',
+                      onClick: () => { setSelectedCustomer(cust); setShowDetail(true); }
+                    }, 'View')
+                  )
+                )
+              )
+            )
+          ),
+        showForm && el('div', { className: 'modal-overlay', onClick: e => { if (e.target === e.currentTarget) setShowForm(false); } },
+          el('div', { className: 'modal-card' },
+            el('div', { className: 'modal-header' },
+              el('h2', null, 'Add Customer'),
+              el('button', { className: 'modal-close', onClick: () => setShowForm(false) }, '×')
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'First Name'),
+              el('input', {
+                type: 'text',
+                value: formData.first_name,
+                onChange: e => setFormData({ ...formData, first_name: e.target.value })
+              })
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Last Name'),
+              el('input', {
+                type: 'text',
+                value: formData.last_name,
+                onChange: e => setFormData({ ...formData, last_name: e.target.value })
+              })
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Email'),
+              el('input', {
+                type: 'email',
+                value: formData.email,
+                onChange: e => setFormData({ ...formData, email: e.target.value })
+              })
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Phone'),
+              el('input', {
+                type: 'text',
+                value: formData.phone,
+                onChange: e => setFormData({ ...formData, phone: e.target.value })
+              })
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Address'),
+              el('input', {
+                type: 'text',
+                value: formData.address,
+                onChange: e => setFormData({ ...formData, address: e.target.value })
+              })
+            ),
+            el('div', { style: { display: 'flex', gap: 12 } },
+              el('button', { className: 'btn btn-success', onClick: handleCreateCustomer }, 'Create'),
+              el('button', { className: 'btn btn-secondary', onClick: () => setShowForm(false) }, 'Cancel')
+            )
+          )
+        ),
+        showDetail && selectedCustomer && el('div', { className: 'modal-overlay', onClick: e => { if (e.target === e.currentTarget) setShowDetail(false); } },
+          el('div', { className: 'modal-card' },
+            el('div', { className: 'modal-header' },
+              el('h2', null, `${selectedCustomer.first_name} ${selectedCustomer.last_name}`),
+              el('button', { className: 'modal-close', onClick: () => setShowDetail(false) }, '×')
+            ),
+            el('div', { style: { marginBottom: 20 } },
+              el('div', null, el('strong', null, 'Email: '), selectedCustomer.email || '-'),
+              el('div', null, el('strong', null, 'Phone: '), selectedCustomer.phone || '-'),
+              el('div', null, el('strong', null, 'Address: '), selectedCustomer.address || '-')
+            )
+          )
+        )
+      );
+    }
+
+    // Sales Page
+    function SalesPage({ currentStore, user, showToast, permissions }) {
+      const [sales, setSales] = useState([]);
+      const [loading, setLoading] = useState(false);
+      const [dateFrom, setDateFrom] = useState(new Date().toISOString().split('T')[0]);
+      const [dateTo, setDateTo] = useState(new Date().toISOString().split('T')[0]);
+      const [searchQuery, setSearchQuery] = useState('');
+      const [showDetail, setShowDetail] = useState(false);
+      const [selectedSale, setSelectedSale] = useState(null);
+
+      useEffect(() => {
+        loadSales();
+      }, [dateFrom, dateTo, searchQuery, currentStore]);
+
+      const loadSales = async () => {
+        setLoading(true);
+        try {
+          const params = new URLSearchParams({
+            store_id: currentStore,
+            date_from: dateFrom,
+            date_to: dateTo,
+            limit: 100
+          });
+          if (searchQuery) params.append('search', searchQuery);
+          const result = await api(`/sales?${params}`);
+          setSales(result || []);
+        } catch (err) {
+          showToast(err.message, 'error');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const handleRefund = async (saleId) => {
+        if (!confirm('Refund this sale?')) return;
+        try {
+          await api(`/sales/${saleId}/refund`, { method: 'POST' });
+          showToast('Sale refunded', 'success');
+          loadSales();
+        } catch (err) {
+          showToast(err.message, 'error');
+        }
+      };
+
+      return el('div', { className: 'page-content' },
+        el('h1', { style: { marginBottom: 24 } }, 'Sales'),
+        el('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 12, marginBottom: 24 } },
+          el('div', className: 'form-group', null,
+            el('label', null, 'From'),
+            el('input', { type: 'date', value: dateFrom, onChange: e => setDateFrom(e.target.value) })
+          ),
+          el('div', { className: 'form-group' },
+            el('label', null, 'To'),
+            el('input', { type: 'date', value: dateTo, onChange: e => setDateTo(e.target.value) })
+          ),
+          el('div', { className: 'form-group', style: { gridColumn: 'span 2' },
+            el('label', null, 'Search Receipt #'),
+            el('input', {
+              type: 'text',
+              value: searchQuery,
+              onChange: e => setSearchQuery(e.target.value),
+              placeholder: 'PP20260410...'
+            })
+          )
+        ),
+        loading ? el('div', null, 'Loading...') :
+          el('table', { className: 'table' },
+            el('thead', null,
+              el('tr', null,
+                el('th', null, 'Receipt #'),
+                el('th', null, 'Date'),
+                el('th', null, 'Items'),
+                el('th', null, 'Total'),
+                el('th', null, 'Method'),
+                el('th', null, 'Status'),
+                el('th', null, 'Actions')
+              )
+            ),
+            el('tbody', null,
+              sales.map(sale =>
+                el('tr', { key: sale.id },
+                  el('td', null, sale.receipt_number),
+                  el('td', null, new Date(sale.created_at).toLocaleDateString()),
+                  el('td', null, sale.items?.length || 0),
+                  el('td', null, `£${sale.total?.toFixed(2) || '0.00'}`),
+                  el('td', null, sale.payment_method || '-'),
+                  el('td', null, el('span', { className: `badge ${sale.is_refunded ? 'badge-danger' : 'badge-success'}` }, sale.is_refunded ? 'Refunded' : 'Completed')),
+                  el('td', null,
+                    el('button', {
+                      className: 'btn btn-small btn-secondary',
+                      onClick: () => { setSelectedSale(sale); setShowDetail(true); }
+                    }, 'View'),
+                    !sale.is_refunded && permissions.canRefund && el('button', {
+                      className: 'btn btn-small btn-danger',
+                      onClick: () => handleRefund(sale.id),
+                      style: { marginLeft: 8 }
+                    }, 'Refund')
+                  )
+                )
+              )
+            )
+          ),
+        showDetail && selectedSale && el('div', { className: 'modal-overlay', onClick: e => { if (e.target === e.currentTarget) setShowDetail(false); } },
+          el('div', { className: 'modal-card' },
+            el('div', { className: 'modal-header' },
+              el('h2', null, `Receipt #${selectedSale.receipt_number}`),
+              el('button', { className: 'modal-close', onClick: () => setShowDetail(false) }, '×')
+            ),
+            el('table', { className: 'table', style: { marginBottom: 20 } },
+              el('thead', null,
+                el('tr', null,
+                  el('th', null, 'Product'),
+                  el('th', null, 'Qty'),
+                  el('th', null, 'Price'),
+                  el('th', null, 'Total')
+                )
+              ),
+              el('tbody', null,
+                selectedSale.items?.map((item, i) =>
+                  el('tr', { key: i },
+                    el('td', null, item.product?.name || '-'),
+                    el('td', null, item.quantity),
+                    el('td', null, `£${item.unit_price?.toFixed(2) || '0.00'}`),
+                    el('td', null, `£${(item.quantity * item.unit_price)?.toFixed(2) || '0.00'}`)
+                  )
+                )
+              )
+            ),
+            el('div', { style: { textAlign: 'right' } },
+              el('div', null, el('strong', null, `Total: £${selectedSale.total?.toFixed(2)}`))
+            )
+          )
+        )
+      );
+    }
+
+    // Purchase Orders Page
+    function PurchaseOrdersPage({ currentStore, user, showToast, stores }) {
+      const [pos, setPos] = useState([]);
+      const [loading, setLoading] = useState(false);
+      const [showForm, setShowForm] = useState(false);
+      const [showDetail, setShowDetail] = useState(false);
+      const [selectedPO, setSelectedPO] = useState(null);
+      const [formData, setFormData] = useState({ supplier_name:'', invoice_reference:'', store_id:currentStore, items:[], notes:'' });
+      const [productSearch, setProductSearch] = useState('');
+      const [productResults, setProductResults] = useState([]);
+      const [searchingProducts, setSearchingProducts] = useState(false);
+      const searchTimeout = useRef(null);
+
+      useEffect(() => { loadPOs(); }, [currentStore]);
+      useEffect(() => { setFormData(f => ({...f, store_id: currentStore})); }, [currentStore]);
+
+      const loadPOs = async () => {
+        setLoading(true);
+        try {
+          const result = await api(`/purchase-orders?store_id=${currentStore}`);
+          setPos(Array.isArray(result) ? result : result.purchase_orders || []);
+        } catch (err) { showToast(err.message, 'error'); }
+        setLoading(false);
+      };
+
+      const searchProducts = async (q) => {
+        if (q.length < 2) { setProductResults([]); return; }
+        setSearchingProducts(true);
+        try {
+          const d = await api(`/products?search=${encodeURIComponent(q)}&limit=20`);
+          setProductResults(d.products || (Array.isArray(d) ? d : []));
+        } catch(e) { setProductResults([]); }
+        setSearchingProducts(false);
+      };
+
+      const handleProductSearch = (val) => {
+        setProductSearch(val);
+        clearTimeout(searchTimeout.current);
+        searchTimeout.current = setTimeout(() => searchProducts(val), 300);
+      };
+
+      const addItemToPO = (product) => {
+        const existing = formData.items.find(i => i.product_id === product.id);
+        if (existing) {
+          setFormData({...formData, items: formData.items.map(i => i.product_id === product.id ? {...i, quantity: i.quantity + 1} : i)});
+        } else {
+          setFormData({...formData, items: [...formData.items, { product_id: product.id, product_name: product.name, sku: product.sku, quantity: 1, cost_price: product.cost_price || 0 }]});
+        }
+        setProductSearch(''); setProductResults([]);
+      };
+
+      const updateItemQty = (idx, qty) => {
+        if (qty <= 0) { setFormData({...formData, items: formData.items.filter((_,i)=>i!==idx)}); return; }
+        setFormData({...formData, items: formData.items.map((item,i) => i===idx ? {...item, quantity: qty} : item)});
+      };
+
+      const updateItemCost = (idx, cost) => {
+        setFormData({...formData, items: formData.items.map((item,i) => i===idx ? {...item, cost_price: parseFloat(cost)||0} : item)});
+      };
+
+      const handleCreatePO = async () => {
+        if (!formData.supplier_name || formData.items.length === 0) { showToast('Add supplier and items','error'); return; }
+        try {
+          await api('/purchase-orders', { method:'POST', body: JSON.stringify(formData) });
+          showToast('Purchase order created!','success');
+          setShowForm(false);
+          setFormData({ supplier_name:'', invoice_reference:'', store_id:currentStore, items:[], notes:'' });
+          loadPOs();
+        } catch (err) { showToast(err.message, 'error'); }
+      };
+
+      const receiveStock = async (poId) => {
+        try {
+          await api(`/purchase-orders/${poId}/receive`, { method:'POST' });
+          showToast('Stock received!','success');
+          loadPOs();
+          setShowDetail(false);
+        } catch(err) { showToast(err.message, 'error'); }
+      };
+
+      const viewPODetail = async (po) => {
+        try {
+          const detail = await api(`/purchase-orders/${po.id}`);
+          setSelectedPO(detail);
+          setShowDetail(true);
+        } catch(err) { showToast(err.message, 'error'); }
+      };
+
+      const poTotal = formData.items.reduce((s,i) => s + (i.quantity * i.cost_price), 0);
+
+      return el('div', { className:'page-content' },
+        el('div', { className:'flex-between', style:{marginBottom:24} },
+          el('h1', null, 'Purchase Orders'),
+          el('button', { className:'btn btn-primary', onClick:()=>setShowForm(true) }, '+ New PO')
+        ),
+        loading ? el('div', null, 'Loading...') :
+        pos.length === 0 ? el('div', { className:'card text-center text-muted' }, 'No purchase orders yet.') :
+        el('table', { className:'table' },
+          el('thead', null, el('tr', null,
+            el('th', null, 'PO #'), el('th', null, 'Date'), el('th', null, 'Supplier'), el('th', null, 'Items'), el('th', null, 'Total'), el('th', null, 'Status')
+          )),
+          el('tbody', null,
+            pos.map(po => el('tr', { key:po.id, onClick:()=>viewPODetail(po), style:{cursor:'pointer'} },
+              el('td', { style:{fontWeight:600,fontFamily:'monospace'} }, po.po_number || '-'),
+              el('td', null, po.created_at ? new Date(po.created_at).toLocaleDateString() : '-'),
+              el('td', null, po.supplier_name),
+              el('td', null, po.item_count || po.items?.length || 0),
+              el('td', null, `£${(po.total_cost || 0).toFixed(2)}`),
+              el('td', null, el('span', { className:`badge ${po.status==='received'?'badge-success':po.status==='cancelled'?'badge-danger':'badge-primary'}` }, po.status || 'draft'))
+            ))
+          )
+        ),
+
+        // CREATE PO FORM
+        showForm && el('div', { className:'modal-overlay', onClick:e=>{if(e.target===e.currentTarget)setShowForm(false)} },
+          el('div', { style:{background:'white',borderRadius:16,maxWidth:800,width:'95%',maxHeight:'90vh',overflow:'auto',padding:28} },
+            el('div', { className:'flex-between', style:{marginBottom:20} },
+              el('h2', null, 'New Purchase Order'),
+              el('button', { className:'btn btn-secondary btn-small', onClick:()=>setShowForm(false) }, '×')
+            ),
+            el('div', { style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16} },
+              el('div', { className:'form-group' }, el('label', null, 'Supplier Name *'),
+                el('input', { type:'text', value:formData.supplier_name, onChange:e=>setFormData({...formData, supplier_name:e.target.value}), placeholder:'e.g. MobileSentrix, TechPoint' })
+              ),
+              el('div', { className:'form-group' }, el('label', null, 'Invoice Reference'),
+                el('input', { type:'text', value:formData.invoice_reference, onChange:e=>setFormData({...formData, invoice_reference:e.target.value}), placeholder:'Invoice # or reference' })
+              )
+            ),
+            el('div', { className:'form-group' }, el('label', null, 'Receiving Store'),
+              el('select', { value:formData.store_id, onChange:e=>setFormData({...formData, store_id:e.target.value}) },
+                (stores||[]).map(s => el('option', { key:s.id, value:s.id }, s.name))
+              )
+            ),
+            // Product search
+            el('div', { style:{marginBottom:16} },
+              el('label', { style:{display:'block',marginBottom:6,fontSize:13,fontWeight:600,color:'var(--gray-600)'} }, 'Add Products'),
+              el('div', { style:{position:'relative'} },
+                el('input', { type:'text', placeholder:'Scan barcode / SKU or search product...', value:productSearch,
+                  onChange:e=>handleProductSearch(e.target.value),
+                  onKeyDown:e=>{if(e.key==='Enter'){e.preventDefault();searchProducts(productSearch)}},
+                  style:{width:'100%',padding:'12px 16px 12px 40px',border:'1px solid var(--gray-300)',borderRadius:8,fontSize:15}
+                }),
+                el('i', { className:'fas fa-barcode', style:{position:'absolute',left:14,top:'50%',transform:'translateY(-50%)',color:'var(--gray-400)'} })
+              ),
+              searchingProducts && el('div', { className:'text-xs text-muted', style:{marginTop:4} }, 'Searching...'),
+              productResults.length > 0 && el('div', { style:{border:'1px solid var(--gray-200)',borderRadius:8,marginTop:4,maxHeight:200,overflow:'auto',background:'white',boxShadow:'0 4px 12px rgba(0,0,0,0.1)'} },
+                productResults.map(p => el('div', { key:p.id, onClick:()=>addItemToPO(p),
+                  style:{padding:'10px 14px',cursor:'pointer',borderBottom:'1px solid var(--gray-100)',display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14}
+                },
+                  el('div', null,
+                    el('div', { style:{fontWeight:600} }, p.name),
+                    el('div', { className:'text-xs text-muted' }, `SKU: ${p.sku||'N/A'} — Cost: £${(p.cost_price||0).toFixed(2)}`)
+                  ),
+                  el('button', { className:'btn btn-primary btn-small', onClick:e=>{e.stopPropagation();addItemToPO(p)} }, '+ Add')
+                ))
+              )
+            ),
+            // PO Items list
+            formData.items.length > 0 && el('div', { style:{background:'var(--gray-50)',borderRadius:8,padding:16,marginBottom:16} },
+              el('table', { className:'table', style:{marginBottom:8} },
+                el('thead', null, el('tr', null,
+                  el('th', null, 'Product'), el('th', null, 'SKU'), el('th', {style:{width:80}}, 'Qty'), el('th', {style:{width:100}}, 'Cost £'), el('th', {style:{width:80}}, 'Total'), el('th', {style:{width:40}}, '')
+                )),
+                el('tbody', null,
+                  formData.items.map((item,i) => el('tr', { key:i },
+                    el('td', { style:{fontWeight:600} }, item.product_name),
+                    el('td', { className:'text-xs text-muted' }, item.sku || '—'),
+                    el('td', null, el('input', { type:'number', min:1, value:item.quantity, onChange:e=>updateItemQty(i, parseInt(e.target.value)||0),
+                      style:{width:60,padding:'4px 8px',border:'1px solid var(--gray-300)',borderRadius:4,textAlign:'center'} })),
+                    el('td', null, el('input', { type:'number', step:'0.01', value:item.cost_price, onChange:e=>updateItemCost(i, e.target.value),
+                      style:{width:80,padding:'4px 8px',border:'1px solid var(--gray-300)',borderRadius:4,textAlign:'right'} })),
+                    el('td', { style:{fontWeight:600} }, `£${(item.quantity * item.cost_price).toFixed(2)}`),
+                    el('td', null, el('button', { onClick:()=>setFormData({...formData, items:formData.items.filter((_,idx)=>idx!==i)}),
+                      style:{background:'none',border:'none',color:'var(--danger)',cursor:'pointer',fontSize:16} }, '×'))
+                  ))
+                )
+              ),
+              el('div', { style:{textAlign:'right',fontWeight:700,fontSize:16} }, `Total: £${poTotal.toFixed(2)}`)
+            ),
+            el('div', { className:'form-group' }, el('label', null, 'Notes'),
+              el('textarea', { value:formData.notes, onChange:e=>setFormData({...formData, notes:e.target.value}), rows:2, placeholder:'Optional notes...' })
+            ),
+            el('div', { style:{display:'flex',gap:12} },
+              el('button', { className:'btn btn-success', onClick:handleCreatePO }, 'Create & Save PO'),
+              el('button', { className:'btn btn-secondary', onClick:()=>setShowForm(false) }, 'Cancel')
+            )
+          )
+        ),
+
+        // PO DETAIL MODAL
+        showDetail && selectedPO && el('div', { className:'modal-overlay', onClick:e=>{if(e.target===e.currentTarget)setShowDetail(false)} },
+          el('div', { style:{background:'white',borderRadius:16,maxWidth:700,width:'95%',maxHeight:'90vh',overflow:'auto',padding:28} },
+            el('div', { className:'flex-between', style:{marginBottom:20} },
+              el('div', null,
+                el('h2', { style:{margin:0} }, `PO ${selectedPO.po_number}`),
+                el('div', { className:'text-sm text-muted' }, `${selectedPO.supplier_name} — ${new Date(selectedPO.created_at).toLocaleDateString()}`)
+              ),
+              el('button', { className:'btn btn-secondary btn-small', onClick:()=>setShowDetail(false) }, '×')
+            ),
+            el('div', { style:{display:'flex',gap:8,marginBottom:16} },
+              el('span', { className:`badge ${selectedPO.status==='received'?'badge-success':'badge-primary'}` }, selectedPO.status),
+              selectedPO.invoice_reference && el('span', { className:'text-sm text-muted' }, `Ref: ${selectedPO.invoice_reference}`)
+            ),
+            (selectedPO.items || []).length > 0 && el('table', { className:'table' },
+              el('thead', null, el('tr', null,
+                el('th', null, 'Product'), el('th', null, 'SKU'), el('th', null, 'Ordered'), el('th', null, 'Received'), el('th', null, 'Cost'), el('th', null, 'Total')
+              )),
+              el('tbody', null,
+                (selectedPO.items||[]).map((item,i) => el('tr', { key:i },
+                  el('td', { style:{fontWeight:600} }, item.product_name || `Product ${item.product_id}`),
+                  el('td', null, item.sku || '—'),
+                  el('td', null, item.quantity_ordered || item.quantity),
+                  el('td', null, item.quantity_received || 0),
+                  el('td', null, `£${(item.cost_price||0).toFixed(2)}`),
+                  el('td', { style:{fontWeight:600} }, `£${((item.quantity_ordered||item.quantity||0) * (item.cost_price||0)).toFixed(2)}`)
+                ))
+              )
+            ),
+            el('div', { style:{textAlign:'right',fontWeight:700,fontSize:16,marginTop:8} }, `Total: £${(selectedPO.total_cost||0).toFixed(2)}`),
+            selectedPO.status !== 'received' && selectedPO.status !== 'cancelled' && el('div', { className:'border-top', style:{display:'flex',gap:12} },
+              el('button', { className:'btn btn-success', onClick:()=>receiveStock(selectedPO.id) }, 'Receive Stock'),
+              el('button', { className:'btn btn-secondary', onClick:()=>setShowDetail(false) }, 'Close')
+            )
+          )
+        )
+      );
+    }
+
+    // Transfers Page
+    function TransfersPage({ currentStore, stores, showToast }) {
+      const [transfers, setTransfers] = useState([]);
+      const [loading, setLoading] = useState(false);
+
+      useEffect(() => {
+        loadTransfers();
+      }, [currentStore]);
+
+      const loadTransfers = async () => {
+        setLoading(true);
+        try {
+          const result = await api(`/transfers?store_id=${currentStore}`);
+          setTransfers(result || []);
+        } catch (err) {
+          showToast(err.message, 'error');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      return el('div', { className: 'page-content' },
+        el('h1', { style: { marginBottom: 24 } }, 'Stock Transfers'),
+        loading ? el('div', null, 'Loading...') :
+          el('table', { className: 'table' },
+            el('thead', null,
+              el('tr', null,
+                el('th', null, 'Product'),
+                el('th', null, 'From'),
+                el('th', null, 'To'),
+                el('th', null, 'Quantity'),
+                el('th', null, 'Status')
+              )
+            ),
+            el('tbody', null,
+              transfers.map(t =>
+                el('tr', { key: t.id },
+                  el('td', null, t.product_name || '-'),
+                  el('td', null, t.from_store_name || '-'),
+                  el('td', null, t.to_store_name || '-'),
+                  el('td', null, t.quantity),
+                  el('td', null, el('span', { className: 'badge badge-primary' }, t.status || 'pending'))
+                )
+              )
+            )
+          )
+      );
+    }
+
+    // Reports Page
+    function ReportsPage({ currentStore, stores, user, showToast }) {
+      const [loading, setLoading] = useState(false);
+      const [stats, setStats] = useState(null);
+      const [dateFrom, setDateFrom] = useState(new Date(Date.now() - 30*24*60*60*1000).toISOString().split('T')[0]);
+      const [dateTo, setDateTo] = useState(new Date().toISOString().split('T')[0]);
+
+      useEffect(() => {
+        loadReport();
+      }, [dateFrom, dateTo, currentStore]);
+
+      const loadReport = async () => {
+        setLoading(true);
+        try {
+          const result = await api(`/sales/reports/summary?store_id=${currentStore}&date_from=${dateFrom}&date_to=${dateTo}`);
+          setStats(result);
+        } catch (err) {
+          showToast(err.message, 'error');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      return el('div', { className: 'page-content' },
+        el('h1', { style: { marginBottom: 24 } }, 'Reports'),
+        el('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 } },
+          el('div', { className: 'form-group' },
+            el('label', null, 'From'),
+            el('input', { type: 'date', value: dateFrom, onChange: e => setDateFrom(e.target.value) })
+          ),
+          el('div', { className: 'form-group' },
+            el('label', null, 'To'),
+            el('input', { type: 'date', value: dateTo, onChange: e => setDateTo(e.target.value) })
+          )
+        ),
+        loading ? el('div', null, 'Loading...') : stats && el('div', null,
+          el('div', { className: 'stat-cards' },
+            el('div', { className: 'stat-card' },
+              el('div', { className: 'stat-label' }, 'Total Revenue'),
+              el('div', { className: 'stat-value' }, `£${(stats.total_revenue || 0).toFixed(2)}`)
+            ),
+            el('div', { className: 'stat-card' },
+              el('div', { className: 'stat-label' }, 'Transactions'),
+              el('div', { className: 'stat-value' }, stats.total_transactions || 0)
+            ),
+            el('div', { className: 'stat-card' },
+              el('div', { className: 'stat-label' }, 'Avg Transaction'),
+              el('div', { className: 'stat-value' }, `£${(stats.total_revenue / (stats.total_transactions || 1)).toFixed(2)}`)
+            ),
+            el('div', { className: 'stat-card' },
+              el('div', { className: 'stat-label' }, 'Payment Methods'),
+              el('div', { className: 'text-sm' },
+                el('div', null, `Cash: £${(stats.cash_total || 0).toFixed(2)}`),
+                el('div', null, `Card: £${(stats.card_total || 0).toFixed(2)}`)
+              )
+            )
+          )
+        )
+      );
+    }
+
+    // Staff Page
+    function StaffPage({ showToast }) {
+      const [staff, setStaff] = useState([]);
+      const [loading, setLoading] = useState(false);
+      const [showForm, setShowForm] = useState(false);
+      const [formData, setFormData] = useState({ first_name: '', last_name: '', email: '', password: '', role: 'cashier', is_active: true });
+
+      useEffect(() => {
+        loadStaff();
+      }, []);
+
+      const loadStaff = async () => {
+        setLoading(true);
+        try {
+          const result = await api('/auth/users');
+          setStaff(result || []);
+        } catch (err) {
+          showToast(err.message, 'error');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const handleCreateStaff = async () => {
+        try {
+          await api('/auth/users', {
+            method: 'POST',
+            body: JSON.stringify(formData)
+          });
+          showToast('Staff member added', 'success');
+          setShowForm(false);
+          setFormData({ first_name: '', last_name: '', email: '', password: '', role: 'cashier', is_active: true });
+          loadStaff();
+        } catch (err) {
+          showToast(err.message, 'error');
+        }
+      };
+
+      return el('div', { className: 'page-content' },
+        el('div', { className: 'flex-between', style: { marginBottom: 24 } },
+          el('h1', null, 'Staff'),
+          el('button', { className: 'btn btn-primary', onClick: () => setShowForm(true) }, '+ Add Staff')
+        ),
+        loading ? el('div', null, 'Loading...') :
+          el('table', { className: 'table' },
+            el('thead', null,
+              el('tr', null,
+                el('th', null, 'Name'),
+                el('th', null, 'Email'),
+                el('th', null, 'Role'),
+                el('th', null, 'Status')
+              )
+            ),
+            el('tbody', null,
+              staff.map(s =>
+                el('tr', { key: s.id },
+                  el('td', null, `${s.first_name} ${s.last_name}`),
+                  el('td', null, s.email),
+                  el('td', null, el('span', { className: 'badge badge-primary' }, s.role)),
+                  el('td', null, el('span', { className: `badge ${s.is_active ? 'badge-success' : 'badge-danger'}` }, s.is_active ? 'Active' : 'Inactive'))
+                )
+              )
+            )
+          ),
+        showForm && el('div', { className: 'modal-overlay', onClick: e => { if (e.target === e.currentTarget) setShowForm(false); } },
+          el('div', { className: 'modal-card' },
+            el('div', { className: 'modal-header' },
+              el('h2', null, 'Add Staff Member'),
+              el('button', { className: 'modal-close', onClick: () => setShowForm(false) }, '×')
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'First Name'),
+              el('input', {
+                type: 'text',
+                value: formData.first_name,
+                onChange: e => setFormData({ ...formData, first_name: e.target.value })
+              })
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Last Name'),
+              el('input', {
+                type: 'text',
+                value: formData.last_name,
+                onChange: e => setFormData({ ...formData, last_name: e.target.value })
+              })
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Email'),
+              el('input', {
+                type: 'email',
+                value: formData.email,
+                onChange: e => setFormData({ ...formData, email: e.target.value })
+              })
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Password'),
+              el('input', {
+                type: 'password',
+                value: formData.password,
+                onChange: e => setFormData({ ...formData, password: e.target.value })
+              })
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Role'),
+              el('select', {
+                value: formData.role,
+                onChange: e => setFormData({ ...formData, role: e.target.value })
+              },
+                el('option', { value: 'admin' }, 'Admin'),
+                el('option', { value: 'manager' }, 'Manager'),
+                el('option', { value: 'cashier' }, 'Cashier')
+              )
+            ),
+            el('div', { style: { display: 'flex', gap: 12 } },
+              el('button', { className: 'btn btn-success', onClick: handleCreateStaff }, 'Add'),
+              el('button', { className: 'btn btn-secondary', onClick: () => setShowForm(false) }, 'Cancel')
+            )
+          )
+        )
+      );
+    }
+
+    // Render
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(el(App));
   </script>
 </body>
 </html>
