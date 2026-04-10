@@ -2429,15 +2429,15 @@
 
       pos.forEach(po => {
         const row = document.createElement('tr');
-        const receivingStore = Object.entries(STORE_IDS).find(([_, id]) => id === po.receiving_store_id)?.[0];
+        const receivingStore = Object.entries(STORE_IDS).find(([_, id]) => id === po.receiving_store_id)?.[0] || 'Unknown';
 
         row.innerHTML = `
-          <td>${po.invoice_reference}</td>
-          <td>${po.supplier_name}</td>
+          <td>${po.invoice_ref || ''}</td>
+          <td>${po.supplier_name || ''}</td>
           <td>${receivingStore}</td>
-          <td>${po.items_count || 0}</td>
-          <td>£${parseFloat(po.total || 0).toFixed(2)}</td>
-          <td>${po.received ? 'Received' : 'Pending'}</td>
+          <td>-</td>
+          <td>£${parseFloat(po.total_cost || 0).toFixed(2)}</td>
+          <td><span class="badge ${po.status === 'received' ? 'badge-success' : 'badge-warning'}">${po.status === 'received' ? 'Received' : 'Draft'}</span></td>
           <td>
             <button class="btn btn-sm btn-primary" onclick="showPODetailsModal('${po.id}')">View</button>
           </td>
@@ -2504,9 +2504,8 @@
 
         const po = await supabase('purchase_orders', 'POST', {
           supplier_name: supplier,
-          invoice_reference: invoiceRef,
-          receiving_store_id: receivingStore,
-          created_at: new Date().toISOString()
+          invoice_ref: invoiceRef,
+          receiving_store_id: receivingStore
         });
 
         // Add items
@@ -2527,8 +2526,39 @@
       }
     }
 
-    function showPODetailsModal(poId) {
-      // TODO: Implement PO details
+    async function showPODetailsModal(poId) {
+      try {
+        const po = await supabase('purchase_orders', 'GET', null, `id=eq.${poId}&select=*`);
+        const items = await supabase('po_items', 'GET', null, `po_id=eq.${poId}&select=*`);
+        const poData = po[0];
+        const receivingStore = Object.entries(STORE_IDS).find(([_, id]) => id === poData.receiving_store_id)?.[0] || 'Unknown';
+
+        let itemsHtml = items.map(item => `
+          <tr>
+            <td>${item.product_name}</td>
+            <td>${item.quantity}</td>
+            <td>£${parseFloat(item.cost_per_item).toFixed(2)}</td>
+            <td>£${(item.quantity * parseFloat(item.cost_per_item)).toFixed(2)}</td>
+          </tr>
+        `).join('');
+
+        openModal('Purchase Order Details', `
+          <div style="margin-bottom: 16px;">
+            <p><strong>Supplier:</strong> ${poData.supplier_name}</p>
+            <p><strong>Invoice Ref:</strong> ${poData.invoice_ref || '-'}</p>
+            <p><strong>Receiving Store:</strong> ${receivingStore}</p>
+            <p><strong>Status:</strong> ${poData.status === 'received' ? 'Received' : 'Draft'}</p>
+            <p><strong>Date:</strong> ${new Date(poData.created_at).toLocaleDateString('en-GB')}</p>
+            <p><strong>Total:</strong> £${parseFloat(poData.total_cost || 0).toFixed(2)}</p>
+          </div>
+          <table class="data-table" style="width:100%">
+            <thead><tr><th>Product</th><th>Qty</th><th>Unit Cost</th><th>Line Total</th></tr></thead>
+            <tbody>${itemsHtml}</tbody>
+          </table>
+        `, [{ text: 'Close', onclick: closeModal }]);
+      } catch (err) {
+        showAlert('poAlert', err.message, 'error');
+      }
     }
 
     // ===== SALES HISTORY PAGE =====
