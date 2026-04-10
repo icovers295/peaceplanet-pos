@@ -5,6 +5,51 @@ const { authMiddleware, requireRole } = require('../middleware/auth');
 
 const router = express.Router();
 
+// ── Smart search: abbreviation expansion + fuzzy word matching ──
+const SEARCH_ALIASES = {
+  // Phone brands - single letter shortcuts
+  'f': 'iphone', 'ip': 'iphone', 'iph': 'iphone',
+  's': 'samsung', 'sam': 'samsung', 'sg': 'samsung',
+  'h': 'huawei', 'hw': 'huawei', 'hua': 'huawei',
+  'g': 'google', 'goo': 'google',
+  'p': 'pixel',
+  'o': 'oppo',
+  'x': 'xiaomi', 'xi': 'xiaomi', 'xia': 'xiaomi', 'mi': 'xiaomi',
+  'on': 'oneplus', '1+': 'oneplus',
+  'n': 'nokia', 'nok': 'nokia',
+  'mo': 'motorola', 'moto': 'motorola',
+  'lg': 'lg',
+  'so': 'sony',
+  // Common product types
+  'scr': 'screen', 'scrn': 'screen',
+  'lcd': 'lcd',
+  'batt': 'battery', 'bat': 'battery',
+  'chrg': 'charger', 'chg': 'charger',
+  'cbl': 'cable',
+  'cse': 'case', 'cvr': 'cover',
+  'prt': 'protector', 'tp': 'tempered',
+  'cam': 'camera',
+  'spk': 'speaker', 'spkr': 'speaker',
+  'btn': 'button',
+  'flx': 'flex',
+  'con': 'connector', 'conn': 'connector',
+  'pwr': 'power',
+  'vol': 'volume',
+  'fpc': 'fpc',
+  // Model shortcuts
+  'pro': 'pro', 'max': 'max', 'plus': 'plus', 'ultra': 'ultra',
+  'mini': 'mini', 'se': 'se', 'lite': 'lite',
+  // Galaxy shortcuts
+  'a': 'a', // Samsung Galaxy A series
+};
+
+function expandSearch(raw) {
+  if (!raw) return '';
+  const words = raw.trim().toLowerCase().split(/\s+/);
+  const expanded = words.map(w => SEARCH_ALIASES[w] || w);
+  return expanded;
+}
+
 // List products with inventory for a store
 router.get('/', authMiddleware, (req, res) => {
   const { store_id, category_id, search, low_stock, page = 1, limit = 50 } = req.query;
@@ -18,8 +63,13 @@ router.get('/', authMiddleware, (req, res) => {
     params.push(category_id);
   }
   if (search) {
-    where.push('(p.name LIKE ? OR p.sku LIKE ?)');
-    params.push(`%${search}%`, `%${search}%`);
+    // Smart search: expand abbreviations, then match each word against name/SKU/category
+    const searchWords = expandSearch(search);
+    const wordConditions = searchWords.map(() => '(LOWER(p.name) LIKE ? OR LOWER(p.sku) LIKE ? OR LOWER(COALESCE(c.name, \'\')) LIKE ?)');
+    where.push('(' + wordConditions.join(' AND ') + ')');
+    for (const word of searchWords) {
+      params.push(`%${word}%`, `%${word}%`, `%${word}%`);
+    }
   }
 
   const whereClause = where.length > 0 ? 'WHERE ' + where.join(' AND ') : '';
@@ -51,10 +101,10 @@ router.get('/', authMiddleware, (req, res) => {
 
   const products = db.prepare(query).all(...params);
 
-  // Get total count
+  // Get total count (must include category join for search to work)
   const countQuery = store_id
-    ? `SELECT COUNT(*) as total FROM products p LEFT JOIN inventory i ON p.id = i.product_id AND i.store_id = ? ${whereClause}`
-    : `SELECT COUNT(*) as total FROM products p ${whereClause}`;
+    ? `SELECT COUNT(*) as total FROM products p LEFT JOIN categories c ON p.category_id = c.id LEFT JOIN inventory i ON p.id = i.product_id AND i.store_id = ? ${whereClause}`
+    : `SELECT COUNT(*) as total FROM products p LEFT JOIN categories c ON p.category_id = c.id ${whereClause}`;
   const countParams = store_id ? [store_id, ...params.slice(1, -2)] : params.slice(0, -2);
   const total = db.prepare(countQuery).get(...countParams);
 
