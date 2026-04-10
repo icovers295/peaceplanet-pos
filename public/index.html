@@ -1618,7 +1618,8 @@
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
 
-      document.getElementById(page + 'Page').classList.add('active');
+      const pageId = page.replace(/-([a-z])/g, (_, c) => c.toUpperCase()) + 'Page';
+      document.getElementById(pageId).classList.add('active');
       document.querySelector(`[data-page="${page}"]`).classList.add('active');
 
       const pageLoaders = {
