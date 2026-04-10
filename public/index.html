@@ -1151,6 +1151,9 @@
         <div class="nav-item" data-page="customers" onclick="navigateTo('customers')">
           <i class="fas fa-users"></i> Customers
         </div>
+        <div class="nav-item" data-page="search" onclick="navigateTo('search')">
+          <i class="fas fa-search"></i> Search
+        </div>
       </div>
 
       <div class="nav-section">
@@ -1472,6 +1475,22 @@
         </div>
 
         <!-- STAFF PAGE (ADMIN ONLY) -->
+        <!-- SEARCH PAGE -->
+        <div class="page" id="searchPage">
+          <div class="page-title">Search</div>
+          <div id="searchAlert" class="alert"></div>
+          <div style="display: flex; gap: 12px; margin-bottom: 16px; align-items: center;">
+            <input type="text" class="form-input" id="globalSearchInput" placeholder="Search products, staff, customers..." style="flex: 1; font-size: 16px; padding: 12px 16px;">
+            <select class="form-input" id="searchTypeFilter" style="width: 160px;" onchange="runGlobalSearch()">
+              <option value="all">All</option>
+              <option value="products">Products</option>
+              <option value="staff">Staff</option>
+              <option value="customers">Customers</option>
+            </select>
+          </div>
+          <div id="searchResults" style="margin-top: 8px;"></div>
+        </div>
+
         <div class="page" id="staffPage">
           <div class="page-title">Staff Management</div>
           <div id="staffAlert" class="alert"></div>
@@ -1653,6 +1672,7 @@
         'inventory': loadInventory,
         'repairs': loadRepairs,
         'customers': loadCustomers,
+        'search': initSearch,
         'transfers': loadTransfers,
         'purchase-orders': loadPurchaseOrders,
         'sales-history': loadSalesHistory,
@@ -1884,10 +1904,8 @@
 
     async function processCheckout(paymentMethod) {
       try {
-        // Get next receipt number
-        const seqResult = await supabase('rpc/next_sequence', 'POST', { seq_name: 'sale_seq' });
-        const seqNum = seqResult.next_value || 1;
-        const receiptNum = `PP${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${seqNum}`;
+        // Get next receipt number via RPC
+        const receiptNum = await supabase('rpc/generate_receipt_number', 'POST', {});
 
         // Create sale
         const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -1904,11 +1922,11 @@
           receipt_number: receiptNum,
           store_id: currentStore,
           staff_id: currentUser.id,
+          cashier_name: currentUser.name,
           subtotal: subtotal,
           discount: discount,
           total: total,
-          payment_method: paymentMethod,
-          created_at: new Date().toISOString()
+          payment_method: paymentMethod
         });
 
         // Create sale items
@@ -1916,6 +1934,7 @@
           await supabase('sale_items', 'POST', {
             sale_id: sale[0].id,
             product_id: item.id,
+            product_name: item.name,
             quantity: item.quantity,
             unit_price: item.price,
             line_total: item.price * item.quantity
@@ -2874,6 +2893,132 @@
       }
     }
 
+    // ===== SEARCH PAGE =====
+    let searchTimeout = null;
+
+    function initSearch() {
+      const input = document.getElementById('globalSearchInput');
+      input.focus();
+      // Remove old listener, add new one
+      input.removeEventListener('input', handleSearchInput);
+      input.addEventListener('input', handleSearchInput);
+      // If there's already text, run the search
+      if (input.value.trim().length >= 2) {
+        runGlobalSearch();
+      }
+    }
+
+    function handleSearchInput() {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => runGlobalSearch(), 300);
+    }
+
+    async function runGlobalSearch() {
+      const query = document.getElementById('globalSearchInput').value.trim();
+      const type = document.getElementById('searchTypeFilter').value;
+      const resultsDiv = document.getElementById('searchResults');
+
+      if (query.length < 2) {
+        resultsDiv.innerHTML = '<p style="color: var(--text-secondary); padding: 20px;">Type at least 2 characters to search...</p>';
+        return;
+      }
+
+      resultsDiv.innerHTML = '<p style="color: var(--text-secondary); padding: 20px;">Searching...</p>';
+
+      try {
+        let html = '';
+
+        // Search Products
+        if (type === 'all' || type === 'products') {
+          const products = await supabase('products', 'GET', null, `or=(name.ilike.*${query}*,sku.ilike.*${query}*,category.ilike.*${query}*)&limit=50&order=name.asc`);
+          if (products.length > 0) {
+            html += '<div style="margin-bottom: 24px;">';
+            html += '<h3 style="margin-bottom: 12px; color: var(--text-primary);">Products (' + products.length + (products.length === 50 ? '+' : '') + ')</h3>';
+            html += '<table class="data-table"><thead><tr><th>Name</th><th>SKU</th><th>Category</th><th>Price</th>';
+            if (isAdmin) html += '<th>Cost</th>';
+            html += '<th>Stock (' + getStoreName(currentStore) + ')</th><th>Actions</th></tr></thead><tbody>';
+
+            for (const p of products) {
+              const stockRecs = await supabase('stock_levels', 'GET', null, `product_id=eq.${p.id}&store_id=eq.${currentStore}`);
+              const stock = stockRecs.length > 0 ? stockRecs[0].quantity : 0;
+              html += '<tr>';
+              html += '<td>' + (p.name || '-') + '</td>';
+              html += '<td>' + (p.sku || '-') + '</td>';
+              html += '<td>' + (p.category || '-') + '</td>';
+              html += '<td>&pound;' + parseFloat(p.sell_price || 0).toFixed(2) + '</td>';
+              if (isAdmin) html += '<td>&pound;' + parseFloat(p.cost_price || 0).toFixed(2) + '</td>';
+              html += '<td>' + stock + '</td>';
+              html += '<td><button class="btn btn-sm btn-primary" onclick="navigateTo(\'inventory\')">View</button></td>';
+              html += '</tr>';
+            }
+            html += '</tbody></table></div>';
+          } else if (type === 'products') {
+            html += '<p style="color: var(--text-secondary); padding: 12px;">No products found for "' + query + '"</p>';
+          }
+        }
+
+        // Search Staff
+        if (type === 'all' || type === 'staff') {
+          const staff = await supabase('staff', 'GET', null, `or=(name.ilike.*${query}*,email.ilike.*${query}*)&limit=20&order=name.asc`);
+          if (staff.length > 0) {
+            html += '<div style="margin-bottom: 24px;">';
+            html += '<h3 style="margin-bottom: 12px; color: var(--text-primary);">Staff (' + staff.length + ')</h3>';
+            html += '<table class="data-table"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Active</th>';
+            if (isAdmin) html += '<th>Actions</th>';
+            html += '</tr></thead><tbody>';
+            staff.forEach(s => {
+              html += '<tr>';
+              html += '<td>' + s.name + '</td>';
+              html += '<td>' + s.email + '</td>';
+              html += '<td>' + s.role + '</td>';
+              html += '<td>' + (s.active ? 'Yes' : 'No') + '</td>';
+              if (isAdmin) html += '<td><button class="btn btn-sm btn-primary" onclick="showEditStaffModal(\'' + s.id + '\')">Edit</button></td>';
+              html += '</tr>';
+            });
+            html += '</tbody></table></div>';
+          } else if (type === 'staff') {
+            html += '<p style="color: var(--text-secondary); padding: 12px;">No staff found for "' + query + '"</p>';
+          }
+        }
+
+        // Search Customers
+        if (type === 'all' || type === 'customers') {
+          const customers = await supabase('customers', 'GET', null, `or=(name.ilike.*${query}*,email.ilike.*${query}*,phone.ilike.*${query}*)&limit=20&order=name.asc`);
+          if (customers.length > 0) {
+            html += '<div style="margin-bottom: 24px;">';
+            html += '<h3 style="margin-bottom: 12px; color: var(--text-primary);">Customers (' + customers.length + ')</h3>';
+            html += '<table class="data-table"><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Actions</th></tr></thead><tbody>';
+            customers.forEach(c => {
+              html += '<tr>';
+              html += '<td>' + (c.name || '-') + '</td>';
+              html += '<td>' + (c.phone || '-') + '</td>';
+              html += '<td>' + (c.email || '-') + '</td>';
+              html += '<td><button class="btn btn-sm btn-primary" onclick="navigateTo(\'customers\')">View</button></td>';
+              html += '</tr>';
+            });
+            html += '</tbody></table></div>';
+          } else if (type === 'customers') {
+            html += '<p style="color: var(--text-secondary); padding: 12px;">No customers found for "' + query + '"</p>';
+          }
+        }
+
+        if (!html) {
+          html = '<p style="color: var(--text-secondary); padding: 20px;">No results found for "' + query + '"</p>';
+        }
+
+        resultsDiv.innerHTML = html;
+      } catch (err) {
+        resultsDiv.innerHTML = '<p style="color: #e74c3c; padding: 20px;">Search error: ' + err.message + '</p>';
+      }
+    }
+
+    function getStoreName(storeId) {
+      for (const [name, id] of Object.entries(STORE_IDS)) {
+        if (id === storeId) return name;
+      }
+      return 'Unknown';
+    }
+
     // ===== STAFF PAGE (ADMIN ONLY) =====
     async function loadStaff() {
       try {
@@ -3139,7 +3284,8 @@
     }
 
     function closeModal(e) {
-      if (e && e.target !== document.getElementById('modalOverlay')) return;
+      // If called from overlay click, only close if clicking the overlay background itself
+      if (e && e.type === 'click' && e.currentTarget === document.getElementById('modalOverlay') && e.target !== e.currentTarget) return;
       document.getElementById('modalOverlay').classList.remove('active');
     }
 
