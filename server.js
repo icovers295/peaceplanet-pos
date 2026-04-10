@@ -89,6 +89,105 @@ app.get('/api/transfers', authMiddleware, (req, res) => {
   res.json(transfers);
 });
 
+// Create stock transfer
+app.post('/api/transfers', authMiddleware, (req, res) => {
+  const { product_id, from_store_id, to_store_id, quantity, notes } = req.body;
+
+  if (!product_id || !from_store_id || !to_store_id || !quantity) {
+    return res.status(400).json({ error: 'Product, from store, to store, and quantity are required' });
+  }
+  if (from_store_id === to_store_id) {
+    return res.status(400).json({ error: 'From and To store must be different' });
+  }
+  if (quantity < 1) {
+    return res.status(400).json({ error: 'Quantity must be at least 1' });
+  }
+
+  // Check product exists
+  const product = db.prepare('SELECT * FROM products WHERE id = ?').get(product_id);
+  if (!product) return res.status(400).json({ error: 'Product not found' });
+
+  // Check stock at source store
+  const inv = db.prepare('SELECT quantity FROM inventory WHERE product_id = ? AND store_id = ?').get(product_id, from_store_id);
+  if (!inv || inv.quantity < quantity) {
+    return res.status(400).json({ error: 'Insufficient stock. Available: ' + (inv ? inv.quantity : 0) });
+  }
+
+  const transferId = require('uuid').v4();
+
+  // Create transfer and immediately deduct from source, add to destination
+  const createTransfer = db.transaction(() => {
+    db.prepare(`INSERT INTO stock_transfers (id, from_store_id, to_store_id, product_id, quantity, status, notes, created_by)
+      VALUES (?, ?, ?, ?, ?, 'pending', ?, ?)`).run(transferId, from_store_id, to_store_id, product_id, quantity, notes || '', req.user.id);
+
+    // Deduct from source store
+    db.prepare('UPDATE inventory SET quantity = quantity - ?, updated_at = CURRENT_TIMESTAMP WHERE product_id = ? AND store_id = ?')
+      .run(quantity, product_id, from_store_id);
+
+    // Add to destination store (upsert)
+    const destInv = db.prepare('SELECT id FROM inventory WHERE product_id = ? AND store_id = ?').get(product_id, to_store_id);
+    if (destInv) {
+      db.prepare('UPDATE inventory SET quantity = quantity + ?, updated_at = CURRENT_TIMESTAMP WHERE product_id = ? AND store_id = ?')
+        .run(quantity, product_id, to_store_id);
+    } else {
+      db.prepare('INSERT INTO inventory (id, product_id, store_id, quantity) VALUES (?, ?, ?, ?)')
+        .run(require('uuid').v4(), product_id, to_store_id, quantity);
+    }
+
+    // Record stock movements
+    db.prepare('INSERT INTO stock_movements (id, product_id, store_id, movement_type, quantity, reference_id, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)')
+      .run(require('uuid').v4(), product_id, from_store_id, 'transfer_out', -quantity, transferId, req.user.id);
+    db.prepare('INSERT INTO stock_movements (id, product_id, store_id, movement_type, quantity, reference_id, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)')
+      .run(require('uuid').v4(), product_id, to_store_id, 'transfer_in', quantity, transferId, req.user.id);
+
+    // Mark as received immediately (stock already moved)
+    db.prepare('UPDATE stock_transfers SET status = ?, received_at = CURRENT_TIMESTAMP WHERE id = ?')
+      .run('received', transferId);
+  });
+
+  try {
+    createTransfer();
+    res.status(201).json({ id: transferId, message: 'Transfer completed — stock moved' });
+  } catch (err) {
+    console.error('Transfer error:', err);
+    res.status(500).json({ error: 'Failed to create transfer: ' + err.message });
+  }
+});
+
+// Receive a pending transfer (legacy — for transfers created without immediate completion)
+app.post('/api/transfers/:id/receive', authMiddleware, (req, res) => {
+  const transfer = db.prepare('SELECT * FROM stock_transfers WHERE id = ?').get(req.params.id);
+  if (!transfer) return res.status(404).json({ error: 'Transfer not found' });
+  if (transfer.status === 'received') return res.status(400).json({ error: 'Already received' });
+
+  const receiveTransfer = db.transaction(() => {
+    // Add stock to destination
+    const destInv = db.prepare('SELECT id FROM inventory WHERE product_id = ? AND store_id = ?').get(transfer.product_id, transfer.to_store_id);
+    if (destInv) {
+      db.prepare('UPDATE inventory SET quantity = quantity + ?, updated_at = CURRENT_TIMESTAMP WHERE product_id = ? AND store_id = ?')
+        .run(transfer.quantity, transfer.product_id, transfer.to_store_id);
+    } else {
+      db.prepare('INSERT INTO inventory (id, product_id, store_id, quantity) VALUES (?, ?, ?, ?)')
+        .run(require('uuid').v4(), transfer.product_id, transfer.to_store_id, transfer.quantity);
+    }
+
+    // Record movement
+    db.prepare('INSERT INTO stock_movements (id, product_id, store_id, movement_type, quantity, reference_id, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)')
+      .run(require('uuid').v4(), transfer.product_id, transfer.to_store_id, 'transfer_in', transfer.quantity, transfer.id, req.user.id);
+
+    // Update status
+    db.prepare('UPDATE stock_transfers SET status = ?, received_at = CURRENT_TIMESTAMP WHERE id = ?')
+      .run('received', transfer.id);
+  });
+
+  try {
+    receiveTransfer();
+    res.json({ success: true, message: 'Transfer received — stock updated' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to receive transfer: ' + err.message });
+  }
+});
+
 // Receipt printing
 app.post('/api/print/receipt', authMiddleware, (req, res) => {
   const { sale } = req.body;
