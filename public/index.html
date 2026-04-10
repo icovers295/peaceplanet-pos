@@ -2334,7 +2334,7 @@
       return el('div', { className: 'page-content' },
         el('h1', { style: { marginBottom: 24 } }, 'Sales'),
         el('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 12, marginBottom: 24 } },
-          el('div', className: 'form-group', null,
+          el('div', { className: 'form-group' },
             el('label', null, 'From'),
             el('input', { type: 'date', value: dateFrom, onChange: e => setDateFrom(e.target.value) })
           ),
@@ -2342,7 +2342,7 @@
             el('label', null, 'To'),
             el('input', { type: 'date', value: dateTo, onChange: e => setDateTo(e.target.value) })
           ),
-          el('div', { className: 'form-group', style: { gridColumn: 'span 2' },
+          el('div', { className: 'form-group', style: { gridColumn: 'span 2' } },
             el('label', null, 'Search Receipt #'),
             el('input', {
               type: 'text',
