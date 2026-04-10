@@ -1832,6 +1832,8 @@
       const [selectedRepair, setSelectedRepair] = useState(null);
       const [showForm, setShowForm] = useState(false);
       const [showDetail, setShowDetail] = useState(false);
+      const [showQuickTicket, setShowQuickTicket] = useState(false);
+      const [quickData, setQuickData] = useState({ customer_name: '', customer_phone: '', device_model: '', issue_description: '' });
       const [formData, setFormData] = useState({
         customer_name: '', customer_phone: '', customer_email: '',
         device_type: '', device_brand: '', device_model: '', imei: '',
@@ -1878,6 +1880,72 @@
         }
       };
 
+      const handleQuickTicket = async () => {
+        if (!quickData.customer_name || !quickData.issue_description) {
+          showToast('Name and issue are required', 'error');
+          return;
+        }
+        try {
+          const data = {
+            store_id: currentStore,
+            customer_name: quickData.customer_name,
+            customer_phone: quickData.customer_phone,
+            device_model: quickData.device_model,
+            issue_description: quickData.issue_description,
+            priority: 'normal'
+          };
+          const result = await api('/repairs', { method: 'POST', body: JSON.stringify(data) });
+          showToast(`Quick ticket created: ${result.ticket_number}`, 'success');
+          printQuickTicket(result.ticket_number, quickData);
+          setShowQuickTicket(false);
+          setQuickData({ customer_name: '', customer_phone: '', device_model: '', issue_description: '' });
+          loadRepairs();
+        } catch (err) {
+          showToast(err.message, 'error');
+        }
+      };
+
+      const printQuickTicket = (ticketNumber, data) => {
+        const now = new Date().toLocaleString('en-GB');
+        const html = `<!DOCTYPE html><html><head><style>
+          body { font-family: 'Courier New', monospace; width: 280px; margin: 0 auto; font-size: 12px; }
+          .center { text-align: center; }
+          .line { border-top: 1px dashed #000; margin: 8px 0; }
+          .big { font-size: 18px; font-weight: bold; letter-spacing: 2px; }
+          .ticket-num { font-size: 22px; font-weight: bold; margin: 8px 0; }
+          table { width: 100%; }
+          td { padding: 3px 0; vertical-align: top; }
+          .label { font-weight: bold; width: 70px; }
+          @media print { body { margin: 0; } }
+        </style></head><body>
+          <div class="center">
+            <div class="big">PEACEPLANET</div>
+            <div>Phone Repairs</div>
+          </div>
+          <div class="line"></div>
+          <div class="center"><div class="ticket-num">${ticketNumber}</div></div>
+          <div class="line"></div>
+          <table>
+            <tr><td class="label">Name:</td><td>${data.customer_name}</td></tr>
+            <tr><td class="label">Phone:</td><td>${data.customer_phone || 'N/A'}</td></tr>
+            <tr><td class="label">Device:</td><td>${data.device_model || 'N/A'}</td></tr>
+            <tr><td class="label">Issue:</td><td>${data.issue_description}</td></tr>
+          </table>
+          <div class="line"></div>
+          <div>Date: ${now}</div>
+          <div class="line"></div>
+          <div class="center" style="margin-top:8px;">
+            <strong>Please keep this ticket.</strong><br>
+            You will need it to collect your device.<br><br>
+            Thank you for choosing PeacePlanet!
+          </div>
+          <script>window.onload=function(){window.print();}</script>
+        </body></html>`;
+        const win = window.open('', '_blank', 'width=350,height=500');
+        win.document.write(html);
+        win.document.close();
+      };
+
       const getStatusBadge = (status) => {
         const badgeClass = {
           'checked_in': 'badge-primary',
@@ -1894,7 +1962,10 @@
       return el('div', { className: 'page-content' },
         el('div', { className: 'flex-between', style: { marginBottom: 24 } },
           el('h1', null, 'Repairs'),
-          el('button', { className: 'btn btn-primary', onClick: () => setShowForm(true) }, '+ New Repair')
+          el('div', { style: { display: 'flex', gap: 8 } },
+            el('button', { className: 'btn btn-warning', onClick: () => setShowQuickTicket(true), style: { fontWeight: 'bold' } }, 'Quick Ticket'),
+            el('button', { className: 'btn btn-primary', onClick: () => setShowForm(true) }, '+ New Repair')
+          )
         ),
         el('div', { className: 'search-bar', style: { marginBottom: 16 } },
           el('input', {
@@ -1937,6 +2008,54 @@
               )
             )
           ),
+        showQuickTicket && el('div', { className: 'modal-overlay', onClick: e => { if (e.target === e.currentTarget) setShowQuickTicket(false); } },
+          el('div', { className: 'modal-card', style: { maxWidth: 420 } },
+            el('div', { className: 'modal-header', style: { background: '#f59e0b', color: '#fff' } },
+              el('h2', null, 'Quick Ticket'),
+              el('button', { className: 'modal-close', onClick: () => setShowQuickTicket(false), style: { color: '#fff' } }, '\u00d7')
+            ),
+            el('p', { style: { color: '#666', fontSize: 13, margin: '0 0 12px' } }, 'Fast check-in \u2014 fill full details later'),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Customer Name *'),
+              el('input', {
+                type: 'text', autoFocus: true, placeholder: 'e.g. John Smith',
+                value: quickData.customer_name,
+                onChange: e => setQuickData({ ...quickData, customer_name: e.target.value })
+              })
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Phone Number'),
+              el('input', {
+                type: 'tel', placeholder: '07...',
+                value: quickData.customer_phone,
+                onChange: e => setQuickData({ ...quickData, customer_phone: e.target.value })
+              })
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Device'),
+              el('input', {
+                type: 'text', placeholder: 'e.g. iPhone 15 Pro Max',
+                value: quickData.device_model,
+                onChange: e => setQuickData({ ...quickData, device_model: e.target.value })
+              })
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Issue *'),
+              el('textarea', {
+                rows: 2, placeholder: 'e.g. Cracked screen, not charging...',
+                value: quickData.issue_description,
+                onChange: e => setQuickData({ ...quickData, issue_description: e.target.value })
+              })
+            ),
+            el('div', { style: { display: 'flex', gap: 12, marginTop: 8 } },
+              el('button', {
+                className: 'btn btn-warning', style: { flex: 1, fontWeight: 'bold', fontSize: 16, padding: '12px 0' },
+                onClick: handleQuickTicket
+              }, 'Create & Print Ticket'),
+              el('button', { className: 'btn btn-secondary', onClick: () => setShowQuickTicket(false) }, 'Cancel')
+            )
+          )
+        ),
         showForm && el('div', { className: 'modal-overlay', onClick: e => { if (e.target === e.currentTarget) setShowForm(false); } },
           el('div', { className: 'modal-card' },
             el('div', { className: 'modal-header' },
