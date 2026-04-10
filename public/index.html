@@ -403,22 +403,24 @@
     }
 
     .modal-body .form-input,
-    .main-content .form-input {
-      background: var(--surface-light);
-      color: var(--text-primary);
-      border: 1px solid var(--border);
+    .main-content .form-input,
+    .modal-body select.form-input,
+    .main-content select.form-input {
+      background: var(--surface-light) !important;
+      color: var(--text-primary) !important;
+      border: 1px solid var(--border) !important;
     }
 
     .modal-body .form-input:focus,
     .main-content .form-input:focus {
-      background: var(--surface-light);
-      border-color: var(--primary);
+      background: var(--surface-light) !important;
+      border-color: var(--primary) !important;
     }
 
     .main-content .search-input {
-      background: var(--surface-light);
-      color: var(--text-primary);
-      border: 1px solid var(--border);
+      background: var(--surface-light) !important;
+      color: var(--text-primary) !important;
+      border: 1px solid var(--border) !important;
     }
 
     .modal-footer {
@@ -2718,7 +2720,7 @@
 
     async function loadSalesHistory() {
       try {
-        const params = `select=*&store_id=eq.${currentStore}&order=created_at.desc&limit=${SALES_ITEMS_PER_PAGE}&offset=${(salesPage - 1) * SALES_ITEMS_PER_PAGE}`;
+        const params = `select=*&store_id=eq.${currentStore}&order=sale_date.desc&limit=${SALES_ITEMS_PER_PAGE}&offset=${(salesPage - 1) * SALES_ITEMS_PER_PAGE}`;
         const sales = await supabase('sales', 'GET', null, params);
         renderSalesHistoryTable(sales);
       } catch (err) {
@@ -2736,8 +2738,8 @@
           <td>${sale.receipt_number}</td>
           <td>£${parseFloat(sale.total).toFixed(2)}</td>
           <td>${sale.payment_method === 'cash' ? 'Cash' : 'Card'}</td>
-          <td>${sale.items_count || 0}</td>
-          <td>${new Date(sale.created_at).toLocaleDateString()}</td>
+          <td>-</td>
+          <td>${new Date(sale.sale_date).toLocaleDateString()}</td>
           <td>
             <button class="btn btn-sm btn-primary" onclick="showSaleDetailsModal('${sale.id}')">View</button>
             ${isAdmin ? `<button class="btn btn-sm btn-danger" onclick="refundSale('${sale.id}')">Refund</button>` : ''}
@@ -2768,7 +2770,7 @@
         }
 
         // Mark as refunded
-        await supabase('sales', 'PATCH', { refunded: true }, `id=eq.${saleId}`);
+        await supabase('sales', 'PATCH', { status: 'refunded' }, `id=eq.${saleId}`);
 
         showAlert('salesHistoryAlert', 'Sale refunded!', 'success');
         loadSalesHistory();
