@@ -1457,7 +1457,7 @@
             page === 'customers' && el(CustomersPage, { showToast }),
             page === 'sales' && el(SalesPage, { currentStore, user, showToast, permissions }),
             page === 'purchase-orders' && el(PurchaseOrdersPage, { currentStore, user, showToast, stores }),
-            page === 'transfers' && el(TransfersPage, { currentStore, stores, showToast }),
+            page === 'transfers' && el(TransfersPage, { currentStore, stores, showToast, user }),
             page === 'reports' && el(ReportsPage, { currentStore, stores, user, showToast }),
             page === 'staff' && el(StaffPage, { showToast })
           )
@@ -2652,47 +2652,211 @@
     }
 
     // Transfers Page
-    function TransfersPage({ currentStore, stores, showToast }) {
+    function TransfersPage({ currentStore, stores, showToast, user }) {
       const [transfers, setTransfers] = useState([]);
       const [loading, setLoading] = useState(false);
+      const [showForm, setShowForm] = useState(false);
+      const [fromStore, setFromStore] = useState(currentStore);
+      const [toStore, setToStore] = useState('');
+      const [quantity, setQuantity] = useState(1);
+      const [notes, setNotes] = useState('');
+      const [productSearch, setProductSearch] = useState('');
+      const [searchResults, setSearchResults] = useState([]);
+      const [selectedProduct, setSelectedProduct] = useState(null);
+      const [submitting, setSubmitting] = useState(false);
+      const searchTimeout = useRef(null);
+
+      useEffect(() => { loadTransfers(); }, [currentStore]);
 
       useEffect(() => {
-        loadTransfers();
-      }, [currentStore]);
+        if (!showForm) return;
+        setFromStore(currentStore);
+        const otherStores = (stores || []).filter(s => s.id !== currentStore);
+        if (otherStores.length > 0 && !toStore) setToStore(otherStores[0].id);
+      }, [showForm, currentStore, stores]);
 
       const loadTransfers = async () => {
         setLoading(true);
         try {
-          const result = await api(`/transfers?store_id=${currentStore}`);
+          const result = await api('/transfers?store_id=' + currentStore);
           setTransfers(result || []);
+        } catch (err) { showToast(err.message, 'error'); }
+        finally { setLoading(false); }
+      };
+
+      const searchProducts = (query) => {
+        setProductSearch(query);
+        setSelectedProduct(null);
+        if (searchTimeout.current) clearTimeout(searchTimeout.current);
+        if (query.length < 2) { setSearchResults([]); return; }
+        searchTimeout.current = setTimeout(async () => {
+          try {
+            const results = await api('/products?search=' + encodeURIComponent(query) + '&store_id=' + fromStore + '&limit=15');
+            setSearchResults(results.products || results || []);
+          } catch (err) { setSearchResults([]); }
+        }, 300);
+      };
+
+      const selectProduct = (product) => {
+        setSelectedProduct(product);
+        setProductSearch(product.name + (product.sku ? ' (' + product.sku + ')' : ''));
+        setSearchResults([]);
+      };
+
+      const handleSubmit = async () => {
+        if (!selectedProduct) { showToast('Select a product first', 'error'); return; }
+        if (!fromStore || !toStore) { showToast('Select both stores', 'error'); return; }
+        if (fromStore === toStore) { showToast('From and To store must be different', 'error'); return; }
+        if (quantity < 1) { showToast('Quantity must be at least 1', 'error'); return; }
+
+        setSubmitting(true);
+        try {
+          await api('/transfers', {
+            method: 'POST',
+            body: JSON.stringify({
+              product_id: selectedProduct.id,
+              from_store_id: fromStore,
+              to_store_id: toStore,
+              quantity: parseInt(quantity),
+              notes: notes
+            })
+          });
+          showToast('Transfer created successfully', 'success');
+          setShowForm(false);
+          resetForm();
+          loadTransfers();
         } catch (err) {
           showToast(err.message, 'error');
-        } finally {
-          setLoading(false);
-        }
+        } finally { setSubmitting(false); }
+      };
+
+      const receiveTransfer = async (id) => {
+        try {
+          await api('/transfers/' + id + '/receive', { method: 'POST' });
+          showToast('Transfer received — stock updated', 'success');
+          loadTransfers();
+        } catch (err) { showToast(err.message, 'error'); }
+      };
+
+      const resetForm = () => {
+        setProductSearch('');
+        setSelectedProduct(null);
+        setSearchResults([]);
+        setQuantity(1);
+        setNotes('');
+        const otherStores = (stores || []).filter(s => s.id !== currentStore);
+        setToStore(otherStores.length > 0 ? otherStores[0].id : '');
+      };
+
+      const getStoreName = (id) => { const s = (stores || []).find(st => st.id === id); return s ? s.name.replace('PeacePlanet - ', '') : '-'; };
+
+      const statusBadge = (status) => {
+        const colors = { pending: '#f59e0b', in_transit: '#3b82f6', received: '#22c55e', cancelled: '#ef4444' };
+        return el('span', { style: { padding: '4px 10px', borderRadius: 12, fontSize: 12, fontWeight: 600, background: (colors[status] || '#666') + '22', color: colors[status] || '#666' } }, (status || 'pending').replace('_', ' '));
       };
 
       return el('div', { className: 'page-content' },
-        el('h1', { style: { marginBottom: 24 } }, 'Stock Transfers'),
+        el('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 } },
+          el('h1', { style: { margin: 0 } }, 'Stock Transfers'),
+          !showForm && el('button', { className: 'btn btn-primary', onClick: () => { resetForm(); setShowForm(true); } }, '+ New Transfer')
+        ),
+
+        showForm && el('div', { className: 'card', style: { marginBottom: 24, padding: 24 } },
+          el('h3', { style: { marginBottom: 16 } }, 'New Stock Transfer'),
+
+          el('div', { className: 'form-group', style: { marginBottom: 16, position: 'relative' } },
+            el('label', null, 'Search Product (scan barcode or type)'),
+            el('input', {
+              type: 'text',
+              value: productSearch,
+              onChange: e => searchProducts(e.target.value),
+              placeholder: 'Type product name or scan SKU...',
+              autoFocus: true,
+              style: { width: '100%' }
+            }),
+            searchResults.length > 0 && el('div', { style: { position: 'absolute', top: '100%', left: 0, right: 0, background: '#1a1a2e', border: '1px solid #333', borderRadius: 8, maxHeight: 250, overflowY: 'auto', zIndex: 100 } },
+              searchResults.map(p =>
+                el('div', { key: p.id, onClick: () => selectProduct(p), style: { padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid #222', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+                  onMouseEnter: e => e.currentTarget.style.background = '#252545',
+                  onMouseLeave: e => e.currentTarget.style.background = 'transparent'
+                },
+                  el('div', null,
+                    el('div', { style: { fontWeight: 600 } }, p.name),
+                    el('div', { style: { fontSize: 12, color: '#888' } }, p.sku || 'No SKU')
+                  ),
+                  el('div', { style: { textAlign: 'right' } },
+                    el('div', { style: { fontWeight: 600 } }, '£' + (p.sell_price || 0).toFixed(2)),
+                    el('div', { style: { fontSize: 12, color: (p.stock || p.quantity || 0) > 0 ? '#22c55e' : '#ef4444' } }, 'Stock: ' + (p.stock || p.quantity || 0))
+                  )
+                )
+              )
+            ),
+            selectedProduct && el('div', { style: { marginTop: 8, padding: '8px 12px', background: '#1e3a5f', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+              el('span', null, selectedProduct.name + ' — Stock: ' + (selectedProduct.stock || selectedProduct.quantity || 0)),
+              el('button', { onClick: () => { setSelectedProduct(null); setProductSearch(''); }, style: { background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 16 } }, '✕')
+            )
+          ),
+
+          el('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 16 } },
+            el('div', { className: 'form-group' },
+              el('label', null, 'From Store'),
+              el('select', { value: fromStore, onChange: e => { setFromStore(e.target.value); setSelectedProduct(null); setProductSearch(''); } },
+                (stores || []).map(s => el('option', { key: s.id, value: s.id }, s.name.replace('PeacePlanet - ', '')))
+              )
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'To Store'),
+              el('select', { value: toStore, onChange: e => setToStore(e.target.value) },
+                (stores || []).filter(s => s.id !== fromStore).map(s => el('option', { key: s.id, value: s.id }, s.name.replace('PeacePlanet - ', '')))
+              )
+            ),
+            el('div', { className: 'form-group' },
+              el('label', null, 'Quantity'),
+              el('input', { type: 'number', min: 1, value: quantity, onChange: e => setQuantity(e.target.value), style: { width: '100%' } })
+            )
+          ),
+
+          el('div', { className: 'form-group', style: { marginBottom: 16 } },
+            el('label', null, 'Notes (optional)'),
+            el('input', { type: 'text', value: notes, onChange: e => setNotes(e.target.value), placeholder: 'e.g. Restock for weekend', style: { width: '100%' } })
+          ),
+
+          el('div', { style: { display: 'flex', gap: 12 } },
+            el('button', { className: 'btn btn-primary', onClick: handleSubmit, disabled: submitting || !selectedProduct },
+              submitting ? 'Creating...' : 'Create Transfer'),
+            el('button', { className: 'btn btn-secondary', onClick: () => setShowForm(false) }, 'Cancel')
+          )
+        ),
+
         loading ? el('div', null, 'Loading...') :
+          transfers.length === 0 ? el('div', { className: 'card', style: { padding: 32, textAlign: 'center', color: '#888' } }, 'No transfers yet. Click "+ New Transfer" to move stock between stores.') :
           el('table', { className: 'table' },
             el('thead', null,
               el('tr', null,
+                el('th', null, 'Date'),
                 el('th', null, 'Product'),
                 el('th', null, 'From'),
                 el('th', null, 'To'),
-                el('th', null, 'Quantity'),
-                el('th', null, 'Status')
+                el('th', null, 'Qty'),
+                el('th', null, 'Status'),
+                el('th', null, 'Actions')
               )
             ),
             el('tbody', null,
               transfers.map(t =>
                 el('tr', { key: t.id },
-                  el('td', null, t.product_name || '-'),
-                  el('td', null, t.from_store_name || '-'),
-                  el('td', null, t.to_store_name || '-'),
+                  el('td', null, t.created_at ? new Date(t.created_at).toLocaleDateString('en-GB') : '-'),
+                  el('td', null,
+                    el('div', { style: { fontWeight: 600 } }, t.product_name || '-'),
+                    el('div', { style: { fontSize: 12, color: '#888' } }, t.sku || '')
+                  ),
+                  el('td', null, getStoreName(t.from_store_id)),
+                  el('td', null, getStoreName(t.to_store_id)),
                   el('td', null, t.quantity),
-                  el('td', null, el('span', { className: 'badge badge-primary' }, t.status || 'pending'))
+                  el('td', null, statusBadge(t.status)),
+                  el('td', null,
+                    t.status === 'pending' && el('button', { className: 'btn btn-success', style: { padding: '4px 12px', fontSize: 12 }, onClick: () => receiveTransfer(t.id) }, 'Receive')
+                  )
                 )
               )
             )
