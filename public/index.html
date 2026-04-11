@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -944,7 +944,7 @@
 
       return el('div', { className: 'login-container' },
         el('div', { className: 'login-card' },
-          el('h1', null, 'ÃÂ°ÃÂÃÂÃÂ PeacePlanet POS'),
+          el('h1', null, '🌍 PeacePlanet POS'),
           el('p', null, 'Point of Sale System'),
           el('form', { onSubmit: handleSubmit },
             el('div', { className: 'form-group' },
@@ -963,7 +963,7 @@
                 type: 'password',
                 value: password,
                 onChange: e => setPassword(e.target.value),
-                placeholder: 'ÃÂ¢ÃÂÃÂ¢ÃÂ¢ÃÂÃÂ¢ÃÂ¢ÃÂÃÂ¢ÃÂ¢ÃÂÃÂ¢ÃÂ¢ÃÂÃÂ¢ÃÂ¢ÃÂÃÂ¢ÃÂ¢ÃÂÃÂ¢ÃÂ¢ÃÂÃÂ¢',
+                placeholder: '••••••••',
                 required: true
               })
             ),
@@ -1009,7 +1009,7 @@
         el('div', { className: 'stat-cards' },
           el('div', { className: 'stat-card' },
             el('div', { className: 'stat-label' }, "Today's Sales"),
-            el('div', { className: 'stat-value' }, `ÃÂÃÂ£${(summary?.total_revenue || 0).toFixed(2)}`)
+            el('div', { className: 'stat-value' }, `£${(summary?.total_revenue || 0).toFixed(2)}`)
           ),
           el('div', { className: 'stat-card' },
             el('div', { className: 'stat-label' }, 'Transactions'),
@@ -1029,11 +1029,11 @@
           el('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 } },
             el('div', null,
               el('div', { className: 'text-sm text-muted' }, 'Cash'),
-              el('div', { style: { fontSize: 20, fontWeight: 700 } }, `ÃÂÃÂ£${(summary.cash_total || 0).toFixed(2)}`)
+              el('div', { style: { fontSize: 20, fontWeight: 700 } }, `£${(summary.cash_total || 0).toFixed(2)}`)
             ),
             el('div', null,
               el('div', { className: 'text-sm text-muted' }, 'Card'),
-              el('div', { style: { fontSize: 20, fontWeight: 700 } }, `ÃÂÃÂ£${(summary.card_total || 0).toFixed(2)}`)
+              el('div', { style: { fontSize: 20, fontWeight: 700 } }, `£${(summary.card_total || 0).toFixed(2)}`)
             )
           )
         )
@@ -1188,7 +1188,7 @@
                 },
                   el('div', { className: 'product-tile-name' }, product.name),
                   el('div', { className: 'product-tile-sku' }, product.sku),
-                  el('div', { className: 'product-tile-price' }, `ÃÂÃÂ£${product.sell_price.toFixed(2)}`),
+                  el('div', { className: 'product-tile-price' }, `£${product.sell_price.toFixed(2)}`),
                   el('div', { className: 'product-tile-stock' }, `Stock: ${product.inventory?.[0]?.quantity || 0}`)
                 )
               )
@@ -1203,7 +1203,7 @@
                   el('div', { key: item.product_id, className: 'cart-item' },
                     el('div', { className: 'cart-item-info' },
                       el('div', { className: 'cart-item-name' }, item.product_name),
-                      el('div', { className: 'cart-item-price' }, `ÃÂÃÂ£${(item.unit_price * item.quantity).toFixed(2)}`)
+                      el('div', { className: 'cart-item-price' }, `£${(item.unit_price * item.quantity).toFixed(2)}`)
                     ),
                     el('div', { className: 'cart-qty-controls' },
                       el('button', {
@@ -1225,7 +1225,7 @@
             ),
             el('div', { className: 'cart-footer' },
               el('div', { className: 'form-group' },
-                el('label', null, 'Discount (ÃÂÃÂ£)'),
+                el('label', null, 'Discount (£)'),
                 el('input', {
                   type: 'number',
                   min: 0,
@@ -1236,15 +1236,15 @@
               ),
               el('div', { className: 'cart-summary' },
                 el('span', { className: 'cart-summary-label' }, 'Subtotal'),
-                el('span', { className: 'cart-summary-value' }, `ÃÂÃÂ£${subtotal.toFixed(2)}`)
+                el('span', { className: 'cart-summary-value' }, `£${subtotal.toFixed(2)}`)
               ),
               el('div', { className: 'cart-summary' },
                 el('span', { className: 'cart-summary-label' }, 'Discount'),
-                el('span', { className: 'cart-summary-value' }, `-ÃÂÃÂ£${discountAmount.toFixed(2)}`)
+                el('span', { className: 'cart-summary-value' }, `-£${discountAmount.toFixed(2)}`)
               ),
               el('div', { className: 'cart-total' },
                 el('span', null, 'Total'),
-                el('span', null, `ÃÂÃÂ£${total.toFixed(2)}`)
+                el('span', null, `£${total.toFixed(2)}`)
               ),
               el('div', { className: 'payment-methods' },
                 el('button', {
@@ -1481,7 +1481,7 @@
       );
     }
 
-    // ÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂ Search Page ÃÂ¢ÃÂÃÂ quick product lookup with fuzzy synonym matching ÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂ
+    // ── Search Page — quick product lookup with fuzzy synonym matching ──
     const SYNONYMS = {
       screen: ['lcd', 'oled', 'display', 'digitizer', 'screen', 'amoled', 'tft', 'incell'],
       lcd: ['screen', 'oled', 'display', 'lcd', 'amoled', 'tft', 'incell'],
@@ -1582,7 +1582,7 @@
             autoFocus: true
           }),
           el('div', { style: { marginTop: 8, fontSize: 13, color: '#666' } },
-            'Shortcuts: f = iPhone, s = Samsung, h = Huawei, g = Google, x = Xiaomi  ÃÂ¢ÃÂÃÂ¢  "screen" also finds LCD, OLED, Display'
+            'Shortcuts: f = iPhone, s = Samsung, h = Huawei, g = Google, x = Xiaomi  •  "screen" also finds LCD, OLED, Display'
           )
         ),
 
@@ -1603,8 +1603,8 @@
                 )
               ),
               el('div', { style: { textAlign: 'right' } },
-                el('div', { style: { fontSize: 22, fontWeight: 700, color: '#22c55e' } }, 'ÃÂÃÂ£' + (p.sell_price || 0).toFixed(2)),
-                isAdmin && el('div', { style: { fontSize: 13, color: '#888', marginTop: 2 } }, 'Cost: ÃÂÃÂ£' + (p.cost_price || 0).toFixed(2)),
+                el('div', { style: { fontSize: 22, fontWeight: 700, color: '#22c55e' } }, '£' + (p.sell_price || 0).toFixed(2)),
+                isAdmin && el('div', { style: { fontSize: 13, color: '#888', marginTop: 2 } }, 'Cost: £' + (p.cost_price || 0).toFixed(2)),
                 el('div', { style: { fontSize: 13, marginTop: 4, color: (p.stock_quantity || 0) > 0 ? '#22c55e' : '#ef4444', fontWeight: 600 } },
                   (p.stock_quantity || 0) > 0 ? 'In Stock: ' + p.stock_quantity : 'Out of Stock'
                 )
@@ -1614,13 +1614,13 @@
         ),
 
         !loading && query.length >= 2 && results.length === 0 && el('div', { style: { padding: 40, textAlign: 'center', color: '#666' } },
-          el('div', { style: { fontSize: 48, marginBottom: 16 } }, 'ÃÂ°ÃÂÃÂÃÂ'),
+          el('div', { style: { fontSize: 48, marginBottom: 16 } }, '🔍'),
           el('div', { style: { fontSize: 18 } }, 'No products found for "' + query + '"'),
-          el('div', { style: { marginTop: 8, fontSize: 14 } }, 'Try a different search ÃÂ¢ÃÂÃÂ e.g. "f 15 screen" or "s charger"')
+          el('div', { style: { marginTop: 8, fontSize: 14 } }, 'Try a different search — e.g. "f 15 screen" or "s charger"')
         ),
 
         !loading && query.length < 2 && el('div', { style: { padding: 40, textAlign: 'center', color: '#555' } },
-          el('div', { style: { fontSize: 48, marginBottom: 16 } }, 'ÃÂ¢ÃÂÃÂ¡'),
+          el('div', { style: { fontSize: 48, marginBottom: 16 } }, '⚡'),
           el('div', { style: { fontSize: 18 } }, 'Quick Product Search'),
           el('div', { style: { marginTop: 8, fontSize: 14, maxWidth: 400, margin: '8px auto', lineHeight: 1.6 } },
             'Start typing to find products instantly. Use shortcuts like "f" for iPhone, "s" for Samsung. Words like "screen", "lcd", and "oled" are interchangeable.'
@@ -1756,8 +1756,8 @@
                     el('td', null, product.name),
                     el('td', null, product.sku),
                     el('td', null, product.category?.name || '-'),
-                    permissions.canSeeCostPrices && el('td', null, `ÃÂÃÂ£${product.cost_price?.toFixed(2) || '0.00'}`),
-                    el('td', null, `ÃÂÃÂ£${product.sell_price?.toFixed(2) || '0.00'}`),
+                    permissions.canSeeCostPrices && el('td', null, `£${product.cost_price?.toFixed(2) || '0.00'}`),
+                    el('td', null, `£${product.sell_price?.toFixed(2) || '0.00'}`),
                     el('td', null, getStockBadge(product.inventory?.[0]?.quantity || 0)),
                     el('td', null,
                       el('button', {
@@ -1785,7 +1785,7 @@
           el('div', { className: 'modal-card' },
             el('div', { className: 'modal-header' },
               el('h2', null, 'Adjust Stock'),
-              el('button', { className: 'modal-close', onClick: () => setShowStockModal(false) }, 'ÃÂÃÂ')
+              el('button', { className: 'modal-close', onClick: () => setShowStockModal(false) }, '×')
             ),
             el('div', { className: 'form-group' },
               el('label', null, 'Adjustment Type'),
@@ -1933,6 +1933,7 @@
           '<strong>Please keep this ticket.</strong><br>' +
           'You will need it to collect your device.<br><br>' +
           'Thank you for choosing PeacePlanet!</div>' +
+          '<scr' + 'ipt>window.onload=function(){window.print()}<\/scr' + 'ipt>' +
           '</body></html>';
         var win = window.open('', '_blank', 'width=350,height=500');
         win.document.write(html);
@@ -1995,7 +1996,7 @@
                   el('td', null, repair.customer_name),
                   el('td', null, `${repair.device_brand} ${repair.device_model}`),
                   el('td', null, getStatusBadge(repair.status)),
-                  el('td', null, `ÃÂÃÂ£${repair.estimated_cost?.toFixed(2) || '0.00'}`),
+                  el('td', null, `£${repair.estimated_cost?.toFixed(2) || '0.00'}`),
                   el('td', null, repair.priority)
                 )
               )
@@ -2049,59 +2050,11 @@
             )
           )
         ),
-        showQuickTicket && el('div', { className: 'modal-overlay', onClick: e => { if (e.target === e.currentTarget) setShowQuickTicket(false); } },
-          el('div', { className: 'modal-card', style: { maxWidth: 420 } },
-            el('div', { className: 'modal-header', style: { background: '#f59e0b', color: '#fff' } },
-              el('h2', null, 'Quick Ticket'),
-              el('button', { className: 'modal-close', onClick: () => setShowQuickTicket(false), style: { color: '#fff' } }, '\u00d7')
-            ),
-            el('p', { style: { color: '#666', fontSize: 13, margin: '0 0 12px' } }, 'Fast check-in \u2014 fill full details later'),
-            el('div', { className: 'form-group' },
-              el('label', null, 'Customer Name *'),
-              el('input', {
-                type: 'text', autoFocus: true, placeholder: 'e.g. John Smith',
-                value: quickData.customer_name,
-                onChange: e => setQuickData({ ...quickData, customer_name: e.target.value })
-              })
-            ),
-            el('div', { className: 'form-group' },
-              el('label', null, 'Phone Number'),
-              el('input', {
-                type: 'tel', placeholder: '07...',
-                value: quickData.customer_phone,
-                onChange: e => setQuickData({ ...quickData, customer_phone: e.target.value })
-              })
-            ),
-            el('div', { className: 'form-group' },
-              el('label', null, 'Device'),
-              el('input', {
-                type: 'text', placeholder: 'e.g. iPhone 15 Pro Max',
-                value: quickData.device_model,
-                onChange: e => setQuickData({ ...quickData, device_model: e.target.value })
-              })
-            ),
-            el('div', { className: 'form-group' },
-              el('label', null, 'Issue *'),
-              el('textarea', {
-                rows: 2, placeholder: 'e.g. Cracked screen, not charging...',
-                value: quickData.issue_description,
-                onChange: e => setQuickData({ ...quickData, issue_description: e.target.value })
-              })
-            ),
-            el('div', { style: { display: 'flex', gap: 12, marginTop: 8 } },
-              el('button', {
-                className: 'btn btn-warning', style: { flex: 1, fontWeight: 'bold', fontSize: 16, padding: '12px 0' },
-                onClick: handleQuickTicket
-              }, 'Create & Print Ticket'),
-              el('button', { className: 'btn btn-secondary', onClick: () => setShowQuickTicket(false) }, 'Cancel')
-            )
-          )
-        ),
         showForm && el('div', { className: 'modal-overlay', onClick: e => { if (e.target === e.currentTarget) setShowForm(false); } },
           el('div', { className: 'modal-card' },
             el('div', { className: 'modal-header' },
               el('h2', null, 'Create Repair'),
-              el('button', { className: 'modal-close', onClick: () => setShowForm(false) }, 'ÃÂÃÂ')
+              el('button', { className: 'modal-close', onClick: () => setShowForm(false) }, '×')
             ),
             el('div', { className: 'form-group' },
               el('label', null, 'Customer Name'),
@@ -2172,7 +2125,7 @@
             ),
             el('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 } },
               el('div', { className: 'form-group' },
-                el('label', null, 'Estimated Cost (ÃÂÃÂ£)'),
+                el('label', null, 'Estimated Cost (£)'),
                 el('input', {
                   type: 'number',
                   step: 0.01,
@@ -2282,7 +2235,7 @@
         if (!amt || amt <= 0) { showToast('Enter valid amount','error'); return; }
         try {
           const result = await api(`/repairs/${repair.id}/pay`, { method:'POST', body: JSON.stringify({ amount: amt, payment_method: payMethod })});
-          showToast(result.fully_paid ? 'Repair fully paid!' : `Payment received. ÃÂÃÂ£${result.amount_paid} paid so far.`,'success');
+          showToast(result.fully_paid ? 'Repair fully paid!' : `Payment received. £${result.amount_paid} paid so far.`,'success');
           loadDetail();
         } catch(e) { showToast(e.message,'error'); }
       };
@@ -2301,7 +2254,7 @@
           el('div', { className:'flex-between', style:{marginBottom:20} },
             el('div', null,
               el('h2', { style:{fontSize:22,fontWeight:700,margin:0} }, `Repair ${repair.ticket_number}`),
-              el('div', { className:'text-sm text-muted', style:{marginTop:4} }, `${repair.customer_name || 'No customer'} ÃÂ¢ÃÂÃÂ ${repair.device_brand||''} ${repair.device_model||''}`)
+              el('div', { className:'text-sm text-muted', style:{marginTop:4} }, `${repair.customer_name || 'No customer'} — ${repair.device_brand||''} ${repair.device_model||''}`)
             ),
             el('div', { style:{display:'flex',gap:8} },
               !editing && el('button', { className:'btn btn-primary btn-small', onClick:()=>setEditing(true) }, 'Edit'),
@@ -2338,10 +2291,10 @@
               el('textarea', { value:editForm.diagnosis, onChange:e=>ef('diagnosis',e.target.value), rows:3, placeholder:'Enter diagnosis...' })
             ),
             el('div', { style:{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12} },
-              el('div', { className:'form-group' }, el('label', null, 'Estimated Cost (ÃÂÃÂ£)'),
+              el('div', { className:'form-group' }, el('label', null, 'Estimated Cost (£)'),
                 el('input', { type:'number', step:'0.01', value:editForm.estimated_cost, onChange:e=>ef('estimated_cost',e.target.value) })
               ),
-              el('div', { className:'form-group' }, el('label', null, 'Final Cost (ÃÂÃÂ£)'),
+              el('div', { className:'form-group' }, el('label', null, 'Final Cost (£)'),
                 el('input', { type:'number', step:'0.01', value:editForm.final_cost, onChange:e=>ef('final_cost',e.target.value) })
               ),
               el('div', { className:'form-group' }, el('label', null, 'Est. Completion'),
@@ -2359,7 +2312,7 @@
           // VIEW MODE
           : el('div', { style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,marginBottom:20} },
             el('div', null, el('div', { className:'text-xs text-muted', style:{fontWeight:600,marginBottom:4} }, 'DEVICE'),
-              el('div', { className:'text-sm' }, `${repair.device_type||'Phone'} ÃÂ¢ÃÂÃÂ ${repair.device_brand||''} ${repair.device_model||''}`),
+              el('div', { className:'text-sm' }, `${repair.device_type||'Phone'} — ${repair.device_brand||''} ${repair.device_model||''}`),
               repair.imei && el('div', { className:'text-xs text-muted', style:{marginTop:2} }, `IMEI: ${repair.imei}`)
             ),
             el('div', null, el('div', { className:'text-xs text-muted', style:{fontWeight:600,marginBottom:4} }, 'CUSTOMER'),
@@ -2373,8 +2326,8 @@
               el('div', { className:'text-sm' }, repair.diagnosis)
             ),
             el('div', null, el('div', { className:'text-xs text-muted', style:{fontWeight:600,marginBottom:4} }, 'COSTS'),
-              el('div', { className:'text-sm' }, `Estimated: ÃÂÃÂ£${(repair.estimated_cost||0).toFixed(2)} ÃÂ¢ÃÂÃÂ Final: ÃÂÃÂ£${(repair.final_cost||0).toFixed(2)}`),
-              el('div', { className:'text-xs text-muted', style:{marginTop:2} }, `Paid: ÃÂÃÂ£${(repair.amount_paid||0).toFixed(2)} ÃÂ¢ÃÂÃÂ Remaining: ÃÂÃÂ£${remaining.toFixed(2)}`)
+              el('div', { className:'text-sm' }, `Estimated: £${(repair.estimated_cost||0).toFixed(2)} — Final: £${(repair.final_cost||0).toFixed(2)}`),
+              el('div', { className:'text-xs text-muted', style:{marginTop:2} }, `Paid: £${(repair.amount_paid||0).toFixed(2)} — Remaining: £${remaining.toFixed(2)}`)
             ),
             el('div', null, el('div', { className:'text-xs text-muted', style:{fontWeight:600,marginBottom:4} }, 'ASSIGNED TO'),
               el('div', { className:'text-sm' }, repair.assigned_to_name || 'Unassigned')
@@ -2405,7 +2358,7 @@
                 },
                   el('div', null,
                     el('div', { style:{fontWeight:600} }, p.name),
-                    el('div', { className:'text-xs text-muted' }, `SKU: ${p.sku || 'N/A'} ÃÂ¢ÃÂÃÂ ÃÂÃÂ£${(p.cost_price||p.sell_price||0).toFixed(2)}`)
+                    el('div', { className:'text-xs text-muted' }, `SKU: ${p.sku || 'N/A'} — £${(p.cost_price||p.sell_price||0).toFixed(2)}`)
                   ),
                   el('button', { className:'btn btn-primary btn-small', onClick:e=>{e.stopPropagation();addPart(p)} }, '+ Add')
                 ))
@@ -2419,14 +2372,14 @@
               el('tbody', null,
                 parts.map(p => el('tr', { key: p.id },
                   el('td', null, p.product_name),
-                  el('td', null, p.sku || 'ÃÂ¢ÃÂÃÂ'),
+                  el('td', null, p.sku || '—'),
                   el('td', null, p.quantity),
-                  el('td', null, `ÃÂÃÂ£${((p.cost||0) * (p.quantity||1)).toFixed(2)}`),
+                  el('td', null, `£${((p.cost||0) * (p.quantity||1)).toFixed(2)}`),
                   el('td', null, p.is_deducted ? el('span',{className:'badge badge-success'},'Yes') : el('span',{className:'text-xs text-muted'},'No'))
                 ))
               )
             ) : el('div', { className:'text-sm text-muted', style:{padding:'12px 0'} }, 'No parts added yet.'),
-            parts.length > 0 && el('div', { style:{textAlign:'right',fontSize:14,fontWeight:600,marginTop:8} }, `Parts Total: ÃÂÃÂ£${partsCost.toFixed(2)}`)
+            parts.length > 0 && el('div', { style:{textAlign:'right',fontSize:14,fontWeight:600,marginTop:8} }, `Parts Total: £${partsCost.toFixed(2)}`)
           ),
 
           // PAYMENT SECTION
@@ -2434,7 +2387,7 @@
             el('h3', { style:{fontSize:16,fontWeight:700,marginBottom:12} }, 'Take Payment'),
             el('div', { style:{display:'flex',gap:12,alignItems:'flex-end'} },
               el('div', { className:'form-group', style:{flex:1,marginBottom:0} },
-                el('label', null, 'Amount (ÃÂÃÂ£)'),
+                el('label', null, 'Amount (£)'),
                 el('input', { type:'number', step:'0.01', value:payAmount, onChange:e=>setPayAmount(e.target.value) })
               ),
               el('div', { className:'form-group', style:{flex:1,marginBottom:0} },
@@ -2443,14 +2396,14 @@
                   el('option',{value:'cash'},'Cash'), el('option',{value:'card'},'Card'), el('option',{value:'bank_transfer'},'Bank Transfer')
                 )
               ),
-              el('button', { className:'btn btn-success', onClick:processPayment, style:{marginBottom:0,height:42} }, `Pay ÃÂÃÂ£${parseFloat(payAmount||0).toFixed(2)}`)
+              el('button', { className:'btn btn-success', onClick:processPayment, style:{marginBottom:0,height:42} }, `Pay £${parseFloat(payAmount||0).toFixed(2)}`)
             )
           ),
 
           // Created date
           el('div', { className:'border-top text-xs text-muted' },
             `Created: ${repair.created_at ? new Date(repair.created_at).toLocaleString() : 'N/A'}`,
-            repair.completed_at ? ` ÃÂ¢ÃÂÃÂ Completed: ${new Date(repair.completed_at).toLocaleString()}` : ''
+            repair.completed_at ? ` — Completed: ${new Date(repair.completed_at).toLocaleString()}` : ''
           )
         )
       );
@@ -2539,7 +2492,7 @@
           el('div', { className: 'modal-card' },
             el('div', { className: 'modal-header' },
               el('h2', null, 'Add Customer'),
-              el('button', { className: 'modal-close', onClick: () => setShowForm(false) }, 'ÃÂÃÂ')
+              el('button', { className: 'modal-close', onClick: () => setShowForm(false) }, '×')
             ),
             el('div', { className: 'form-group' },
               el('label', null, 'First Name'),
@@ -2591,7 +2544,7 @@
           el('div', { className: 'modal-card' },
             el('div', { className: 'modal-header' },
               el('h2', null, `${selectedCustomer.first_name} ${selectedCustomer.last_name}`),
-              el('button', { className: 'modal-close', onClick: () => setShowDetail(false) }, 'ÃÂÃÂ')
+              el('button', { className: 'modal-close', onClick: () => setShowDetail(false) }, '×')
             ),
             el('div', { style: { marginBottom: 20 } },
               el('div', null, el('strong', null, 'Email: '), selectedCustomer.email || '-'),
@@ -2687,7 +2640,7 @@
                   el('td', null, sale.receipt_number),
                   el('td', null, new Date(sale.created_at).toLocaleDateString()),
                   el('td', null, sale.items?.length || 0),
-                  el('td', null, `ÃÂÃÂ£${sale.total?.toFixed(2) || '0.00'}`),
+                  el('td', null, `£${sale.total?.toFixed(2) || '0.00'}`),
                   el('td', null, sale.payment_method || '-'),
                   el('td', null, el('span', { className: `badge ${sale.is_refunded ? 'badge-danger' : 'badge-success'}` }, sale.is_refunded ? 'Refunded' : 'Completed')),
                   el('td', null,
@@ -2709,7 +2662,7 @@
           el('div', { className: 'modal-card' },
             el('div', { className: 'modal-header' },
               el('h2', null, `Receipt #${selectedSale.receipt_number}`),
-              el('button', { className: 'modal-close', onClick: () => setShowDetail(false) }, 'ÃÂÃÂ')
+              el('button', { className: 'modal-close', onClick: () => setShowDetail(false) }, '×')
             ),
             el('table', { className: 'table', style: { marginBottom: 20 } },
               el('thead', null,
@@ -2725,14 +2678,14 @@
                   el('tr', { key: i },
                     el('td', null, item.product?.name || '-'),
                     el('td', null, item.quantity),
-                    el('td', null, `ÃÂÃÂ£${item.unit_price?.toFixed(2) || '0.00'}`),
-                    el('td', null, `ÃÂÃÂ£${(item.quantity * item.unit_price)?.toFixed(2) || '0.00'}`)
+                    el('td', null, `£${item.unit_price?.toFixed(2) || '0.00'}`),
+                    el('td', null, `£${(item.quantity * item.unit_price)?.toFixed(2) || '0.00'}`)
                   )
                 )
               )
             ),
             el('div', { style: { textAlign: 'right' } },
-              el('div', null, el('strong', null, `Total: ÃÂÃÂ£${selectedSale.total?.toFixed(2)}`))
+              el('div', null, el('strong', null, `Total: £${selectedSale.total?.toFixed(2)}`))
             )
           )
         )
@@ -2846,7 +2799,7 @@
               el('td', null, po.created_at ? new Date(po.created_at).toLocaleDateString() : '-'),
               el('td', null, po.supplier_name),
               el('td', null, po.item_count || po.items?.length || 0),
-              el('td', null, `ÃÂÃÂ£${(po.total_cost || 0).toFixed(2)}`),
+              el('td', null, `£${(po.total_cost || 0).toFixed(2)}`),
               el('td', null, el('span', { className:`badge ${po.status==='received'?'badge-success':po.status==='cancelled'?'badge-danger':'badge-primary'}` }, po.status || 'draft'))
             ))
           )
@@ -2857,7 +2810,7 @@
           el('div', { style:{background:'white',borderRadius:16,maxWidth:800,width:'95%',maxHeight:'90vh',overflow:'auto',padding:28} },
             el('div', { className:'flex-between', style:{marginBottom:20} },
               el('h2', null, 'New Purchase Order'),
-              el('button', { className:'btn btn-secondary btn-small', onClick:()=>setShowForm(false) }, 'ÃÂÃÂ')
+              el('button', { className:'btn btn-secondary btn-small', onClick:()=>setShowForm(false) }, '×')
             ),
             el('div', { style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16} },
               el('div', { className:'form-group' }, el('label', null, 'Supplier Name *'),
@@ -2890,7 +2843,7 @@
                 },
                   el('div', null,
                     el('div', { style:{fontWeight:600} }, p.name),
-                    el('div', { className:'text-xs text-muted' }, `SKU: ${p.sku||'N/A'} ÃÂ¢ÃÂÃÂ Cost: ÃÂÃÂ£${(p.cost_price||0).toFixed(2)}`)
+                    el('div', { className:'text-xs text-muted' }, `SKU: ${p.sku||'N/A'} — Cost: £${(p.cost_price||0).toFixed(2)}`)
                   ),
                   el('button', { className:'btn btn-primary btn-small', onClick:e=>{e.stopPropagation();addItemToPO(p)} }, '+ Add')
                 ))
@@ -2900,23 +2853,23 @@
             formData.items.length > 0 && el('div', { style:{background:'var(--gray-50)',borderRadius:8,padding:16,marginBottom:16} },
               el('table', { className:'table', style:{marginBottom:8} },
                 el('thead', null, el('tr', null,
-                  el('th', null, 'Product'), el('th', null, 'SKU'), el('th', {style:{width:80}}, 'Qty'), el('th', {style:{width:100}}, 'Cost ÃÂÃÂ£'), el('th', {style:{width:80}}, 'Total'), el('th', {style:{width:40}}, '')
+                  el('th', null, 'Product'), el('th', null, 'SKU'), el('th', {style:{width:80}}, 'Qty'), el('th', {style:{width:100}}, 'Cost £'), el('th', {style:{width:80}}, 'Total'), el('th', {style:{width:40}}, '')
                 )),
                 el('tbody', null,
                   formData.items.map((item,i) => el('tr', { key:i },
                     el('td', { style:{fontWeight:600} }, item.product_name),
-                    el('td', { className:'text-xs text-muted' }, item.sku || 'ÃÂ¢ÃÂÃÂ'),
+                    el('td', { className:'text-xs text-muted' }, item.sku || '—'),
                     el('td', null, el('input', { type:'number', min:1, value:item.quantity, onChange:e=>updateItemQty(i, parseInt(e.target.value)||0),
                       style:{width:60,padding:'4px 8px',border:'1px solid var(--gray-300)',borderRadius:4,textAlign:'center'} })),
                     el('td', null, el('input', { type:'number', step:'0.01', value:item.cost_price, onChange:e=>updateItemCost(i, e.target.value),
                       style:{width:80,padding:'4px 8px',border:'1px solid var(--gray-300)',borderRadius:4,textAlign:'right'} })),
-                    el('td', { style:{fontWeight:600} }, `ÃÂÃÂ£${(item.quantity * item.cost_price).toFixed(2)}`),
+                    el('td', { style:{fontWeight:600} }, `£${(item.quantity * item.cost_price).toFixed(2)}`),
                     el('td', null, el('button', { onClick:()=>setFormData({...formData, items:formData.items.filter((_,idx)=>idx!==i)}),
-                      style:{background:'none',border:'none',color:'var(--danger)',cursor:'pointer',fontSize:16} }, 'ÃÂÃÂ'))
+                      style:{background:'none',border:'none',color:'var(--danger)',cursor:'pointer',fontSize:16} }, '×'))
                   ))
                 )
               ),
-              el('div', { style:{textAlign:'right',fontWeight:700,fontSize:16} }, `Total: ÃÂÃÂ£${poTotal.toFixed(2)}`)
+              el('div', { style:{textAlign:'right',fontWeight:700,fontSize:16} }, `Total: £${poTotal.toFixed(2)}`)
             ),
             el('div', { className:'form-group' }, el('label', null, 'Notes'),
               el('textarea', { value:formData.notes, onChange:e=>setFormData({...formData, notes:e.target.value}), rows:2, placeholder:'Optional notes...' })
@@ -2934,9 +2887,9 @@
             el('div', { className:'flex-between', style:{marginBottom:20} },
               el('div', null,
                 el('h2', { style:{margin:0} }, `PO ${selectedPO.po_number}`),
-                el('div', { className:'text-sm text-muted' }, `${selectedPO.supplier_name} ÃÂ¢ÃÂÃÂ ${new Date(selectedPO.created_at).toLocaleDateString()}`)
+                el('div', { className:'text-sm text-muted' }, `${selectedPO.supplier_name} — ${new Date(selectedPO.created_at).toLocaleDateString()}`)
               ),
-              el('button', { className:'btn btn-secondary btn-small', onClick:()=>setShowDetail(false) }, 'ÃÂÃÂ')
+              el('button', { className:'btn btn-secondary btn-small', onClick:()=>setShowDetail(false) }, '×')
             ),
             el('div', { style:{display:'flex',gap:8,marginBottom:16} },
               el('span', { className:`badge ${selectedPO.status==='received'?'badge-success':'badge-primary'}` }, selectedPO.status),
@@ -2949,15 +2902,15 @@
               el('tbody', null,
                 (selectedPO.items||[]).map((item,i) => el('tr', { key:i },
                   el('td', { style:{fontWeight:600} }, item.product_name || `Product ${item.product_id}`),
-                  el('td', null, item.sku || 'ÃÂ¢ÃÂÃÂ'),
+                  el('td', null, item.sku || '—'),
                   el('td', null, item.quantity_ordered || item.quantity),
                   el('td', null, item.quantity_received || 0),
-                  el('td', null, `ÃÂÃÂ£${(item.cost_price||0).toFixed(2)}`),
-                  el('td', { style:{fontWeight:600} }, `ÃÂÃÂ£${((item.quantity_ordered||item.quantity||0) * (item.cost_price||0)).toFixed(2)}`)
+                  el('td', null, `£${(item.cost_price||0).toFixed(2)}`),
+                  el('td', { style:{fontWeight:600} }, `£${((item.quantity_ordered||item.quantity||0) * (item.cost_price||0)).toFixed(2)}`)
                 ))
               )
             ),
-            el('div', { style:{textAlign:'right',fontWeight:700,fontSize:16,marginTop:8} }, `Total: ÃÂÃÂ£${(selectedPO.total_cost||0).toFixed(2)}`),
+            el('div', { style:{textAlign:'right',fontWeight:700,fontSize:16,marginTop:8} }, `Total: £${(selectedPO.total_cost||0).toFixed(2)}`),
             selectedPO.status !== 'received' && selectedPO.status !== 'cancelled' && el('div', { className:'border-top', style:{display:'flex',gap:12} },
               el('button', { className:'btn btn-success', onClick:()=>receiveStock(selectedPO.id) }, 'Receive Stock'),
               el('button', { className:'btn btn-secondary', onClick:()=>setShowDetail(false) }, 'Close')
@@ -3049,7 +3002,7 @@
       const receiveTransfer = async (id) => {
         try {
           await api('/transfers/' + id + '/receive', { method: 'POST' });
-          showToast('Transfer received ÃÂ¢ÃÂÃÂ stock updated', 'success');
+          showToast('Transfer received — stock updated', 'success');
           loadTransfers();
         } catch (err) { showToast(err.message, 'error'); }
       };
@@ -3101,15 +3054,15 @@
                     el('div', { style: { fontSize: 12, color: '#888' } }, p.sku || 'No SKU')
                   ),
                   el('div', { style: { textAlign: 'right' } },
-                    el('div', { style: { fontWeight: 600 } }, 'ÃÂÃÂ£' + (p.sell_price || 0).toFixed(2)),
+                    el('div', { style: { fontWeight: 600 } }, '£' + (p.sell_price || 0).toFixed(2)),
                     el('div', { style: { fontSize: 12, color: (p.stock || p.quantity || 0) > 0 ? '#22c55e' : '#ef4444' } }, 'Stock: ' + (p.stock || p.quantity || 0))
                   )
                 )
               )
             ),
             selectedProduct && el('div', { style: { marginTop: 8, padding: '8px 12px', background: '#1e3a5f', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
-              el('span', null, selectedProduct.name + ' ÃÂ¢ÃÂÃÂ Stock: ' + (selectedProduct.stock || selectedProduct.quantity || 0)),
-              el('button', { onClick: () => { setSelectedProduct(null); setProductSearch(''); }, style: { background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 16 } }, 'ÃÂ¢ÃÂÃÂ')
+              el('span', null, selectedProduct.name + ' — Stock: ' + (selectedProduct.stock || selectedProduct.quantity || 0)),
+              el('button', { onClick: () => { setSelectedProduct(null); setProductSearch(''); }, style: { background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 16 } }, '✕')
             )
           ),
 
@@ -3219,7 +3172,7 @@
           el('div', { className: 'stat-cards' },
             el('div', { className: 'stat-card' },
               el('div', { className: 'stat-label' }, 'Total Revenue'),
-              el('div', { className: 'stat-value' }, `ÃÂÃÂ£${(stats.total_revenue || 0).toFixed(2)}`)
+              el('div', { className: 'stat-value' }, `£${(stats.total_revenue || 0).toFixed(2)}`)
             ),
             el('div', { className: 'stat-card' },
               el('div', { className: 'stat-label' }, 'Transactions'),
@@ -3227,13 +3180,13 @@
             ),
             el('div', { className: 'stat-card' },
               el('div', { className: 'stat-label' }, 'Avg Transaction'),
-              el('div', { className: 'stat-value' }, `ÃÂÃÂ£${(stats.total_revenue / (stats.total_transactions || 1)).toFixed(2)}`)
+              el('div', { className: 'stat-value' }, `£${(stats.total_revenue / (stats.total_transactions || 1)).toFixed(2)}`)
             ),
             el('div', { className: 'stat-card' },
               el('div', { className: 'stat-label' }, 'Payment Methods'),
               el('div', { className: 'text-sm' },
-                el('div', null, `Cash: ÃÂÃÂ£${(stats.cash_total || 0).toFixed(2)}`),
-                el('div', null, `Card: ÃÂÃÂ£${(stats.card_total || 0).toFixed(2)}`)
+                el('div', null, `Cash: £${(stats.cash_total || 0).toFixed(2)}`),
+                el('div', null, `Card: £${(stats.card_total || 0).toFixed(2)}`)
               )
             )
           )
@@ -3309,7 +3262,7 @@
           el('div', { className: 'modal-card' },
             el('div', { className: 'modal-header' },
               el('h2', null, 'Add Staff Member'),
-              el('button', { className: 'modal-close', onClick: () => setShowForm(false) }, 'ÃÂÃÂ')
+              el('button', { className: 'modal-close', onClick: () => setShowForm(false) }, '×')
             ),
             el('div', { className: 'form-group' },
               el('label', null, 'First Name'),
