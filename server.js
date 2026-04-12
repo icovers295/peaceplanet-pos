@@ -348,8 +348,53 @@ app.post('/api/import/csv-products', authMiddleware, (req, res) => {
       if (!csId || !name) continue;
 
       if (!productMap.has(csId)) {
-        // Build full product name: "Manufacturer Name Color Storage"
+        // Build full product name with brand prefix from category
+        // Categories like "iPhone - Screens" → prefix "iPhone", "Samsung - Screens" → "Samsung"
+        // "Accessories - iPad Cases" → "iPad", "iPad - LCD" → "iPad"
+        let brandPrefix = '';
+        if (category) {
+          const catLower = category.toLowerCase();
+          // Extract brand from category (text before " - ")
+          const dashIdx = category.indexOf(' - ');
+          const catBrand = dashIdx > 0 ? category.substring(0, dashIdx).trim() : '';
+
+          // Map category brands to proper display names
+          const brandMap = {
+            'iphone': 'iPhone', 'ipad': 'iPad', 'samsung': 'Samsung',
+            'huawei': 'Huawei', 'google': 'Google', 'pixel': 'Google Pixel',
+            'xiaomi': 'Xiaomi', 'oppo': 'Oppo', 'oneplus': 'OnePlus',
+            'nokia': 'Nokia', 'motorola': 'Motorola', 'lg': 'LG',
+            'sony': 'Sony', 'xperia': 'Sony Xperia', 'hudl': 'Hudl',
+            'honor': 'Honor', 'realme': 'Realme', 'nothing': 'Nothing',
+            'accessories': '', 'mobile devices': ''
+          };
+
+          // Check category brand
+          if (catBrand && brandMap[catBrand.toLowerCase()] !== undefined) {
+            brandPrefix = brandMap[catBrand.toLowerCase()];
+          } else if (catBrand && catBrand.length > 1) {
+            brandPrefix = catBrand;
+          }
+
+          // For "Accessories - iPhone Cases" etc, extract the device brand from after the dash
+          if (!brandPrefix && dashIdx > 0) {
+            const afterDash = category.substring(dashIdx + 3).trim().toLowerCase();
+            for (const [key, val] of Object.entries(brandMap)) {
+              if (afterDash.includes(key) && val) { brandPrefix = val; break; }
+            }
+          }
+        }
+
+        // Build name: prefix + product name + color + storage
         let fullName = name;
+        // Only add brand prefix if the product name doesn't already start with it
+        if (brandPrefix) {
+          const nameLower = name.toLowerCase();
+          const prefixLower = brandPrefix.toLowerCase();
+          if (!nameLower.startsWith(prefixLower) && !nameLower.startsWith(prefixLower.split(' ').pop())) {
+            fullName = brandPrefix + ' ' + name;
+          }
+        }
         if (color) fullName += ' ' + color;
         if (storage) fullName += ' ' + storage;
 
