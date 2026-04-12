@@ -1322,7 +1322,7 @@
       const [lowStockCount, setLowStockCount] = useState(0);
       useEffect(() => {
       const tk = localStorage.getItem('pp_token');
-      if (!currentStore?.id || !tk) return;
+      if (!currentStore || !tk) return;
         const fetchCount = () => {
           fetch('/api/products?store_id=' + currentStore.id + '&low_stock=true&limit=1', { headers: { Authorization: 'Bearer ' + tk }
           }).then(r => r.json()).then(d => setLowStockCount(d.total || 0)).catch(() => {});
@@ -1576,7 +1576,6 @@
     function LowStockPage() {
       const ctx = useContext(AppContext);
       const { currentStore, showToast, user, permissions } = ctx;
-      console.log('LSP RENDER ctx:', !!ctx, 'store:', currentStore?.id, currentStore?.name);
       const [products, setProducts] = useState([]);
       const [loading, setLoading] = useState(true);
       const [filter, setFilter] = useState('all');
@@ -1584,9 +1583,8 @@
       const isAdmin = user?.role === 'admin';
 
       useEffect(() => {
-        console.log('LSP useEffect, storeId:', currentStore?.id, 'token:', !!token); if (!currentStore?.id) return; console.log('LSP FETCHING for store:', currentStore.id);
         setLoading(true);
-        fetch('/api/products?store_id=' + currentStore.id + '&low_stock=true&limit=500', {
+        fetch('/api/products?store_id=' + currentStore + '&low_stock=true&limit=500', {
           headers: { Authorization: 'Bearer ' + token }
         }).then(r => r.json()).then(d => {
           const items = (d.products || []).filter(p => {
@@ -1601,7 +1599,7 @@
           setProducts(items);
           setLoading(false);
         }).catch(() => setLoading(false));
-      }, [currentStore?.id]);
+      }, [currentStore]);
 
       const filtered = filter === 'all' ? products : products.filter(p => {
         const name = (p.name || '').toLowerCase();
