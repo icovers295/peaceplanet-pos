@@ -459,6 +459,97 @@ app.post('/api/import/csv-products', authMiddleware, (req, res) => {
   }
 });
 
+// ── CSV Import: Bulk import customers from CellStore CSV ──
+app.post('/api/import/csv-customers', authMiddleware, (req, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' });
+
+  const { csv_text } = req.body;
+  if (!csv_text) return res.status(400).json({ error: 'csv_text required' });
+
+  try {
+    function parseCSVLine(line) {
+      const result = [];
+      let current = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') {
+          if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
+          else { inQuotes = !inQuotes; }
+        } else if (ch === ',' && !inQuotes) {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += ch;
+        }
+      }
+      result.push(current.trim());
+      return result;
+    }
+
+    const lines = csv_text.split('\n').filter(l => l.trim());
+    if (lines.length < 2) return res.status(400).json({ error: 'CSV has no data rows' });
+
+    const header = parseCSVLine(lines[0]);
+    const colIdx = {};
+    header.forEach((h, i) => { colIdx[h.replace(/"/g, '').trim()] = i; });
+
+    const uuidv4 = require('uuid').v4;
+    let created = 0, skipped = 0;
+
+    const importAll = db.transaction(() => {
+      const insertCust = db.prepare('INSERT INTO customers (id, first_name, last_name, email, phone, address, notes) VALUES (?, ?, ?, ?, ?, ?, ?)');
+
+      for (let i = 1; i < lines.length; i++) {
+        const cols = parseCSVLine(lines[i]);
+        if (cols.length < 4) { skipped++; continue; }
+
+        let firstName = (cols[colIdx['First Name']] || '').trim();
+        let lastName = (cols[colIdx['Last Name']] || '').trim();
+        const email = (cols[colIdx['Email']] || '').trim();
+        const phone = (cols[colIdx['Contact No']] || '').trim();
+        const company = (cols[colIdx['Company']] || '').trim();
+        const addr1 = (cols[colIdx['Shipping address one']] || '').trim();
+        const addr2 = (cols[colIdx['Shipping address two']] || '').trim();
+        const city = (cols[colIdx['Shipping city']] || '').trim();
+        const zip = (cols[colIdx['Shipping zip']] || '').trim();
+
+        // If first name contains a space and no last name, split it
+        if (firstName && !lastName && firstName.includes(' ')) {
+          const parts = firstName.split(/\s+/);
+          firstName = parts[0];
+          lastName = parts.slice(1).join(' ');
+        }
+
+        // Filter junk: must have at least 2 alpha chars in first name
+        const alphaCount = (firstName.match(/[a-zA-Z]/g) || []).length;
+        if (alphaCount < 2) { skipped++; continue; }
+
+        // Build address string
+        const addrParts = [addr1, addr2, city, zip].filter(Boolean);
+        const address = addrParts.join(', ') || null;
+
+        // Notes: include company if present
+        const notes = company ? 'Company: ' + company : null;
+
+        insertCust.run(uuidv4(), firstName, lastName || null, email || null, phone || null, address, notes);
+        created++;
+      }
+    });
+
+    importAll();
+
+    res.json({
+      success: true,
+      message: 'Import complete: ' + created + ' customers created, ' + skipped + ' junk entries skipped',
+      stats: { customers_created: created, skipped: skipped }
+    });
+  } catch (err) {
+    console.error('Customer CSV Import error:', err);
+    res.status(500).json({ error: 'Import failed: ' + err.message });
+  }
+});
+
 // Monitor mode page (standalone HTML)
 app.get('/monitor/:storeId', (req, res) => {
   res.send(`<!DOCTYPE html>
