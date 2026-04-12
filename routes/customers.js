@@ -22,7 +22,9 @@ router.get('/', authMiddleware, (req, res) => {
     SELECT * FROM customers ${where} ORDER BY first_name LIMIT ? OFFSET ?
   `).all(...params, parseInt(limit), offset);
 
-  res.json(customers);
+  const total = db.prepare(`SELECT COUNT(*) as total FROM customers ${where}`).get(...params);
+
+  res.json({ customers, total: total.total, page: parseInt(page), limit: parseInt(limit) });
 });
 
 // Get customer with history
