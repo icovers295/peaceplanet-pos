@@ -2418,17 +2418,32 @@
       const [showDetail, setShowDetail] = useState(false);
       const [selectedCustomer, setSelectedCustomer] = useState(null);
       const [formData, setFormData] = useState({ first_name: '', last_name: '', email: '', phone: '', address: '', notes: '' });
+      const [custPage, setCustPage] = useState(1);
+      const [custTotal, setCustTotal] = useState(0);
+      const custLimit = 50;
 
       useEffect(() => {
-        loadCustomers();
+        setCustPage(1);
+        loadCustomers(1);
       }, [searchQuery]);
 
-      const loadCustomers = async () => {
+      useEffect(() => {
+        loadCustomers(custPage);
+      }, [custPage]);
+
+      const loadCustomers = async (pg) => {
         setLoading(true);
         try {
-          const params = searchQuery ? `?search=${encodeURIComponent(searchQuery)}` : '';
-          const result = await api(`/customers${params}`);
-          setCustomers(result || []);
+          var params = '?page=' + (pg || 1) + '&limit=' + custLimit;
+          if (searchQuery) params += '&search=' + encodeURIComponent(searchQuery);
+          const result = await api('/customers' + params);
+          if (result && result.customers) {
+            setCustomers(result.customers);
+            setCustTotal(result.total || 0);
+          } else {
+            setCustomers(Array.isArray(result) ? result : []);
+            setCustTotal(Array.isArray(result) ? result.length : 0);
+          }
         } catch (err) {
           showToast(err.message, 'error');
         } finally {
@@ -2488,6 +2503,11 @@
               )
             )
           ),
+        custTotal > custLimit && el('div', { style: { display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, marginTop: 16 } },
+          el('button', { className: 'btn btn-secondary btn-small', disabled: custPage <= 1, onClick: () => setCustPage(custPage - 1) }, 'Previous'),
+          el('span', null, 'Page ' + custPage + ' of ' + Math.ceil(custTotal / custLimit) + ' (' + custTotal + ' customers)'),
+          el('button', { className: 'btn btn-secondary btn-small', disabled: custPage >= Math.ceil(custTotal / custLimit), onClick: () => setCustPage(custPage + 1) }, 'Next')
+        ),
         showForm && el('div', { className: 'modal-overlay', onClick: e => { if (e.target === e.currentTarget) setShowForm(false); } },
           el('div', { className: 'modal-card' },
             el('div', { className: 'modal-header' },
