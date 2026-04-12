@@ -64,11 +64,27 @@ router.get('/', authMiddleware, (req, res) => {
   }
   if (search) {
     // Smart search: expand abbreviations, then match each word against name/SKU/category
+    // For short numeric terms (model numbers like "15", "14"), only match against name & category — not SKU
+    // This prevents barcode/SKU numbers from polluting model-number searches
+    // If the entire search looks like a barcode/SKU (long number or starts with letters+digits), search SKU too
     const searchWords = expandSearch(search);
-    const wordConditions = searchWords.map(() => '(LOWER(p.name) LIKE ? OR LOWER(p.sku) LIKE ? OR LOWER(COALESCE(c.name, \'\')) LIKE ?)');
+    const isFullSKU = searchWords.length === 1 && /^[a-z0-9-]{5,}$/i.test(searchWords[0]);
+    const wordConditions = searchWords.map(word => {
+      const isShortNumber = /^\d{1,4}$/.test(word);
+      if (isShortNumber && !isFullSKU) {
+        // Model numbers: only search name and category, not SKU
+        return '(LOWER(p.name) LIKE ? OR LOWER(COALESCE(c.name, \'\')) LIKE ?)';
+      }
+      return '(LOWER(p.name) LIKE ? OR LOWER(p.sku) LIKE ? OR LOWER(COALESCE(c.name, \'\')) LIKE ?)';
+    });
     where.push('(' + wordConditions.join(' AND ') + ')');
     for (const word of searchWords) {
-      params.push(`%${word}%`, `%${word}%`, `%${word}%`);
+      const isShortNumber = /^\d{1,4}$/.test(word);
+      if (isShortNumber && !isFullSKU) {
+        params.push(`%${word}%`, `%${word}%`);
+      } else {
+        params.push(`%${word}%`, `%${word}%`, `%${word}%`);
+      }
     }
   }
 
