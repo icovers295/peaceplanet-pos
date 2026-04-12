@@ -1527,7 +1527,7 @@
             page === 'dashboard' && el(DashboardPage, { user, currentStore, showToast }),
             page === 'pos' && el(POSPage, { currentStore, showToast }),
             page === 'search' && el(SearchPage, { currentStore, user, showToast, permissions }),
-                page === 'lowstock' && el(LowStockPage, { currentStore, user, showToast, permissions }),
+                page === 'lowstock' && el(LowStockPage, null),
             page === 'products' && el(ProductsPage, { currentStore, user, showToast, permissions }),
             page === 'repairs' && el(RepairsPage, { currentStore, user, showToast, permissions }),
             page === 'customers' && el(CustomersPage, { showToast }),
@@ -1573,7 +1573,8 @@
       button: ['button', 'key', 'power button', 'volume'],
     };
 
-    function LowStockPage({ currentStore, user, showToast, permissions }) {
+    function LowStockPage() {
+      const { currentStore, showToast } = useContext(AppContext);
       const [products, setProducts] = useState([]);
       const [loading, setLoading] = useState(true);
       const [filter, setFilter] = useState('all');
