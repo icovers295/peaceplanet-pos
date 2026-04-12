@@ -99,7 +99,7 @@ router.get('/', authMiddleware, (req, res) => {
       LEFT JOIN inventory i ON p.id = i.product_id AND i.store_id = ?
       ${whereClause}
       ${low_stock ? 'AND COALESCE(i.quantity, 0) <= COALESCE(i.low_stock_threshold, 5)' : ''}
-      ORDER BY p.name
+      ORDER BY p.sell_price ASC, p.name
       LIMIT ? OFFSET ?
     `;
     params = [store_id, ...params, parseInt(limit), offset];
@@ -109,7 +109,7 @@ router.get('/', authMiddleware, (req, res) => {
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
       ${whereClause}
-      ORDER BY p.name
+      ORDER BY p.sell_price ASC, p.name
       LIMIT ? OFFSET ?
     `;
     params = [...params, parseInt(limit), offset];
