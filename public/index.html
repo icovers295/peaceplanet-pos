@@ -1574,7 +1574,9 @@
     };
 
     function LowStockPage() {
-      const { currentStore, showToast, user, permissions } = useContext(AppContext);
+      const ctx = useContext(AppContext);
+      const { currentStore, showToast, user, permissions } = ctx;
+      console.log('LSP RENDER ctx:', !!ctx, 'store:', currentStore?.id, currentStore?.name);
       const [products, setProducts] = useState([]);
       const [loading, setLoading] = useState(true);
       const [filter, setFilter] = useState('all');
@@ -1582,7 +1584,7 @@
       const isAdmin = user?.role === 'admin';
 
       useEffect(() => {
-        if (!currentStore?.id) return;
+        console.log('LSP useEffect, storeId:', currentStore?.id, 'token:', !!token); if (!currentStore?.id) return; console.log('LSP FETCHING for store:', currentStore.id);
         setLoading(true);
         fetch('/api/products?store_id=' + currentStore.id + '&low_stock=true&limit=500', {
           headers: { Authorization: 'Bearer ' + token }
