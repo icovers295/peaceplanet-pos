@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PeacePlanet POS</title>
+  <title>iCovers POS</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <style>
     * {
@@ -74,6 +74,35 @@
       margin-bottom: 32px;
       font-size: 14px;
     }
+
+    .login-brand {
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .login-brand-name {
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .login-brand-tagline {
+      font-size: 13px;
+      color: var(--gray-500);
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      margin-top: 2px;
+    }
+    .sidebar-brand-tagline {
+      font-size: 10px;
+      color: rgba(255,255,255,0.45);
+      font-weight: 500;
+      letter-spacing: 0.3px;
+      margin-top: 2px;
+    }
+
 
     .form-group {
       margin-bottom: 20px;
@@ -944,8 +973,11 @@
 
       return el('div', { className: 'login-container' },
         el('div', { className: 'login-card' },
-          el('h1', null, '🌍 PeacePlanet POS'),
-          el('p', null, 'Point of Sale System'),
+          el('div', { className: 'login-brand' },
+            el('div', { className: 'login-brand-name' }, 'iCovers'),
+            el('div', { className: 'login-brand-tagline' }, 'Smartphone Sales & Repair')
+          ),
+          el('p', null, 'PeacePlanet POS'),
           el('form', { onSubmit: handleSubmit },
             el('div', { className: 'form-group' },
               el('label', null, 'Email'),
@@ -1351,9 +1383,10 @@
           el('div', { className: 'sidebar' },
             el('div', { className: 'sidebar-header' },
               el('div', { className: 'logo' },
-                el('i', { className: 'fas fa-leaf' }),
-                'PeacePlanet'
-              )
+                el('i', { className: 'fas fa-mobile-screen-button' }),
+                'iCovers'
+              ),
+              el('div', { className: 'sidebar-brand-tagline' }, 'Smartphone Sales & Repair')
             ),
             el('div', { className: 'sidebar-nav' },
               el('div', {
