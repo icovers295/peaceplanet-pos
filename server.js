@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Initialize database
@@ -268,6 +268,195 @@ app.post('/api/print/label', authMiddleware, (req, res) => {
     </body></html>`;
   }
   res.json({ html });
+});
+
+// ── CSV Import: Bulk import products from CellStore CSV ──
+app.post('/api/import/csv-products', authMiddleware, (req, res) => {
+  // Only admins can import
+  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' });
+
+  const { csv_text } = req.body;
+  if (!csv_text) return res.status(400).json({ error: 'csv_text required' });
+
+  try {
+    // Parse CSV (handle quoted fields with commas inside)
+    function parseCSVLine(line) {
+      const result = [];
+      let current = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') {
+          if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
+          else { inQuotes = !inQuotes; }
+        } else if (ch === ',' && !inQuotes) {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += ch;
+        }
+      }
+      result.push(current.trim());
+      return result;
+    }
+
+    const lines = csv_text.split('\n').filter(l => l.trim());
+    if (lines.length < 2) return res.status(400).json({ error: 'CSV has no data rows' });
+
+    const header = parseCSVLine(lines[0]);
+    const colIdx = {};
+    header.forEach((h, i) => { colIdx[h.replace(/"/g, '').trim()] = i; });
+
+    // Required columns check
+    const needed = ['Sub-Domain', 'Id', 'Product name', 'SKU', 'Cost price', 'Selling Price', 'Current inventory', 'Category name'];
+    for (const n of needed) {
+      if (colIdx[n] === undefined) return res.status(400).json({ error: 'Missing column: ' + n });
+    }
+
+    // Get store mapping
+    const stores = db.prepare('SELECT id, name, is_main FROM stores').all();
+    const storeMap = {};
+    for (const s of stores) {
+      const lower = s.name.toLowerCase();
+      if (s.is_main) { storeMap['store'] = s.id; storeMap['main'] = s.id; }
+      if (lower.includes('omagh')) storeMap['omagh'] = s.id;
+      if (lower.includes('cookstown')) storeMap['cookstown'] = s.id;
+      if (lower.includes('dungannon')) storeMap['dungannon'] = s.id;
+    }
+
+    // Parse all rows and group by product Id
+    const productMap = new Map(); // CellStore Id → { details, inventory: { subdomain: qty } }
+
+    for (let i = 1; i < lines.length; i++) {
+      const cols = parseCSVLine(lines[i]);
+      if (cols.length < header.length) continue;
+
+      const subdomain = (cols[colIdx['Sub-Domain']] || '').toLowerCase();
+      const csId = cols[colIdx['Id']] || '';
+      const category = cols[colIdx['Category name']] || '';
+      const manufacturer = cols[colIdx['Manufacturer name']] || '';
+      const name = cols[colIdx['Product name']] || '';
+      const color = cols[colIdx['Color Name']] || '';
+      const storage = cols[colIdx['Storage']] || '';
+      const sku = cols[colIdx['SKU']] || '';
+      const costPrice = parseFloat(cols[colIdx['Cost price']] || '0') || 0;
+      const sellPrice = parseFloat(cols[colIdx['Selling Price']] || '0') || 0;
+      const qty = parseInt(cols[colIdx['Current inventory']] || '0') || 0;
+      const minStock = parseInt(cols[colIdx['Minimum stock']] || '5') || 5;
+      const requireRef = (cols[colIdx['Require Reference']] || '').toLowerCase() === 'yes' ? 1 : 0;
+
+      if (!csId || !name) continue;
+
+      if (!productMap.has(csId)) {
+        // Build full product name: "Manufacturer Name Color Storage"
+        let fullName = name;
+        if (color) fullName += ' ' + color;
+        if (storage) fullName += ' ' + storage;
+
+        productMap.set(csId, {
+          name: fullName,
+          category: category,
+          manufacturer: manufacturer,
+          sku: sku || ('CS-' + csId),
+          costPrice: costPrice,
+          sellPrice: sellPrice,
+          isSerialized: requireRef,
+          minStock: minStock,
+          inventory: {}
+        });
+      }
+
+      // Use max cost price across stores (some stores show 0)
+      const prod = productMap.get(csId);
+      if (costPrice > prod.costPrice) prod.costPrice = costPrice;
+      if (sellPrice > prod.sellPrice) prod.sellPrice = sellPrice;
+
+      // Store inventory
+      if (storeMap[subdomain]) {
+        prod.inventory[subdomain] = qty > 0 ? qty : 0;
+      }
+    }
+
+    // Now do the import in a transaction
+    const uuidv4 = require('uuid').v4;
+    const categoryCache = {};
+    let created = 0, skipped = 0, catCreated = 0;
+
+    const importAll = db.transaction(() => {
+      // Prepare statements
+      const findCat = db.prepare('SELECT id FROM categories WHERE LOWER(name) = LOWER(?)');
+      const insertCat = db.prepare('INSERT INTO categories (id, name) VALUES (?, ?)');
+      const findProd = db.prepare('SELECT id FROM products WHERE sku = ?');
+      const insertProd = db.prepare('INSERT INTO products (id, sku, name, description, category_id, cost_price, sell_price, is_serialized) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+      const findInv = db.prepare('SELECT id FROM inventory WHERE product_id = ? AND store_id = ?');
+      const insertInv = db.prepare('INSERT INTO inventory (id, product_id, store_id, quantity, low_stock_threshold) VALUES (?, ?, ?, ?, ?)');
+      const updateInv = db.prepare('UPDATE inventory SET quantity = ?, low_stock_threshold = ?, updated_at = CURRENT_TIMESTAMP WHERE product_id = ? AND store_id = ?');
+
+      for (const [csId, prod] of productMap) {
+        // Get or create category
+        let categoryId = null;
+        if (prod.category) {
+          if (categoryCache[prod.category.toLowerCase()]) {
+            categoryId = categoryCache[prod.category.toLowerCase()];
+          } else {
+            const existing = findCat.get(prod.category);
+            if (existing) {
+              categoryId = existing.id;
+            } else {
+              categoryId = uuidv4();
+              insertCat.run(categoryId, prod.category);
+              catCreated++;
+            }
+            categoryCache[prod.category.toLowerCase()] = categoryId;
+          }
+        }
+
+        // Check if product already exists by SKU
+        const existingProd = findProd.get(prod.sku);
+        if (existingProd) {
+          skipped++;
+          // Still update inventory for existing products
+          for (const [subdomain, qty] of Object.entries(prod.inventory)) {
+            const storeId = storeMap[subdomain];
+            if (!storeId) continue;
+            const inv = findInv.get(existingProd.id, storeId);
+            if (inv) {
+              updateInv.run(qty, prod.minStock, existingProd.id, storeId);
+            } else {
+              insertInv.run(uuidv4(), existingProd.id, storeId, qty, prod.minStock);
+            }
+          }
+          continue;
+        }
+
+        // Create product
+        const prodId = uuidv4();
+        insertProd.run(prodId, prod.sku, prod.name, prod.manufacturer || '', categoryId, prod.costPrice, prod.sellPrice, prod.isSerialized);
+        created++;
+
+        // Create inventory for each store
+        for (const s of stores) {
+          // Find matching subdomain for this store
+          let qty = 0;
+          for (const [subdomain, subQty] of Object.entries(prod.inventory)) {
+            if (storeMap[subdomain] === s.id) { qty = subQty; break; }
+          }
+          insertInv.run(uuidv4(), prodId, s.id, qty, prod.minStock);
+        }
+      }
+    });
+
+    importAll();
+
+    res.json({
+      success: true,
+      message: `Import complete: ${created} products created, ${skipped} existing (inventory updated), ${catCreated} categories created`,
+      stats: { products_created: created, products_skipped: skipped, categories_created: catCreated, total_in_csv: productMap.size }
+    });
+  } catch (err) {
+    console.error('CSV Import error:', err);
+    res.status(500).json({ error: 'Import failed: ' + err.message });
+  }
 });
 
 // Monitor mode page (standalone HTML)
