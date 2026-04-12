@@ -1596,7 +1596,7 @@
           results.map(p =>
             el('div', { key: p.id, style: { background: '#1a1a2e', borderRadius: 12, padding: '16px 20px', display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', gap: 16, border: '1px solid #252545' } },
               el('div', null,
-                el('div', { style: { fontWeight: 700, fontSize: 16, marginBottom: 4 } }, p.name),
+                el('div', { style: { fontWeight: 700, fontSize: 16, marginBottom: 4, color: '#fff' } }, p.name),
                 el('div', { style: { display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 13, color: '#888' } },
                   p.sku && el('span', null, 'SKU: ' + p.sku),
                   p.category_name && el('span', null, p.category_name)
