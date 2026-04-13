@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PeacePlanet POS</title>
+  <title>iCovers POS</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <style>
     * {
@@ -74,6 +74,48 @@
       margin-bottom: 32px;
       font-size: 14px;
     }
+
+    .login-brand {
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .login-brand-name {
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .login-brand-tagline {
+      font-size: 13px;
+      color: var(--gray-500);
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      margin-top: 2px;
+    }
+    
+    .nav-badge { background:#ef4444;color:white;font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:auto;min-width:20px;text-align:center;animation:pulse-badge 2s infinite; }
+    @keyframes pulse-badge { 0%,100%{opacity:1} 50%{opacity:0.6} }
+    .low-stock-card { background:#1a1a2e;border-radius:12px;padding:16px 20px;display:grid;grid-template-columns:1fr auto;align-items:center;gap:16px;border-left:4px solid #ef4444;margin-bottom:8px; }
+    .low-stock-card.warning { border-left-color:#f59e0b; }
+    .low-stock-card.critical { border-left-color:#ef4444; }
+    .low-stock-header { display:flex;align-items:center;gap:12px;margin-bottom:24px;padding:16px 20px;background:linear-gradient(135deg,rgba(239,68,68,0.15),rgba(245,158,11,0.1));border-radius:12px;border:1px solid rgba(239,68,68,0.3); }
+    .low-stock-header i { font-size:24px;color:#ef4444; }
+    .low-stock-count { font-size:32px;font-weight:800;color:#ef4444; }
+    .low-stock-filters { display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap; }
+    .low-stock-filters button { padding:6px 14px;border-radius:20px;border:1px solid #333;background:transparent;color:#aaa;cursor:pointer;font-size:13px; }
+    .low-stock-filters button.active { background:#ef4444;color:white;border-color:#ef4444; }
+
+    .sidebar-brand-tagline {
+      font-size: 10px;
+      color: rgba(255,255,255,0.45);
+      font-weight: 500;
+      letter-spacing: 0.3px;
+      margin-top: 2px;
+    }
+
 
     .form-group {
       margin-bottom: 20px;
@@ -883,7 +925,8 @@
       padding-top: 16px;
       margin-top: 16px;
     }
-  </style>
+  .barcode{margin:8px auto;text-align:center}.barcode svg{width:220px;height:50px}
+</style>
 </head>
 <body>
   <div id="root"></div>
@@ -944,8 +987,11 @@
 
       return el('div', { className: 'login-container' },
         el('div', { className: 'login-card' },
-          el('h1', null, '🌍 PeacePlanet POS'),
-          el('p', null, 'Point of Sale System'),
+          el('div', { className: 'login-brand' },
+            el('div', { className: 'login-brand-name' }, 'iCovers'),
+            el('div', { className: 'login-brand-tagline' }, 'Smartphone Sales & Repair')
+          ),
+          el('p', null, 'iCovers POS'),
           el('form', { onSubmit: handleSubmit },
             el('div', { className: 'form-group' },
               el('label', null, 'Email'),
@@ -1274,6 +1320,18 @@
       const [stores, setStores] = useState([]);
       const [currentStore, setCurrentStore] = useState(null);
       const [page, setPage] = useState('dashboard');
+      const [lowStockCount, setLowStockCount] = useState(0);
+      useEffect(() => {
+      const tk = localStorage.getItem('pp_token');
+      if (!currentStore || !tk) return;
+        const fetchCount = () => {
+          fetch('/api/products?store_id=' + currentStore.id + '&low_stock=true&limit=1', { headers: { Authorization: 'Bearer ' + tk }
+          }).then(r => r.json()).then(d => setLowStockCount(d.total || 0)).catch(() => {});
+        };
+        fetchCount();
+        const intv = setInterval(fetchCount, 60000);
+        return () => clearInterval(intv);
+      }, [currentStore?.id]);
       const [toasts, setToasts] = useState([]);
       const [permissions, setPermissions] = useState({});
       const [loading, setLoading] = useState(true);
@@ -1351,9 +1409,10 @@
           el('div', { className: 'sidebar' },
             el('div', { className: 'sidebar-header' },
               el('div', { className: 'logo' },
-                el('i', { className: 'fas fa-leaf' }),
-                'PeacePlanet'
-              )
+                el('i', { className: 'fas fa-mobile-screen-button' }),
+                'iCovers'
+              ),
+              el('div', { className: 'sidebar-brand-tagline' }, 'Smartphone Sales & Repair')
             ),
             el('div', { className: 'sidebar-nav' },
               el('div', {
@@ -1376,6 +1435,15 @@
               },
                 el('i', { className: 'fas fa-search' }),
                 'Search'
+              ),
+              el('div', {
+                className: `nav-item ${page === 'lowstock' ? 'active' : ''}`,
+                onClick: () => setPage('lowstock'),
+                style: { display: 'flex', alignItems: 'center' }
+              },
+                el('i', { className: 'fas fa-triangle-exclamation', style: { color: page === 'lowstock' ? '' : '#ef4444' } }),
+                'Low Stock',
+                lowStockCount > 0 && el('span', { className: 'nav-badge' }, lowStockCount)
               ),
               el('div', {
                 className: `nav-item ${page === 'products' ? 'active' : ''}`,
@@ -1460,6 +1528,7 @@
             page === 'dashboard' && el(DashboardPage, { user, currentStore, showToast }),
             page === 'pos' && el(POSPage, { currentStore, showToast }),
             page === 'search' && el(SearchPage, { currentStore, user, showToast, permissions }),
+                page === 'lowstock' && el(LowStockPage, null),
             page === 'products' && el(ProductsPage, { currentStore, user, showToast, permissions }),
             page === 'repairs' && el(RepairsPage, { currentStore, user, showToast, permissions }),
             page === 'customers' && el(CustomersPage, { showToast }),
@@ -1504,6 +1573,96 @@
       housing: ['back', 'rear', 'housing'],
       button: ['button', 'key', 'power button', 'volume'],
     };
+
+    function LowStockPage() {
+      const ctx = useContext(AppContext);
+      const { currentStore, showToast, user, permissions } = ctx;
+      const [products, setProducts] = useState([]);
+      const [loading, setLoading] = useState(true);
+      const [filter, setFilter] = useState('all');
+      const token = localStorage.getItem('pp_token');
+      const isAdmin = user?.role === 'admin';
+
+      useEffect(() => {
+        setLoading(true);
+        fetch('/api/products?store_id=' + currentStore + '&low_stock=true&limit=500', {
+          headers: { Authorization: 'Bearer ' + token }
+        }).then(r => r.json()).then(d => {
+          const items = (d.products || []).filter(p => {
+            const name = (p.name || '').toLowerCase();
+            const cat = (p.category_name || '').toLowerCase();
+            const isScreen = cat.includes('screen') || name.includes('screen') || name.includes('lcd') || name.includes('oled');
+            const isPart = cat.includes('part') || cat.includes('component');
+            const isBattery = cat.includes('batter') || name.includes('battery');
+            const isIphone = cat.includes('iphone') || name.includes('iphone');
+            return (isScreen || isPart || isBattery) && isIphone;
+          }).filter(p => (p.stock_quantity || 0) <= 2);
+          setProducts(items);
+          setLoading(false);
+        }).catch(() => setLoading(false));
+      }, [currentStore]);
+
+      const filtered = filter === 'all' ? products : products.filter(p => {
+        const name = (p.name || '').toLowerCase();
+        const cat = (p.category_name || '').toLowerCase();
+        if (filter === 'screens') return cat.includes('screen') || name.includes('screen') || name.includes('lcd') || name.includes('oled');
+        if (filter === 'batteries') return cat.includes('batter') || name.includes('battery');
+        if (filter === 'parts') return cat.includes('part') || cat.includes('component');
+        return true;
+      });
+
+      const outOfStock = filtered.filter(p => (p.stock_quantity || 0) === 0).length;
+      const critical = filtered.filter(p => (p.stock_quantity || 0) > 0 && (p.stock_quantity || 0) <= 2).length;
+
+      return el('div', { style: { padding: 24 } },
+        el('h2', { style: { fontSize: 24, fontWeight: 700, marginBottom: 16, color: '#fff' } },
+          el('i', { className: 'fas fa-triangle-exclamation', style: { color: '#ef4444', marginRight: 10 } }),
+          'Low Stock Alert - iPhone Screens, Parts & Batteries'
+        ),
+        el('div', { className: 'low-stock-header' },
+          el('i', { className: 'fas fa-exclamation-circle' }),
+          el('div', null,
+            el('div', { className: 'low-stock-count' }, filtered.length + ' items'),
+            el('div', { style: { color: '#ccc', fontSize: 14 } },
+              outOfStock + ' out of stock, ' + critical + ' critical (1-2 left)'
+            )
+          )
+        ),
+        el('div', { className: 'low-stock-filters' },
+          ['all', 'screens', 'batteries', 'parts'].map(f =>
+            el('button', {
+              key: f, className: filter === f ? 'active' : '',
+              onClick: () => setFilter(f)
+            }, f === 'all' ? 'All (' + products.length + ')' : f.charAt(0).toUpperCase() + f.slice(1))
+          )
+        ),
+        loading ? el('div', { style: { color: '#888', padding: 40, textAlign: 'center' } }, 'Loading...') :
+        filtered.length === 0 ? el('div', { style: { color: '#22c55e', padding: 40, textAlign: 'center', fontSize: 18 } },
+          el('i', { className: 'fas fa-check-circle', style: { marginRight: 8 } }), 'All stocked up!'
+        ) :
+        el('div', null,
+          filtered.sort((a, b) => (a.stock_quantity || 0) - (b.stock_quantity || 0)).map(p =>
+            el('div', { key: p.id, className: 'low-stock-card ' + ((p.stock_quantity || 0) === 0 ? 'critical' : 'warning') },
+              el('div', null,
+                el('div', { style: { fontWeight: 700, fontSize: 15, color: '#fff', marginBottom: 4 } }, p.name),
+                el('div', { style: { fontSize: 13, color: '#888' } },
+                  p.sku && el('span', { style: { marginRight: 16 } }, 'SKU: ' + p.sku),
+                  p.category_name && el('span', null, p.category_name)
+                )
+              ),
+              el('div', { style: { textAlign: 'right' } },
+                el('div', { style: { fontSize: 20, fontWeight: 800, color: (p.stock_quantity || 0) === 0 ? '#ef4444' : '#f59e0b' } },
+                  (p.stock_quantity || 0) === 0 ? 'OUT OF STOCK' : p.stock_quantity + ' left'),
+                el('div', { style: { fontSize: 18, fontWeight: 700, color: '#22c55e', marginTop: 4 } },
+                  '£' + (p.sell_price || 0).toFixed(2)),
+                isAdmin && el('div', { style: { fontSize: 12, color: '#888', marginTop: 2 } },
+                  'Cost: £' + (p.cost_price || 0).toFixed(2))
+              )
+            )
+          )
+        )
+      );
+    }
 
     function SearchPage({ currentStore, user, showToast, permissions }) {
       const [query, setQuery] = useState('');
@@ -1905,20 +2064,21 @@
         }
       };
 
-      const printQuickTicket = (ticketNumber, data) => {
+      function generateBarcodeSVG(text){var CODE128B=[[2,1,2,2,2,2],[2,2,2,1,2,2],[2,2,2,2,2,1],[1,2,1,2,2,3],[1,2,1,3,2,2],[1,3,1,2,2,2],[1,2,2,2,1,3],[1,2,2,3,1,2],[1,3,2,2,1,2],[2,2,1,2,1,3],[2,2,1,3,1,2],[2,3,1,2,1,2],[1,1,2,2,3,2],[1,2,2,1,3,2],[1,2,2,2,3,1],[1,1,3,2,2,2],[1,2,3,1,2,2],[1,2,3,2,2,1],[2,2,3,2,1,1],[2,2,1,1,3,2],[2,2,1,2,3,1],[2,1,3,2,1,2],[2,2,3,1,1,2],[3,1,2,1,3,1],[3,1,1,2,2,2],[3,2,1,1,2,2],[3,2,1,2,2,1],[3,1,2,2,1,2],[3,2,2,1,1,2],[3,2,2,2,1,1],[2,1,2,1,2,3],[2,1,2,3,2,1],[2,3,2,1,2,1],[1,1,1,3,2,3],[1,3,1,1,2,3],[1,3,1,3,2,1],[1,1,2,3,1,3],[1,3,2,1,1,3],[1,3,2,3,1,1],[2,1,1,3,1,3],[2,3,1,1,1,3],[2,3,1,3,1,1],[1,1,2,1,3,3],[1,1,2,3,3,1],[1,3,2,1,3,1],[1,1,3,1,2,3],[1,1,3,3,2,1],[1,3,3,1,2,1],[3,1,3,1,2,1],[2,1,1,3,3,1],[2,3,1,1,3,1],[2,1,3,1,1,3],[2,1,3,3,1,1],[2,1,3,1,3,1],[3,1,1,1,2,3],[3,1,1,3,2,1],[3,3,1,1,2,1],[3,1,2,1,1,3],[3,1,2,3,1,1],[3,3,2,1,1,1],[3,1,4,1,1,1],[2,2,1,4,1,1],[4,3,1,1,1,1],[1,1,1,2,2,4],[1,1,1,4,2,2],[1,2,1,1,2,4],[1,2,1,4,2,1],[1,4,1,1,2,2],[1,4,1,2,2,1],[1,1,2,2,1,4],[1,1,2,4,1,2],[1,2,2,1,1,4],[1,2,2,4,1,1],[1,4,2,1,1,2],[1,4,2,2,1,1],[2,4,1,2,1,1],[2,2,1,1,1,4],[4,1,3,1,1,1],[2,4,1,1,1,2],[1,3,4,1,1,1],[1,1,1,2,4,2],[1,2,1,1,4,2],[1,2,1,2,4,1],[1,1,4,2,1,2],[1,2,4,1,1,2],[1,2,4,2,1,1],[4,1,1,2,1,2],[4,2,1,1,1,2],[4,2,1,2,1,1],[2,1,2,1,4,1],[2,1,4,1,2,1],[4,1,2,1,2,1],[1,1,1,1,4,3],[1,1,1,3,4,1],[1,3,1,1,4,1],[1,1,4,1,1,3],[1,1,4,3,1,1],[4,1,1,1,1,3],[4,1,1,3,1,1],[1,1,3,1,4,1],[1,1,4,1,3,1],[3,1,1,1,4,1],[4,1,1,1,3,1],[2,1,1,4,1,2],[2,1,1,2,1,4],[2,1,1,2,3,2],[2,3,3,1,1,1,2]];var codes=[104];var sum=104;for(var i=0;i<text.length;i++){var code=text.charCodeAt(i)-32;codes.push(code);sum+=code*(i+1)}codes.push(sum%103);codes.push(106);var bars='';var x=0;for(var c=0;c<codes.length;c++){var pattern=CODE128B[codes[c]];for(var p=0;p<pattern.length;p++){if(p%2===0)bars+='<rect x="'+x+'" y="0" width="'+pattern[p]+'" height="50" fill="black"/>';x+=pattern[p]}}return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+x+' 50">'+bars+'</svg>'}
+const printQuickTicket = (ticketNumber, data) => {
         var now = new Date().toLocaleString('en-GB');
         var html = '<!DOCTYPE html><html><head><style>' +
           'body{font-family:Courier New,monospace;width:280px;margin:0 auto;font-size:12px}' +
           '.center{text-align:center}.line{border-top:1px dashed #000;margin:8px 0}' +
-          '.big{font-size:18px;font-weight:bold;letter-spacing:2px}' +
-          '.ticket-num{font-size:22px;font-weight:bold;margin:8px 0}' +
+          '.big{font-size:14px;font-weight:bold;letter-spacing:1px}' +
+          '.ticket-num{font-size:16px;font-weight:bold;margin:8px 0}' +
           'table{width:100%}td{padding:3px 0;vertical-align:top}' +
           '.label{font-weight:bold;width:70px}' +
           '@media print{body{margin:0}}' +
           '</style></head><body>' +
           '<div class="center"><div class="big">PEACEPLANET</div><div>Phone Repairs</div></div>' +
           '<div class="line"></div>' +
-          '<div class="center"><div class="ticket-num">' + ticketNumber + '</div></div>' +
+          '<div class="center"><div class="ticket-num">' + ticketNumber + '</div><div class="barcode">' + generateBarcodeSVG(ticketNumber) + '</div></div>' +
           '<div class="line"></div>' +
           '<table>' +
           '<tr><td class="label">Name:</td><td>' + data.customer_name + '</td></tr>' +
@@ -1932,7 +2092,9 @@
           '<div class="center" style="margin-top:8px">' +
           '<strong>Please keep this ticket.</strong><br>' +
           'You will need it to collect your device.<br><br>' +
-          'Thank you for choosing PeacePlanet!</div>' +
+'<div class="barcode" style="margin-top:8px">' + generateBarcodeSVG(data.customer_phone || ticketNumber) + '</div>' +
+'<div style="font-size:10px;text-align:center;margin-bottom:4px">Scan to find customer</div>' +
+          'Thank you for choosing iCovers!</div>' +
           '<scr' + 'ipt>window.onload=function(){window.print()}<\/scr' + 'ipt>' +
           '</body></html>';
         var win = window.open('', '_blank', 'width=350,height=500');
