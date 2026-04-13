@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>3pm Orders · PeacePlanet POS</title>
+<style>
+  :root {
+    --bg: #f2f2f7; --card: #ffffff; --border: rgba(0,0,0,0.08);
+    --text: #1c1c1e; --muted: #6e6e73; --accent: #007aff;
+    --danger: #ff3b30; --warn: #ff9500; --ok: #34c759;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif; background: var(--bg); color: var(--text); }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 24px 20px 80px; }
+  header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 12px; flex-wrap: wrap; }
+  header h1 { font-size: 26px; margin: 0; letter-spacing: -0.02em; }
+  header .sub { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  header .right { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .back { color: var(--accent); text-decoration: none; font-weight: 500; font-size: 14px; }
+  select, input, button, textarea { font: inherit; }
+  select, input[type=text], input[type=number], input[type=date], textarea { padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--card); font-size: 15px; }
+  button { padding: 10px 16px; border: none; border-radius: 10px; background: var(--accent); color: white; font-weight: 500; cursor: pointer; font-size: 15px; }
+  button.secondary { background: rgba(0,0,0,0.06); color: var(--text); }
+  button.ghost { background: transparent; color: var(--accent); padding: 6px 10px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px; margin-bottom: 16px; }
+  .cutoff { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; background: rgba(0,122,255,0.1); color: var(--accent); }
+  .cutoff.urgent { background: rgba(255,149,0,0.14); color: var(--warn); }
+  .cutoff.past { background: rgba(255,59,48,0.12); color: var(--danger); }
+  .form-grid { display: grid; grid-template-columns: 1fr 120px 160px 170px 120px auto; gap: 8px; align-items: end; }
+  .form-grid .field { display: flex; flex-direction: column; gap: 4px; }
+  .form-grid label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 600; }
+  .scan-wrap { position: relative; }
+  .scan-wrap input { width: 100%; font-size: 16px; }
+  .suggest { position: absolute; background: var(--card); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); max-height: 280px; overflow-y: auto; z-index: 50; width: 100%; margin-top: 4px; }
+  .suggest .item { padding: 10px 12px; cursor: pointer; border-bottom: 1px solid var(--border); }
+  .suggest .item:last-child { border-bottom: none; }
+  .suggest .item:hover, .suggest .item.active { background: rgba(0,122,255,0.08); }
+  .suggest .nm { font-size: 14px; }
+  .suggest .sk { font-size: 12px; color: var(--muted); font-family: "SF Mono", Menlo, monospace; }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 8px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); font-size: 14px; vertical-align: middle; }
+  th { font-weight: 600; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+  td.sku { font-family: "SF Mono", Menlo, monospace; color: var(--muted); font-size: 12px; }
+  td.product-cell { min-width: 200px; }
+  td input[type=number] { width: 60px; text-align: center; padding: 6px; }
+  td input[type=date], td input[type=text] { padding: 6px 8px; font-size: 13px; }
+  .empty { text-align: center; padding: 40px 20px; color: var(--muted); }
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--text); color: white; padding: 12px 20px; border-radius: 12px; font-size: 14px; opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 100; }
+  .toast.show { opacity: 1; }
+  .toast.error { background: var(--danger); }
+  .status-pill { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+  .status-open { background: rgba(0,122,255,0.12); color: var(--accent); }
+  .status-submitted { background: rgba(255,149,0,0.15); color: var(--warn); }
+  .status-processed { background: rgba(52,199,89,0.15); color: #2d9d48; }
+  .status-cancelled { background: rgba(0,0,0,0.08); color: var(--muted); }
+  .priority-chip { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; user-select: none; }
+  .priority-normal { background: rgba(0,0,0,0.06); color: var(--muted); }
+  .priority-urgent { background: rgba(255,59,48,0.12); color: var(--danger); }
+  .login-box { max-width: 360px; margin: 80px auto; padding: 24px; background: var(--card); border-radius: 16px; border: 1px solid var(--border); }
+  .login-box h1 { margin-top: 0; }
+  .login-box input { width: 100%; margin-bottom: 10px; }
+  .login-box button { width: 100%; margin-top: 6px; }
+  .history-item { padding: 12px; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+  .history-item .meta { font-size: 12px; color: var(--muted); }
+  .action-bar { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; flex-wrap: wrap; }
+  @media (max-width: 900px) {
+    .form-grid { grid-template-columns: 1fr 1fr; }
+    .form-grid .scan-field { grid-column: 1 / -1; }
+    th.hide-mobile, td.hide-mobile { display: none; }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="toast" id="toast"></div>
+<script>
+const $ = (sel, root=document) => root.querySelector(sel);
+const tokenKey = 'pp_token';
+const storeKey = 'pp_store_id';
+let token = localStorage.getItem(tokenKey) || '';
+let state = { user: null, stores: [], storeId: localStorage.getItem(storeKey) || '', order: null, history: [], suggestions: [], activeIdx: -1, picked: null };
+
+function showToast(msg, isError) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isError ? ' error' : '');
+  clearTimeout(window._tt); window._tt = setTimeout(() => t.className = 'toast', 1800);
+}
+
+async function api(path, opts = {}) {
+  const res = await fetch('/api' + path, {
+    ...opts,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: 'Bearer ' + token } : {}),
+      ...(opts.headers || {})
+    }
+  });
+  if (res.status === 401) { localStorage.removeItem(tokenKey); token = ''; render(); throw new Error('Session expired'); }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
+  return data;
+}
+
+async function login(email, password) {
+  const r = await api('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
+  token = r.token; localStorage.setItem(tokenKey, token);
+  state.user = r.user;
+  await bootstrap();
+}
+
+async function bootstrap() {
+  if (!token) { render(); return; }
+  try {
+    const stores = await api('/stores');
+    state.stores = Array.isArray(stores) ? stores : (stores.stores || []);
+    if (!state.storeId && state.stores.length) {
+      state.storeId = state.stores[0].id;
+      localStorage.setItem(storeKey, state.storeId);
+    }
+    await loadOrder();
+    await loadHistory();
+    render();
+  } catch (e) { showToast(e.message, true); render(); }
+}
+
+async function loadOrder() {
+  if (!state.storeId) return;
+  state.order = await api('/stock-orders/current?store_id=' + state.storeId);
+}
+
+async function loadHistory() {
+  if (!state.storeId) return;
+  const r = await api('/stock-orders?store_id=' + state.storeId);
+  state.history = (r.orders || []).filter(o => o.status !== 'open').slice(0, 20);
+}
+
+async function addItem(payload) {
+  state.order = await api('/stock-orders/current/items', { method: 'POST', body: JSON.stringify({ ...payload, store_id: state.storeId }) });
+  showToast('Added');
+  render();
+}
+
+async function patchItem(id, changes) {
+  state.order = await api('/stock-orders/items/' + id, { method: 'PATCH', body: JSON.stringify(changes) });
+  render();
+}
+
+async function removeItem(id) {
+  state.order = await api('/stock-orders/items/' + id, { method: 'DELETE' });
+  render();
+}
+
+async function submitOrder() {
+  if (!state.order || !state.order.items.length) { showToast('No items to submit', true); return; }
+  if (!confirm('Send today\u2019s 3pm order? It will be locked and a new one started.')) return;
+  await api('/stock-orders/' + state.order.id + '/submit', { method: 'POST' });
+  showToast('Sent — stock order locked');
+  await loadOrder(); await loadHistory(); render();
+}
+
+function exportCsv() {
+  if (!state.order || !state.order.items.length) return;
+  const rows = [['SKU','Product','Qty','Needed by','Customer','Priority','Supplier','Notes']];
+  for (const it of state.order.items) rows.push([it.sku||'', it.name||'', it.quantity, it.needed_by||'', it.customer_name||'', it.priority||'', it.supplier||'', it.notes||'']);
+  const csv = rows.map(r => r.map(v => '"' + String(v).replace(/"/g,'""') + '"').join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  a.download = '3pm-order-' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+
+function printList() { window.print(); }
+
+async function searchProducts(q) {
+  if (!q || q.length < 2) return [];
+  try {
+    const r = await api('/products?search=' + encodeURIComponent(q) + '&limit=10');
+    return r.products || [];
+  } catch { return []; }
+}
+
+function escapeHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
+
+function cutoffStatus() {
+  const now = new Date();
+  const target = new Date(); target.setHours(15,0,0,0);
+  const diffMs = target - now;
+  if (diffMs <= 0) {
+    const tomorrow = new Date(target); tomorrow.setDate(tomorrow.getDate()+1);
+    const m = Math.round((tomorrow - now) / 60000);
+    return { cls: 'past', text: 'Past 3pm — next cutoff in ' + Math.floor(m/60) + 'h ' + (m%60) + 'm (tomorrow)' };
+  }
+  const mins = Math.round(diffMs / 60000);
+  const cls = mins <= 60 ? 'urgent' : '';
+  if (mins < 60) return { cls, text: mins + ' min until 3pm cutoff' };
+  return { cls, text: Math.floor(mins/60) + 'h ' + (mins%60) + 'm until 3pm cutoff' };
+}
+
+function todayISO() { return new Date().toISOString().slice(0,10); }
+
+function renderLogin() {
+  $('#app').innerHTML = '<div class="wrap"><div class="login-box"><h1>3pm Orders</h1><p style="color:var(--muted);margin-top:0">Sign in to continue</p><form id="loginForm"><input type="email" id="email" placeholder="Email" required autocomplete="username" /><input type="password" id="password" placeholder="Password" required autocomplete="current-password" /><button type="submit">Sign in</button></form></div></div>';
+  $('#loginForm').onsubmit = async (e) => {
+    e.preventDefault();
+    try { await login($('#email').value, $('#password').value); }
+    catch (err) { showToast(err.message, true); }
+  };
+}
+
+function itemRow(it) {
+  return '<tr data-id="' + it.id + '">' +
+    '<td class="product-cell"><div>' + escapeHtml(it.name || '') + '</div><div class="sku">' + escapeHtml(it.sku || '') + '</div></td>' +
+    '<td><input type="number" min="1" value="' + it.quantity + '" data-field="quantity" /></td>' +
+    '<td><input type="date" value="' + (it.needed_by || '') + '" data-field="needed_by" /></td>' +
+    '<td class="hide-mobile"><input type="text" value="' + escapeHtml(it.customer_name || '') + '" placeholder="Customer" data-field="customer_name" style="width:130px" /></td>' +
+    '<td><span class="priority-chip priority-' + (it.priority || 'normal') + '" data-field="priority">' + (it.priority === 'urgent' ? 'Urgent' : 'Normal') + '</span></td>' +
+    '<td class="hide-mobile"><input type="text" value="' + escapeHtml(it.supplier || '') + '" placeholder="Supplier" data-field="supplier" style="width:120px" /></td>' +
+    '<td class="hide-mobile"><input type="text" value="' + escapeHtml(it.notes || '') + '" placeholder="Notes" data-field="notes" style="width:140px" /></td>' +
+    '<td><button class="ghost" data-act="rm" style="color:var(--danger)">Remove</button></td>' +
+  '</tr>';
+}
+
+function renderApp() {
+  const storeOptions = state.stores.map(s => '<option value="' + s.id + '"' + (s.id === state.storeId ? ' selected' : '') + '>' + escapeHtml(s.name.replace('PeacePlanet - ','')) + '</option>').join('');
+  const items = (state.order && state.order.items) || [];
+  const totalQty = items.reduce((a, b) => a + b.quantity, 0);
+  const urgentCount = items.filter(i => i.priority === 'urgent').length;
+  const co = cutoffStatus();
+  const historyHtml = state.history.length ? state.history.map(h =>
+    '<div class="history-item"><div><div><strong>' + new Date(h.created_at).toLocaleString() + '</strong></div><div class="meta">' + h.item_count + ' lines · ' + h.total_qty + ' pieces</div></div><span class="status-pill status-' + h.status + '">' + h.status + '</span></div>'
+  ).join('') : '<div class="empty" style="padding:20px">No past orders yet</div>';
+
+  $('#app').innerHTML =
+    '<div class="wrap"><header><div><h1>3pm Orders</h1><div class="sub">Staff list of parts to order — locks at 3pm cutoff</div><div style="margin-top:8px"><span class="cutoff ' + co.cls + '">⏰ ' + co.text + '</span></div></div><div class="right"><select id="storeSel">' + storeOptions + '</select><a class="back" href="/">← Back to POS</a><button class="secondary" id="logoutBtn">Sign out</button></div></header>' +
+    '<div class="card"><div class="form-grid">' +
+      '<div class="field scan-field"><label>Scan / search</label><div class="scan-wrap"><input type="text" id="scan" placeholder="Scan barcode / SKU or start typing a product…" autocomplete="off" autofocus /><div id="suggest"></div></div></div>' +
+      '<div class="field"><label>Qty</label><input type="number" id="qty" min="1" value="1" /></div>' +
+      '<div class="field"><label>Needed by</label><input type="date" id="neededBy" value="' + todayISO() + '" /></div>' +
+      '<div class="field"><label>Customer (optional)</label><input type="text" id="customerName" placeholder="e.g. John Smith" /></div>' +
+      '<div class="field"><label>Priority</label><select id="priority"><option value="normal">Normal</option><option value="urgent">Urgent</option></select></div>' +
+      '<div class="field"><label>&nbsp;</label><button id="addBtn">Add</button></div>' +
+    '</div><div class="hint">Tip: scan a barcode (or type) and press Enter. Customer & date are optional — handy for special orders.</div></div>' +
+    '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px"><div><strong>Today\'s 3pm order</strong><span class="status-pill status-open" style="margin-left:8px">Open</span>' + (urgentCount ? '<span class="status-pill status-submitted" style="margin-left:6px">' + urgentCount + ' urgent</span>' : '') + '</div><div style="color:var(--muted);font-size:13px">' + items.length + ' line' + (items.length===1?'':'s') + ' · ' + totalQty + ' piece' + (totalQty===1?'':'s') + '</div></div>' +
+    (items.length ?
+      '<div style="overflow-x:auto"><table><thead><tr><th>Product</th><th>Qty</th><th>Needed by</th><th class="hide-mobile">Customer</th><th>Priority</th><th class="hide-mobile">Supplier</th><th class="hide-mobile">Notes</th><th></th></tr></thead><tbody id="itemsBody">' + items.map(itemRow).join('') + '</tbody></table></div><div class="action-bar"><button class="secondary" id="exportBtn">Export CSV</button><button class="secondary" id="printBtn">Print</button><button id="submitBtn">Send 3pm order →</button></div>'
+      : '<div class="empty">No items yet. Scan or search above to add.</div>'
+    ) + '</div>' +
+    '<div class="card"><strong>Past orders</strong><div style="margin-top:12px">' + historyHtml + '</div></div></div>';
+
+  wireHandlers(items);
+}
+
+function wireHandlers(items) {
+  $('#storeSel').onchange = async (e) => {
+    state.storeId = e.target.value;
+    localStorage.setItem(storeKey, state.storeId);
+    await loadOrder(); await loadHistory(); render();
+  };
+  $('#logoutBtn').onclick = () => { localStorage.removeItem(tokenKey); token=''; state.user=null; render(); };
+  if ($('#submitBtn')) $('#submitBtn').onclick = submitOrder;
+  if ($('#exportBtn')) $('#exportBtn').onclick = exportCsv;
+  if ($('#printBtn')) $('#printBtn').onclick = printList;
+
+  const scanInput = $('#scan');
+  const sugg = $('#suggest');
+  let searchTimer;
+
+  const submitAdd = async () => {
+    const v = scanInput.value.trim();
+    const payload = {
+      quantity: parseInt($('#qty').value) || 1,
+      needed_by: $('#neededBy').value || null,
+      customer_name: $('#customerName').value.trim() || null,
+      priority: $('#priority').value,
+    };
+    if (state.picked) { payload.product_id = state.picked.id; }
+    else if (v) { payload.sku = v; }
+    else return;
+    try {
+      await addItem(payload);
+      scanInput.value=''; $('#qty').value=1; $('#customerName').value=''; $('#priority').value='normal';
+      sugg.innerHTML=''; sugg.className=''; state.picked=null; state.suggestions=[]; state.activeIdx=-1;
+      scanInput.focus();
+    } catch (e) { showToast(e.message, true); }
+  };
+
+  $('#addBtn').onclick = submitAdd;
+
+  scanInput.addEventListener('input', () => {
+    state.picked = null;
+    clearTimeout(searchTimer);
+    const q = scanInput.value.trim();
+    if (!q) { sugg.innerHTML=''; sugg.className=''; state.suggestions=[]; return; }
+    searchTimer = setTimeout(async () => {
+      state.suggestions = await searchProducts(q);
+      state.activeIdx = -1;
+      if (!state.suggestions.length) { sugg.innerHTML=''; sugg.className=''; return; }
+      sugg.className = 'suggest';
+      sugg.innerHTML = state.suggestions.map((p,i) =>
+        '<div class="item" data-idx="' + i + '"><div class="nm">' + escapeHtml(p.name) + '</div><div class="sk">' + escapeHtml(p.sku || '') + '</div></div>'
+      ).join('');
+      sugg.querySelectorAll('.item').forEach(el => {
+        el.onclick = () => {
+          const p = state.suggestions[parseInt(el.dataset.idx)];
+          state.picked = p; scanInput.value = p.sku || p.name;
+          sugg.innerHTML=''; sugg.className='';
+          $('#qty').focus();
+        };
+      });
+    }, 180);
+  });
+
+  scanInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (state.activeIdx >= 0 && state.suggestions[state.activeIdx]) {
+        const p = state.suggestions[state.activeIdx];
+        state.picked = p; scanInput.value = p.sku || p.name;
+        sugg.innerHTML=''; sugg.className=''; state.activeIdx=-1;
+        submitAdd();
+      } else { submitAdd(); }
+    } else if (e.key === 'ArrowDown' && state.suggestions.length) {
+      e.preventDefault(); state.activeIdx = Math.min(state.activeIdx+1, state.suggestions.length-1); highlight();
+    } else if (e.key === 'ArrowUp' && state.suggestions.length) {
+      e.preventDefault(); state.activeIdx = Math.max(state.activeIdx-1, 0); highlight();
+    } else if (e.key === 'Escape') { sugg.innerHTML=''; sugg.className=''; state.activeIdx=-1; }
+  });
+
+  function highlight() {
+    sugg.querySelectorAll('.item').forEach((el, i) => el.classList.toggle('active', i===state.activeIdx));
+  }
+
+  const body = $('#itemsBody');
+  if (body) {
+    body.addEventListener('click', async (e) => {
+      const row = e.target.closest('tr'); if (!row) return;
+      const id = row.dataset.id;
+      const item = items.find(x => x.id === id); if (!item) return;
+      if (e.target.dataset.act === 'rm') { await removeItem(id); return; }
+      if (e.target.dataset.field === 'priority') {
+        const next = (item.priority === 'urgent') ? 'normal' : 'urgent';
+        await patchItem(id, { priority: next });
+      }
+    });
+    body.addEventListener('change', async (e) => {
+      const row = e.target.closest('tr'); if (!row) return;
+      const id = row.dataset.id;
+      const f = e.target.dataset.field;
+      if (!f) return;
+      const val = e.target.type === 'number' ? (parseInt(e.target.value)||1) : e.target.value;
+      await patchItem(id, { [f]: val });
+    });
+  }
+}
+
+function render() { if (!token) renderLogin(); else renderApp(); }
+
+setInterval(() => { if (token && state.order) render(); }, 60000);
+
+(async () => {
+  if (token) { try { await bootstrap(); } catch (e) { render(); } } else render();
+})();
+</script>
+</body>
+</html>

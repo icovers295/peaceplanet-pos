@@ -5,7 +5,6 @@ const { authMiddleware, requireRole } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Ensure tables exist (idempotent). Runs on first load of this module.
 db.exec(`
   CREATE TABLE IF NOT EXISTS stock_orders (
     id TEXT PRIMARY KEY,
