@@ -290,10 +290,10 @@ function seedDefaultData() {
 
   // Create stores
   const stores = [
-    { id: uuidv4(), name: 'PeacePlanet - Main', address: 'Main Street, Northern Ireland', is_main: 1 },
-    { id: uuidv4(), name: 'PeacePlanet - Dungannon', address: 'Dungannon, Northern Ireland', is_main: 0 },
-    { id: uuidv4(), name: 'PeacePlanet - Cookstown', address: 'Cookstown, Northern Ireland', is_main: 0 },
-    { id: uuidv4(), name: 'PeacePlanet - Omagh', address: 'Omagh, Northern Ireland', is_main: 0 },
+    { id: uuidv4(), name: 'Main', address: 'Main Street, Northern Ireland', is_main: 1 },
+    { id: uuidv4(), name: 'Dungannon', address: 'Dungannon, Northern Ireland', is_main: 0 },
+    { id: uuidv4(), name: 'Cookstown', address: 'Cookstown, Northern Ireland', is_main: 0 },
+    { id: uuidv4(), name: 'Omagh', address: 'Omagh, Northern Ireland', is_main: 0 },
   ];
 
   const insertStore = db.prepare('INSERT INTO stores (id, name, address, is_main) VALUES (?, ?, ?, ?)');
