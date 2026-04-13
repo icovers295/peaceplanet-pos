@@ -125,18 +125,22 @@ router.put('/:id', authMiddleware, (req, res) => {
   if (estimated_cost !== undefined) { updates.push('estimated_cost = ?'); params.push(estimated_cost); }
   if (final_cost !== undefined) { updates.push('final_cost = ?'); params.push(final_cost); }
   if (priority !== undefined) { updates.push('priority = ?'); params.push(priority); }
-  if (assigned_to !== undefined) { updates.push('assigned_to = ?'); params.push(assigned_to); }
+  if (assigned_to !== undefined) { updates.push('assigned_to = ?'); params.push(assigned_to || null); }
   if (notes !== undefined) { updates.push('notes = ?'); params.push(notes); }
-  if (estimated_completion !== undefined) { updates.push('estimated_completion = ?'); params.push(estimated_completion); }
+  if (estimated_completion !== undefined) { updates.push('estimated_completion = ?'); params.push(estimated_completion || null); }
 
   if (status === 'completed') {
     updates.push('completed_at = CURRENT_TIMESTAMP');
   }
 
   params.push(req.params.id);
-  db.prepare(`UPDATE repairs SET ${updates.join(', ')} WHERE id = ?`).run(...params);
-
-  res.json({ success: true });
+  try {
+    db.prepare(`UPDATE repairs SET ${updates.join(', ')} WHERE id = ?`).run(...params);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Repair update error:', err.message);
+    res.status(500).json({ error: 'Failed to update repair: ' + err.message });
+  }
 });
 
 // Add part to repair
