@@ -2027,6 +2027,12 @@
           const result = await api('/repairs', { method: 'POST', body: JSON.stringify(data) });
           showToast(`Repair created: ${result.ticket_number}`, 'success');
           setShowForm(false);
+          const printData = {
+            customer_name: formData.customer_name,
+            customer_phone: formData.customer_phone,
+            device_model: (formData.device_brand ? formData.device_brand + ' ' : '') + (formData.device_model || ''),
+            issue_description: formData.issue_description
+          };
           setFormData({
             customer_name: '', customer_phone: '', customer_email: '',
             device_type: '', device_brand: '', device_model: '', imei: '',
@@ -2034,6 +2040,9 @@
             assigned_to: '', notes: ''
           });
           loadRepairs();
+          if (window.confirm('Print repair ticket for ' + result.ticket_number + '?')) {
+            printQuickTicket(result.ticket_number, printData);
+          }
         } catch (err) {
           showToast(err.message, 'error');
         }
@@ -2076,7 +2085,7 @@ const printQuickTicket = (ticketNumber, data) => {
           '.label{font-weight:bold;width:70px}' +
           '@media print{body{margin:0}}' +
           '</style></head><body>' +
-          '<div class="center"><div class="big">PEACEPLANET</div><div>Phone Repairs</div></div>' +
+          '<div class="center"><div class="big">iCovers</div><div>Phone Repairs</div></div>' +
           '<div class="line"></div>' +
           '<div class="center"><div class="ticket-num">' + ticketNumber + '</div><div class="barcode">' + generateBarcodeSVG(ticketNumber) + '</div></div>' +
           '<div class="line"></div>' +
@@ -3199,7 +3208,7 @@ const printQuickTicket = (ticketNumber, data) => {
         setToStore(otherStores.length > 0 ? otherStores[0].id : '');
       };
 
-      const getStoreName = (id) => { const s = (stores || []).find(st => st.id === id); return s ? s.name.replace('PeacePlanet - ', '') : '-'; };
+      const getStoreName = (id) => { const s = (stores || []).find(st => st.id === id); return s ? s.name.replace('PeacePlanet - ', '').replace('iCovers - ', '') : '-'; };
 
       const statusBadge = (status) => {
         const colors = { pending: '#f59e0b', in_transit: '#3b82f6', received: '#22c55e', cancelled: '#ef4444' };
@@ -3252,13 +3261,13 @@ const printQuickTicket = (ticketNumber, data) => {
             el('div', { className: 'form-group' },
               el('label', null, 'From Store'),
               el('select', { value: fromStore, onChange: e => { setFromStore(e.target.value); setSelectedProduct(null); setProductSearch(''); } },
-                (stores || []).map(s => el('option', { key: s.id, value: s.id }, s.name.replace('PeacePlanet - ', '')))
+                (stores || []).map(s => el('option', { key: s.id, value: s.id }, s.name.replace('PeacePlanet - ', '').replace('iCovers - ', '')))
               )
             ),
             el('div', { className: 'form-group' },
               el('label', null, 'To Store'),
               el('select', { value: toStore, onChange: e => setToStore(e.target.value) },
-                (stores || []).filter(s => s.id !== fromStore).map(s => el('option', { key: s.id, value: s.id }, s.name.replace('PeacePlanet - ', '')))
+                (stores || []).filter(s => s.id !== fromStore).map(s => el('option', { key: s.id, value: s.id }, s.name.replace('PeacePlanet - ', '').replace('iCovers - ', '')))
               )
             ),
             el('div', { className: 'form-group' },
