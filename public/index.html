@@ -2890,14 +2890,14 @@ const printQuickTicket = (ticketNumber, data) => {
       const [showForm, setShowForm] = useState(false);
       const [showDetail, setShowDetail] = useState(false);
       const [selectedPO, setSelectedPO] = useState(null);
-      const [formData, setFormData] = useState({ supplier_name:'', invoice_reference:'', store_id:currentStore, items:[], notes:'' });
+      const [formData, setFormData] = useState({ supplier_name:'', invoice_reference:'', store_id: (stores||[]).find(s=>s.is_main)?.id || currentStore, items:[], notes:'' });
       const [productSearch, setProductSearch] = useState('');
       const [productResults, setProductResults] = useState([]);
       const [searchingProducts, setSearchingProducts] = useState(false);
       const searchTimeout = useRef(null);
 
       useEffect(() => { loadPOs(); }, [currentStore]);
-      useEffect(() => { setFormData(f => ({...f, store_id: currentStore})); }, [currentStore]);
+      useEffect(() => { setFormData(f => ({...f, store_id: (stores||[]).find(s=>s.is_main)?.id || currentStore})); }, [currentStore, stores]);
 
       const loadPOs = async () => {
         setLoading(true);
@@ -2949,7 +2949,7 @@ const printQuickTicket = (ticketNumber, data) => {
           await api('/purchase-orders', { method:'POST', body: JSON.stringify(formData) });
           showToast('Purchase order created!','success');
           setShowForm(false);
-          setFormData({ supplier_name:'', invoice_reference:'', store_id:currentStore, items:[], notes:'' });
+          setFormData({ supplier_name:'', invoice_reference:'', store_id: (stores||[]).find(s=>s.is_main)?.id || currentStore, items:[], notes:'' });
           loadPOs();
         } catch (err) { showToast(err.message, 'error'); }
       };
