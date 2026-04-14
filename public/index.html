@@ -926,11 +926,67 @@
       margin-top: 16px;
     }
   .barcode{margin:8px auto;text-align:center}.barcode svg{width:220px;height:50px}
+/* === SLEEK APPLE STYLE OVERRIDES === */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    body, html {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif !important;
+      background: linear-gradient(180deg, #f5f5f7 0%, #eef1f8 100%) !important;
+      background-attachment: fixed !important;
+      letter-spacing: -0.015em !important;
+      -webkit-font-smoothing: antialiased;
+    }
+    body::before { content: ''; position: fixed; top: -200px; right: -200px; width: 600px; height: 600px; background: radial-gradient(circle, rgba(175,82,222,0.18) 0%, transparent 70%); pointer-events: none; z-index: 0; }
+    body::after { content: ''; position: fixed; bottom: -200px; left: -200px; width: 600px; height: 600px; background: radial-gradient(circle, rgba(0,199,190,0.15) 0%, transparent 70%); pointer-events: none; z-index: 0; }
+    #root, .app-layout, .login-page { position: relative; z-index: 1; }
+    .btn-primary {
+      background: linear-gradient(135deg, #007aff 0%, #5e5ce6 100%) !important;
+      box-shadow: 0 4px 14px rgba(0,122,255,0.35) !important;
+      border: none !important;
+    }
+    .btn-primary:hover { transform: translateY(-1px) scale(1.02); box-shadow: 0 6px 20px rgba(0,122,255,0.5) !important; }
+    .btn-success {
+      background: linear-gradient(135deg, #00c7be 0%, #30d158 100%) !important;
+      box-shadow: 0 4px 14px rgba(48,209,88,0.35) !important;
+    }
+    .stat-card .stat-icon {
+      width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
+      border-radius: 12px; color: white !important; opacity: 1 !important;
+      background: linear-gradient(135deg, #007aff 0%, #5e5ce6 100%);
+      box-shadow: 0 4px 12px rgba(0,122,255,0.3);
+    }
+    .stat-card:nth-child(2) .stat-icon { background: linear-gradient(135deg, #ff2d92 0%, #ff6482 100%) !important; }
+    .stat-card:nth-child(3) .stat-icon { background: linear-gradient(135deg, #00c7be 0%, #30d158 100%) !important; }
+    .stat-card:nth-child(4) .stat-icon { background: linear-gradient(135deg, #ff9500 0%, #ff2d55 100%) !important; }
+    .stat-card:nth-child(5) .stat-icon { background: linear-gradient(135deg, #af52de 0%, #5e5ce6 100%) !important; }
+    .stat-card .stat-value {
+      background: linear-gradient(135deg, #007aff 0%, #5e5ce6 100%);
+      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .page-header h1, h1 {
+      font-weight: 800 !important; letter-spacing: -0.035em !important;
+      background: linear-gradient(135deg, #1c1c1e 0%, #5e5ce6 100%);
+      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .nav-item.active {
+      background: linear-gradient(135deg, #007aff 0%, #5e5ce6 100%) !important;
+      color: #fff !important;
+      box-shadow: 0 4px 14px rgba(0,122,255,0.4) !important;
+    }
+    .store-pill.active {
+      background: linear-gradient(135deg, #007aff 0%, #5e5ce6 100%) !important;
+      box-shadow: 0 4px 14px rgba(0,122,255,0.4) !important;
+    }
+    .card { border-radius: 16px !important; border: 1px solid rgba(0,0,0,0.05) !important; }
+    .login-card h1 {
+      background: linear-gradient(135deg, #007aff 0%, #5e5ce6 100%);
+      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    /* === END OVERRIDES === */
 </style>
+
 </head>
 <body>
   <div id="root"></div>
-
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
