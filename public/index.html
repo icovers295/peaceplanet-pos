@@ -1479,7 +1479,13 @@
               },
                 el('i', { className: 'fas fa-file-invoice' }),
                 'Purchase Orders'
-              ),
+              ),(user.role === 'admin' || user.role === 'manager') && el('div', {
+          className: 'nav-item',
+          onClick: () => window.open('/stock-orders.html', '_blank')
+        },
+          el('i', { className: 'fas fa-clipboard-list' }),
+          '3pm Orders'
+        ),
               (user.role === 'admin' || user.role === 'manager') && el('div', {
                 className: `nav-item ${page === 'transfers' ? 'active' : ''}`,
                 onClick: () => setPage('transfers')
