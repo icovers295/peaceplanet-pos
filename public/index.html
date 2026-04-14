@@ -488,16 +488,18 @@
             if (!payload.estimated_completion) delete payload.estimated_completion;
             const created = await api('/repairs', { method:'POST', body: JSON.stringify(payload) });
             // Upload any check-in photos now that we have the repair id
+            let photoOk = 0, photoFail = 0;
             if (created && created.id && pendingPhotos.length) {
               for (const ph of pendingPhotos) {
                 try {
                   await api('/photos', { method:'POST', body: JSON.stringify({
-                    entity_type:'repair', entity_id: created.id, tag: ph.tag || 'check-in', data: ph.dataUrl
+                    entity_type:'repair', entity_id: String(created.id), tag: ph.tag || 'check-in', data: ph.dataUrl
                   })});
-                } catch(err) { console.warn('Photo upload failed', err); }
+                  photoOk++;
+                } catch(err) { photoFail++; console.warn('Photo upload failed', err); showToast('Photo upload failed: '+err.message, 'danger'); }
               }
             }
-            showToast(`Repair ${created.ticket_number||''} created${pendingPhotos.length?` with ${pendingPhotos.length} photo(s)`:''}!`);
+            showToast(`Repair ${created.ticket_number||''} created${pendingPhotos.length?` — ${photoOk} photo(s) saved${photoFail?`, ${photoFail} failed`:''}`:''}!`);
             setShowCreate(false);
             loadRepairs();
           } catch(e) { showToast(e.message,'danger'); }
