@@ -839,6 +839,15 @@
               parts.length > 0 && el('div', { style:{textAlign:'right',fontSize:14,fontWeight:600,marginTop:8} }, `Parts Total: £${partsCost.toFixed(2)}`)
             ),
 
+            // --- PHOTOS SECTION ---
+            el('div', { style:{borderTop:'1px solid var(--gray-200)',paddingTop:20,marginTop:16} },
+              el('h3', { style:{fontSize:16,fontWeight:700,marginBottom:12} }, 'Photos'),
+              el('div', {
+                id: `repair-photos-${repair.id}`,
+                ref: (n) => { if (n && window.renderPhotoGallery) window.renderPhotoGallery(n, { entity_type:'repair', entity_id: String(repair.id), tag:'before' }); }
+              })
+            ),
+
             // --- PAYMENT SECTION ---
             remaining > 0 && el('div', { style:{borderTop:'1px solid var(--gray-200)',paddingTop:20,marginTop:16} },
               el('h3', { style:{fontSize:16,fontWeight:700,marginBottom:12} }, 'Take Payment'),
