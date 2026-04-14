@@ -24,7 +24,7 @@ app.use('/api/sales', stripSensitiveData, require('./routes/sales'));
 app.use('/api/repairs', stripSensitiveData, require('./routes/repairs'));
 app.use('/api/customers', require('./routes/customers'));
 app.use('/api/purchase-orders', stripSensitiveData, require('./routes/purchase-orders'));
-
+app.use('/api/stock-orders', stripSensitiveData, require('./routes/stock-orders'));
 // ── User permissions endpoint (tells frontend what to show/hide) ──
 app.get('/api/permissions', authMiddleware, (req, res) => {
   res.json({
