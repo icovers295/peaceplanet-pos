@@ -844,7 +844,11 @@
               el('h3', { style:{fontSize:16,fontWeight:700,marginBottom:12} }, 'Photos'),
               el('div', {
                 id: `repair-photos-${repair.id}`,
-                ref: (n) => { if (n && window.renderPhotoGallery) window.renderPhotoGallery(n, { entity_type:'repair', entity_id: String(repair.id), tag:'before' }); }
+                ref: (n) => {
+                  if (!n || n.dataset.ppLoaded) return;
+                  n.dataset.ppLoaded = '1';
+                  if (window.renderPhotoGallery) window.renderPhotoGallery(n, { entity_type:'repair', entity_id: String(repair.id), tag:'before' });
+                }
               })
             ),
 
