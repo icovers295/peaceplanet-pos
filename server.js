@@ -22,6 +22,7 @@ app.use('/api/stores', require('./routes/stores'));
 app.use('/api/products', stripSensitiveData, require('./routes/products'));
 app.use('/api/sales', stripSensitiveData, require('./routes/sales'));
 app.use('/api/sales', stripSensitiveData, require('./routes/sale-edits'));
+app.use('/api/photos', require('./routes/photos'));
 app.use('/api/repairs', stripSensitiveData, require('./routes/repairs'));
 app.use('/api/customers', require('./routes/customers'));
 app.use('/api/purchase-orders', stripSensitiveData, require('./routes/purchase-orders'));

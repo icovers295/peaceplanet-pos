@@ -45,6 +45,7 @@
   .badge-refunded { background:rgba(255,59,48,0.15); color:#c0291f; }
   .actions { display:flex; gap:16px; margin-top:20px; padding-top:20px; border-top:1px solid #e8e8ed; }
 </style>
+<script src="/photo-capture.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -145,12 +146,19 @@ function render() {
       <div class="totals"><span class="lbl">Tax</span><span class="val">${money(sale.tax_amount)}</span></div>
       <div class="totals total-row"><span class="lbl">Total</span><span class="val">${money(sale.total)}</span></div>
 
+      <div style="margin-top:20px;padding-top:20px;border-top:1px solid #e8e8ed">
+        <div style="font-size:13px;font-weight:700;text-transform:uppercase;color:#8e8e93;letter-spacing:0.05em;margin-bottom:12px">Photos</div>
+        <div id="photos-gallery"></div>
+      </div>
       <div class="actions">
         ${status !== 'refunded' ? `<button class="btn btn-danger" onclick="refundAll()"><i class="fa fa-ban"></i> Refund whole sale</button>` : ''}
         <button class="btn btn-primary" onclick="window.print()"><i class="fa fa-print"></i> Print receipt</button>
       </div>
     </div>
   `;
+
+  // Photos
+  if (window.renderPhotoGallery) renderPhotoGallery(document.getElementById('photos-gallery'), { entity_type: 'sale', entity_id: sale.id, tag: 'receipt' });
 
   // Enter on add-sku adds item
   document.getElementById('addSku').addEventListener('keydown', e => {
