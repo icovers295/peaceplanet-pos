@@ -62,8 +62,16 @@ router.get('/:id', authMiddleware, (req, res) => {
   res.json(p);
 });
 
-// Stream image directly (for <img src="/api/photos/ID/raw">)
-router.get('/:id/raw', authMiddleware, (req, res) => {
+// Middleware that also accepts ?token=... (for <img> tags that can't send headers)
+function authOrQueryToken(req, res, next) {
+  if (!req.headers.authorization && req.query.token) {
+    req.headers.authorization = 'Bearer ' + req.query.token;
+  }
+  return authMiddleware(req, res, next);
+}
+
+// Stream image directly (for <img src="/api/photos/ID/raw?token=...">)
+router.get('/:id/raw', authOrQueryToken, (req, res) => {
   const p = db.prepare('SELECT data, mime FROM photos WHERE id = ?').get(req.params.id);
   if (!p) return res.status(404).send('Not found');
   const base64 = (p.data || '').split(',')[1] || '';

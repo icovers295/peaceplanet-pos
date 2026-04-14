@@ -35,7 +35,7 @@
 
   window.capturePhoto = function capturePhoto({ entity_type, entity_id, tag = 'before', title = 'Take Photo' }) {
     injectCss();
-    const token = localStorage.getItem('pos_token');
+    const token = localStorage.getItem('pp_token') || localStorage.getItem('pos_token');
     return new Promise((resolve, reject) => {
       const bd = document.createElement('div');
       bd.className = 'pp-photo-backdrop';
@@ -216,24 +216,27 @@
   // Helper to render a photo gallery for an entity
   window.renderPhotoGallery = async function renderPhotoGallery(container, { entity_type, entity_id, allowCapture = true, tag = 'before', canDelete = true }) {
     injectCss();
-    const token = localStorage.getItem('pos_token');
+    const token = localStorage.getItem('pp_token') || localStorage.getItem('pos_token');
+    const idKey = String(entity_id).replace(/[^a-zA-Z0-9]/g,'');
     container.innerHTML = '<div style="padding:12px;color:#8e8e93">Loading photos…</div>';
     try {
-      const r = await fetch(`/api/photos?entity_type=${entity_type}&entity_id=${entity_id}`, { headers: { 'Authorization': 'Bearer ' + token } });
-      const photos = await r.json();
+      const r = await fetch(`/api/photos?entity_type=${entity_type}&entity_id=${encodeURIComponent(entity_id)}`, { headers: { 'Authorization': 'Bearer ' + token } });
+      const body = await r.json();
+      const photos = Array.isArray(body) ? body : (Array.isArray(body.photos) ? body.photos : []);
+      if (!r.ok) throw new Error(body.error || 'Failed to load photos');
       container.innerHTML = `
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px">
           ${photos.map(p => `
             <div style="position:relative;border-radius:12px;overflow:hidden;background:#f5f5f7;aspect-ratio:1">
-              <img src="/api/photos/${p.id}/raw" style="width:100%;height:100%;object-fit:cover;display:block" onclick="window.open('/api/photos/${p.id}/raw','_blank')">
+              <img src="/api/photos/${p.id}/raw?token=${encodeURIComponent(token)}" style="width:100%;height:100%;object-fit:cover;display:block;cursor:pointer" onclick="window.open('/api/photos/${p.id}/raw?token=${encodeURIComponent(token)}','_blank')">
               <div style="position:absolute;bottom:0;left:0;right:0;padding:6px 8px;background:linear-gradient(transparent,rgba(0,0,0,0.6));color:white;font-size:11px;font-weight:600">${p.tag||''}</div>
               ${canDelete ? `<button onclick="deletePhoto('${p.id}', this)" style="position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;border:none;background:rgba(255,59,48,0.9);color:white;cursor:pointer;font-size:12px">✕</button>` : ''}
             </div>
           `).join('') || '<div style="grid-column:1/-1;color:#8e8e93;font-size:13px;padding:12px">No photos yet.</div>'}
         </div>
-        ${allowCapture ? `<button class="pp-btn pp-btn-primary" style="margin-top:12px" onclick="addPhoto_${entity_id.replace(/-/g,'')}()"><i class="fa fa-camera"></i> Add photo</button>` : ''}
+        ${allowCapture ? `<button class="pp-btn pp-btn-primary" style="margin-top:12px" onclick="addPhoto_${idKey}()"><i class="fa fa-camera"></i> Add photo</button>` : ''}
       `;
-      window[`addPhoto_${entity_id.replace(/-/g,'')}`] = async () => {
+      window[`addPhoto_${idKey}`] = async () => {
         try {
           await capturePhoto({ entity_type, entity_id, tag });
           renderPhotoGallery(container, { entity_type, entity_id, allowCapture, tag, canDelete });
