@@ -991,6 +991,7 @@
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
 
+  <script src="/photo-capture.js"></script>
   <script type="text/babel">
     const { useState, useEffect, useContext, createContext, useCallback, useRef } = React;
     const el = React.createElement;
@@ -2614,6 +2615,12 @@ const printQuickTicket = (ticketNumber, data) => {
               )
             ) : el('div', { className:'text-sm text-muted', style:{padding:'12px 0'} }, 'No parts added yet.'),
             parts.length > 0 && el('div', { style:{textAlign:'right',fontSize:14,fontWeight:600,marginTop:8} }, `Parts Total: £${partsCost.toFixed(2)}`)
+          ),
+
+          // PHOTOS SECTION (before / after repair)
+          el('div', { className:'border-top' },
+            el('h3', { style:{fontSize:16,fontWeight:700,marginBottom:12} }, 'Photos'),
+            el('div', { id:`repair-photos-${repair.id}`, ref: (n) => { if (n && window.renderPhotoGallery) window.renderPhotoGallery(n, { entity_type:'repair', entity_id: repair.id, tag:'before' }); } })
           ),
 
           // PAYMENT SECTION
