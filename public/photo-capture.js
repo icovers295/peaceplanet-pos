@@ -187,6 +187,12 @@
 
       save.addEventListener('click', async () => {
         if (!dataUrl) return;
+        // LOCAL mode — no upload, just hand dataURL back to caller
+        if (entity_id === null || entity_id === undefined) {
+          cleanup();
+          resolve({ dataUrl, tag, local: true });
+          return;
+        }
         save.disabled = true; save.textContent = 'Saving…';
         try {
           const r = await fetch('/api/photos', {
