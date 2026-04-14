@@ -1038,9 +1038,130 @@
     }
 
     function StaffPage() {
-      return React.createElement('div', null,
-        React.createElement('div', { className: 'page-header' }, React.createElement('h1', null, 'Staff')),
-        React.createElement('div', { className: 'card' }, React.createElement('p', null, 'Staff management...'))
+      const { user, stores, showToast } = useContext(AppContext);
+      const [users, setUsers] = useState([]);
+      const [loading, setLoading] = useState(true);
+      const [showAdd, setShowAdd] = useState(false);
+      const [editingId, setEditingId] = useState(null);
+      const [form, setForm] = useState({ email:'', password:'', first_name:'', last_name:'', role:'cashier', store_id:'' });
+      const el = React.createElement;
+
+      const load = async () => {
+        setLoading(true);
+        try { const d = await api('/auth/users'); setUsers(Array.isArray(d)?d:[]); } catch(e) { showToast(e.message,'danger'); }
+        setLoading(false);
+      };
+      useEffect(() => { load(); }, []);
+
+      const roleBadge = (r) => {
+        const colors = { admin:'#5e5ce6', manager:'#007aff', cashier:'#30d158', technician:'#ff9f0a' };
+        return el('span', { style:{display:'inline-block',padding:'3px 10px',borderRadius:12,fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:'uppercase',color:'white',background: colors[r]||'#8e8e93'} }, r||'—');
+      };
+
+      const submit = async (e) => {
+        e.preventDefault();
+        try {
+          if (editingId) {
+            const payload = { first_name:form.first_name, last_name:form.last_name, role:form.role, store_id:form.store_id||null };
+            if (form.password) payload.password = form.password;
+            await api(`/auth/users/${editingId}`, { method:'PUT', body: JSON.stringify(payload) });
+            showToast('Staff updated');
+          } else {
+            if (!form.email || !form.password || !form.first_name) { showToast('Email, password and first name required','danger'); return; }
+            await api('/auth/users', { method:'POST', body: JSON.stringify({ ...form, store_ids: form.store_id ? [form.store_id] : [] }) });
+            showToast('Staff member added');
+          }
+          setShowAdd(false); setEditingId(null);
+          setForm({ email:'', password:'', first_name:'', last_name:'', role:'cashier', store_id:'' });
+          load();
+        } catch(err) { showToast(err.message,'danger'); }
+      };
+
+      const startEdit = (u) => {
+        setEditingId(u.id);
+        setForm({ email:u.email, password:'', first_name:u.first_name||'', last_name:u.last_name||'', role:u.role||'cashier', store_id:u.store_id||'' });
+        setShowAdd(true);
+      };
+
+      const toggleActive = async (u) => {
+        try { await api(`/auth/users/${u.id}`, { method:'PUT', body: JSON.stringify({ is_active: !u.is_active }) }); load(); }
+        catch(err){ showToast(err.message,'danger'); }
+      };
+
+      if (user?.role !== 'admin') {
+        return el('div', null,
+          el('div',{className:'page-header'},el('h1',null,'Staff')),
+          el('div',{className:'card'}, el('p',null,'Admin access required to view staff.'))
+        );
+      }
+
+      return el('div', null,
+        el('div', { className:'page-header', style:{display:'flex',justifyContent:'space-between',alignItems:'center'} },
+          el('h1', null, 'Staff'),
+          el('button', { className:'btn btn-primary', onClick: ()=>{ setEditingId(null); setForm({email:'',password:'',first_name:'',last_name:'',role:'cashier',store_id:''}); setShowAdd(!showAdd); } },
+            el('i', { className:'fas fa-plus', style:{marginRight:6} }),
+            showAdd ? 'Cancel' : 'Add Staff Member'
+          )
+        ),
+
+        showAdd && el('div', { className:'card', style:{marginBottom:20} },
+          el('h3', { style:{marginTop:0,marginBottom:16} }, editingId ? 'Edit Staff Member' : 'New Staff Member'),
+          el('form', { onSubmit: submit },
+            el('div', { style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12} },
+              el('div', { className:'form-group' }, el('label',null,'First Name *'),
+                el('input', { className:'form-control', value:form.first_name, onChange:e=>setForm(p=>({...p,first_name:e.target.value})) })),
+              el('div', { className:'form-group' }, el('label',null,'Last Name'),
+                el('input', { className:'form-control', value:form.last_name, onChange:e=>setForm(p=>({...p,last_name:e.target.value})) })),
+              el('div', { className:'form-group' }, el('label',null,'Email *'),
+                el('input', { className:'form-control', type:'email', value:form.email, disabled:!!editingId, onChange:e=>setForm(p=>({...p,email:e.target.value})) })),
+              el('div', { className:'form-group' }, el('label',null, editingId?'New Password (leave blank to keep)':'Password *'),
+                el('input', { className:'form-control', type:'password', value:form.password, onChange:e=>setForm(p=>({...p,password:e.target.value})) })),
+              el('div', { className:'form-group' }, el('label',null,'Role'),
+                el('select', { className:'form-control', value:form.role, onChange:e=>setForm(p=>({...p,role:e.target.value})) },
+                  el('option',{value:'cashier'},'Cashier'),
+                  el('option',{value:'technician'},'Technician'),
+                  el('option',{value:'manager'},'Manager'),
+                  el('option',{value:'admin'},'Admin')
+                )),
+              el('div', { className:'form-group' }, el('label',null,'Home Store'),
+                el('select', { className:'form-control', value:form.store_id, onChange:e=>setForm(p=>({...p,store_id:e.target.value})) },
+                  el('option',{value:''},'— Select —'),
+                  ...(stores||[]).map(s=>el('option',{key:s.id,value:s.id},s.name))
+                ))
+            ),
+            el('button', { className:'btn btn-primary', type:'submit' }, editingId?'Save Changes':'Create Staff Member')
+          )
+        ),
+
+        el('div', { className:'card', style:{padding:0,overflow:'hidden'} },
+          loading
+            ? el('div', { style:{padding:24,textAlign:'center',color:'#8e8e93'} }, 'Loading staff…')
+            : users.length === 0
+              ? el('div', { style:{padding:24,textAlign:'center',color:'#8e8e93'} }, 'No staff members yet.')
+              : el('table', { className:'table', style:{margin:0} },
+                  el('thead', null, el('tr', null,
+                    el('th',null,'Name'), el('th',null,'Email'), el('th',null,'Role'),
+                    el('th',null,'Store'), el('th',null,'Status'), el('th',{style:{textAlign:'right'}},'Actions')
+                  )),
+                  el('tbody', null,
+                    ...users.map(u => el('tr', { key:u.id },
+                      el('td',{style:{fontWeight:600}}, `${u.first_name||''} ${u.last_name||''}`.trim() || '—'),
+                      el('td',{style:{color:'#636366'}}, u.email),
+                      el('td', null, roleBadge(u.role)),
+                      el('td', null, u.store_name || '—'),
+                      el('td', null,
+                        u.is_active
+                          ? el('span',{style:{color:'#30d158',fontWeight:600,fontSize:12}},'● Active')
+                          : el('span',{style:{color:'#ff3b30',fontWeight:600,fontSize:12}},'● Disabled')
+                      ),
+                      el('td',{style:{textAlign:'right',whiteSpace:'nowrap'}},
+                        el('button',{className:'btn btn-sm btn-secondary',style:{marginRight:6},onClick:()=>startEdit(u)},'Edit'),
+                        u.id !== user.id && el('button',{className:'btn btn-sm ' + (u.is_active?'btn-danger':'btn-success'),onClick:()=>toggleActive(u)}, u.is_active?'Disable':'Enable')
+                      )
+                    ))
+                  )
+                )
+        )
       );
     }
 
