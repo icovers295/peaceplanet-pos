@@ -2902,6 +2902,11 @@ const printQuickTicket = (ticketNumber, data) => {
                       className: 'btn btn-small btn-secondary',
                       onClick: () => { setSelectedSale(sale); setShowDetail(true); }
                     }, 'View'),
+                    el('button', {
+                      className: 'btn btn-small btn-primary',
+                      onClick: () => window.open('/sale-edit.html?id=' + sale.id, '_blank'),
+                      style: { marginLeft: 8 }
+                    }, 'Edit'),
                     !sale.is_refunded && permissions.canRefund && el('button', {
                       className: 'btn btn-small btn-danger',
                       onClick: () => handleRefund(sale.id),
