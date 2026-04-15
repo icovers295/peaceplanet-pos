@@ -220,7 +220,7 @@
     async _hydrateRepairs() {
       const { data: repairs } = await this.client
         .from('repairs')
-        .select('id,ticket_number,store_id,staff_id,customer_id,device_type,device_model,issue_description,status,priority,estimated_cost,total_paid,notes,created_at,updated_at')
+        .select('id,ticket_number,store_id,staff_id,customer_id,device_type,device_model,issue_description,status,priority,estimated_cost,total_paid,notes,photos,imei,created_at,updated_at')
         .order('created_at', { ascending: false })
         .limit(500);
       const ids = (repairs || []).map(r => r.id);
@@ -241,11 +241,15 @@
       this._cache.repairs = (repairs || []).map(r => ({
         id: r.id, ticket: r.ticket_number,
         store: this.storeNameById[r.store_id] || '',
-        customer_id: r.customer_id,
+        customer_id: r.customer_id, customerId: r.customer_id,
         device_type: r.device_type, device_model: r.device_model,
+        device: [r.device_type, r.device_model].filter(Boolean).join(' ') || (r.device_type || r.device_model || ''),
+        imei: r.imei || '',
         issue: r.issue_description, status: r.status, priority: r.priority,
-        total: Number(r.estimated_cost), paid: Number(r.total_paid),
+        total: Number(r.estimated_cost), cost: Number(r.estimated_cost),
+        paid: Number(r.total_paid),
         parts: partsById[r.id] || [], notes: r.notes || '',
+        photos: Array.isArray(r.photos) ? r.photos : (r.photos ? [] : []),
         created: r.created_at, updated: r.updated_at,
       }));
     },
@@ -397,24 +401,35 @@
 
     async _syncRepairs(prev, next) {
       for (const r of this._added(prev, next)) {
+        const devType = r.device_type || r.device || null;
         const { error } = await this.client.from('repairs').insert({
           id: r.id, ticket_number: r.ticket,
           store_id: this.storeIdByName[r.store],
-          staff_id: this.currentUser?.id, customer_id: r.customer_id,
-          device_type: r.device_type, device_model: r.device_model,
+          staff_id: this.currentUser?.id, customer_id: r.customerId || r.customer_id,
+          device_type: devType, device_model: r.device_model || null,
+          imei: r.imei || null,
           issue_description: r.issue, status: r.status || 'Checked In',
           priority: r.priority || 'normal',
-          estimated_cost: r.total || 0, total_paid: r.paid || 0,
+          estimated_cost: r.cost ?? r.total ?? 0, total_paid: r.paid || 0,
           notes: r.notes || null,
+          photos: Array.isArray(r.photos) ? r.photos : [],
         });
         if (error) throw error;
       }
-      // Updates (status/paid changes)
+      // Updates (status/paid/photos/notes/imei changes)
       for (const r of next) {
         const p = prev.find(x => x.id === r.id);
-        if (p && (p.status !== r.status || p.paid !== r.paid || p.total !== r.total)) {
+        if (!p) continue;
+        const cost = r.cost ?? r.total;
+        const pcost = p.cost ?? p.total;
+        const photosChanged = JSON.stringify(p.photos||[]) !== JSON.stringify(r.photos||[]);
+        const notesChanged = (p.notes||'') !== (r.notes||'');
+        const imeiChanged = (p.imei||'') !== (r.imei||'');
+        if (p.status !== r.status || p.paid !== r.paid || pcost !== cost || photosChanged || notesChanged || imeiChanged) {
           await this.client.from('repairs').update({
-            status: r.status, total_paid: r.paid, estimated_cost: r.total,
+            status: r.status, total_paid: r.paid, estimated_cost: cost,
+            photos: Array.isArray(r.photos) ? r.photos : [],
+            notes: r.notes || null, imei: r.imei || null,
           }).eq('id', r.id);
         }
       }

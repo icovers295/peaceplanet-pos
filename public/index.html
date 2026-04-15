@@ -878,7 +878,7 @@ textarea.form-control{resize:vertical;min-height:60px}
 
 <!-- REPAIRS -->
 <div class="page" id="page-repairs">
-<div class="page-header"><h1>Repairs</h1><button class="btn btn-primary" onclick="openNewRepair()"><i class="fas fa-plus"></i> New Repair</button></div>
+<div class="page-header"><h1>Repairs</h1><div style="display:flex;gap:8px"><button class="btn btn-success" onclick="openQuickTicket()"><i class="fas fa-bolt"></i> Quick Ticket</button><button class="btn btn-primary" onclick="openNewRepair()"><i class="fas fa-plus"></i> New Repair</button></div></div>
 <div class="card">
 <div class="filter-bar">
 <div class="search-box" style="flex:1;margin:0"><i class="fas fa-search"></i><input class="form-control" placeholder="Search repairs..." id="repSearch" oninput="renderRepairs()"></div>
@@ -1578,7 +1578,9 @@ function openNewRepair(){
       <div class="form-group"><label>Estimated Cost (£)</label><input class="form-control" type="number" step="0.01" id="nrCost" value="0"></div>
       <div class="form-group"><label>Priority</label><select class="form-control" id="nrPriority"><option>normal</option><option>urgent</option></select></div>
       <div class="form-group"><label>Notes</label><input class="form-control" id="nrNotes"></div>
-    </div>`;
+    </div>
+    <div class="form-group"><label>Check-in Photos</label><div id="nrPhotoStrip" style="display:flex;gap:8px;flex-wrap:wrap;min-height:8px"></div><button type="button" class="btn btn-secondary" style="margin-top:8px" onclick="PPCamera.open(window._pendingRepairPhotos||[], function(p){window._pendingRepairPhotos=p; renderPhotoStrip('nrPhotoStrip', p);})"><i class="fas fa-camera"></i> Take Photo</button></div>`;
+  window._pendingRepairPhotos=[];
   document.getElementById('nrCust').onchange=function(){document.getElementById('newCustFields').style.display=this.value==='__new'?'block':'none'};
   document.getElementById('modalFooter').innerHTML=`<button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveNewRepair()">Create Repair</button>`;
   openModal();
@@ -1603,8 +1605,9 @@ function saveNewRepair(){
   const d=new Date();
   const ticket='RPR'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+'-'+String(seq).padStart(5,'0');
 
-  const repair={id:uid(),ticket,customerId:custId,device,imei:document.getElementById('nrImei').value.trim(),issue,status:'Checked In',priority:document.getElementById('nrPriority').value,cost:parseFloat(document.getElementById('nrCost').value)||0,paid:0,parts:[],store:document.getElementById('nrStore').value,notes:document.getElementById('nrNotes').value.trim(),created:now()};
+  const repair={id:uid(),ticket,customerId:custId,device,imei:document.getElementById('nrImei').value.trim(),issue,status:'Checked In',priority:document.getElementById('nrPriority').value,cost:parseFloat(document.getElementById('nrCost').value)||0,paid:0,parts:[],store:document.getElementById('nrStore').value,notes:document.getElementById('nrNotes').value.trim(),photos:(window._pendingRepairPhotos||[]).slice(),created:now()};
   const repairs=getRepairs();repairs.push(repair);save('repairs',repairs);
+  window._pendingRepairPhotos=[];
   closeModal();renderRepairs();
 }
 
@@ -1634,6 +1637,9 @@ function openRepairDetail(rid){
       <div><strong>Customer:</strong> ${c?c.name:'-'}<br><strong>Device:</strong> ${r.device}${r.imei?' (IMEI: '+r.imei+')':''}<br><strong>Store:</strong> ${r.store}<br><strong>Priority:</strong> ${r.priority==='urgent'?'<span class="badge badge-danger">URGENT</span>':'Normal'}<br><strong>Created:</strong> ${fmtDate(r.created)}</div>
       <div><strong>Issue:</strong><p style="margin-top:4px;color:var(--g600)">${r.issue}</p>${r.notes?'<br><strong>Notes:</strong><p style="color:var(--g600)">'+r.notes+'</p>':''}</div>
     </div>
+    <h3>Photos</h3>
+    <div id="rdPhotoStrip" style="display:flex;gap:8px;flex-wrap:wrap;min-height:8px;margin-bottom:8px"></div>
+    <button type="button" class="btn btn-secondary" style="margin-bottom:16px" onclick="editRepairPhotos('${rid}')"><i class="fas fa-camera"></i> Add / Manage Photos</button>
     <h3>Status</h3>
     <div class="status-flow">${statusBtns}</div>
     <div class="form-row form-row-2" style="margin:16px 0">
@@ -1655,6 +1661,7 @@ function openRepairDetail(rid){
     ${!fullyPaid?`<div class="form-row" style="grid-template-columns:120px auto auto;align-items:end"><div class="form-group" style="margin:0"><label>Amount (£)</label><input class="form-control" type="number" step="0.01" id="rdPayAmt" value="${remaining.toFixed(2)}"></div><button class="btn btn-success" onclick="makeRepairPayment('${rid}','cash')"><i class="fas fa-money-bill"></i> Cash</button><button class="btn btn-primary" onclick="makeRepairPayment('${rid}','card')"><i class="fas fa-credit-card"></i> Card</button></div>`:''}`;
   document.getElementById('modalFooter').innerHTML=`<button class="btn btn-secondary" onclick="closeModal()">Close</button>`;
   openModal();
+  renderPhotoStrip('rdPhotoStrip', r.photos||[]);
 }
 
 function setRepairStatus(rid,status){
@@ -2417,6 +2424,186 @@ document.addEventListener('DOMContentLoaded', function(){
   const poSearch = document.getElementById('poQuickSearch');
   if(poSearch) poSearch.addEventListener('keydown', function(e){ if(e.key==='Enter') poQuickAdd() });
 });
+
+// ═══════════════════════════════════════════════════════
+// PHOTO / WEBCAM CAPTURE WIDGET
+// ═══════════════════════════════════════════════════════
+function renderPhotoStrip(hostId, photos){
+  const el=document.getElementById(hostId); if(!el) return;
+  el.innerHTML=(photos||[]).map((p,i)=>`<div style="position:relative;width:72px;height:72px;border-radius:8px;overflow:hidden;border:1px solid var(--g200);background:#000"><img src="${p.dataUrl}" style="width:100%;height:100%;object-fit:cover" onclick="PPCamera.preview('${p.dataUrl.replace(/'/g,"\\'")}')"></div>`).join('')
+    || '<div style="color:var(--g400);font-size:12px">No photos yet</div>';
+}
+
+function editRepairPhotos(rid){
+  const repairs=getRepairs();
+  const r=repairs.find(x=>x.id===rid); if(!r) return;
+  const existing=(r.photos||[]).slice();
+  PPCamera.open(existing, function(updated){
+    const rs=getRepairs(); const rr=rs.find(x=>x.id===rid); if(!rr) return;
+    rr.photos=updated; save('repairs', rs);
+    openRepairDetail(rid);
+  });
+}
+
+window.PPCamera = (function(){
+  let stream=null, photos=[], onDone=null, overlay=null;
+
+  function compress(blobOrCanvas, maxW=1024, quality=0.78){
+    return new Promise(res=>{
+      const draw = (img, W, H) => {
+        const scale=Math.min(1, maxW/Math.max(W,H));
+        const cw=Math.round(W*scale), ch=Math.round(H*scale);
+        const c=document.createElement('canvas'); c.width=cw; c.height=ch;
+        c.getContext('2d').drawImage(img, 0, 0, cw, ch);
+        res(c.toDataURL('image/jpeg', quality));
+      };
+      if(blobOrCanvas instanceof HTMLCanvasElement){
+        const img=new Image(); img.onload=()=>draw(img, img.width, img.height); img.src=blobOrCanvas.toDataURL('image/png');
+      } else { // File
+        const fr=new FileReader();
+        fr.onload=()=>{ const img=new Image(); img.onload=()=>draw(img, img.width, img.height); img.src=fr.result; };
+        fr.readAsDataURL(blobOrCanvas);
+      }
+    });
+  }
+
+  function build(){
+    overlay=document.createElement('div');
+    overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px';
+    overlay.innerHTML=`
+      <div style="background:#fff;border-radius:16px;padding:16px;max-width:720px;width:100%;max-height:90vh;overflow:auto">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="margin:0">Take Photos</h3><button type="button" class="btn btn-secondary btn-sm" onclick="PPCamera.cancel()">Close</button></div>
+        <div id="ppCamArea" style="background:#000;border-radius:12px;overflow:hidden;position:relative;aspect-ratio:4/3;max-height:60vh">
+          <video id="ppCamVideo" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover"></video>
+          <div id="ppCamFallback" style="display:none;color:#fff;padding:20px;text-align:center">Camera not available — use Upload instead.</div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+          <button type="button" class="btn btn-primary" onclick="PPCamera.snap()"><i class="fas fa-camera"></i> Capture</button>
+          <label class="btn btn-secondary" style="cursor:pointer;margin:0"><i class="fas fa-upload"></i> Upload<input type="file" accept="image/*" multiple style="display:none" onchange="PPCamera.uploadFiles(this.files)"></label>
+          <label class="btn btn-secondary" style="cursor:pointer;margin:0"><i class="fas fa-mobile-alt"></i> Camera (mobile)<input type="file" accept="image/*" capture="environment" style="display:none" onchange="PPCamera.uploadFiles(this.files)"></label>
+          <button type="button" class="btn btn-secondary" onclick="PPCamera.switchCam()"><i class="fas fa-sync"></i> Switch</button>
+          <div style="flex:1"></div>
+          <button type="button" class="btn btn-success" onclick="PPCamera.done()"><i class="fas fa-check"></i> Done</button>
+        </div>
+        <div id="ppCamThumbs" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"></div>
+      </div>`;
+    document.body.appendChild(overlay);
+  }
+
+  function renderThumbs(){
+    const el=document.getElementById('ppCamThumbs'); if(!el) return;
+    el.innerHTML=photos.map((p,i)=>`<div style="position:relative;width:80px;height:80px;border-radius:8px;overflow:hidden;border:2px solid #fff"><img src="${p.dataUrl}" style="width:100%;height:100%;object-fit:cover"><button onclick="PPCamera.remove(${i})" style="position:absolute;top:2px;right:2px;background:#ff3b30;color:#fff;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:12px;line-height:1">×</button></div>`).join('');
+  }
+
+  let facing='environment';
+  async function startCam(){
+    try{
+      if(stream){ stream.getTracks().forEach(t=>t.stop()); }
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing }, audio: false });
+      const v=document.getElementById('ppCamVideo'); if(v){ v.srcObject=stream; }
+    }catch(e){
+      console.warn('camera failed', e);
+      const v=document.getElementById('ppCamVideo'); if(v) v.style.display='none';
+      const f=document.getElementById('ppCamFallback'); if(f) f.style.display='block';
+    }
+  }
+
+  return {
+    open(existing, cb){
+      photos=(existing||[]).slice(); onDone=cb;
+      build(); renderThumbs(); startCam();
+    },
+    snap(){
+      const v=document.getElementById('ppCamVideo');
+      if(!v || !v.videoWidth){ alert('Camera not ready'); return; }
+      const c=document.createElement('canvas'); c.width=v.videoWidth; c.height=v.videoHeight;
+      c.getContext('2d').drawImage(v, 0, 0);
+      compress(c).then(dataUrl=>{
+        photos.push({id:'ph_'+Date.now()+'_'+Math.random().toString(36).slice(2,6), dataUrl, ts:new Date().toISOString()});
+        renderThumbs();
+      });
+    },
+    uploadFiles(files){
+      const arr=Array.from(files||[]);
+      Promise.all(arr.map(f=>compress(f))).then(urls=>{
+        urls.forEach(dataUrl=>photos.push({id:'ph_'+Date.now()+'_'+Math.random().toString(36).slice(2,6), dataUrl, ts:new Date().toISOString()}));
+        renderThumbs();
+      });
+    },
+    remove(i){ photos.splice(i,1); renderThumbs(); },
+    switchCam(){ facing=(facing==='environment'?'user':'environment'); startCam(); },
+    preview(url){
+      const pv=document.createElement('div');
+      pv.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:10001;display:flex;align-items:center;justify-content:center;cursor:pointer';
+      pv.onclick=()=>pv.remove();
+      pv.innerHTML=`<img src="${url}" style="max-width:95vw;max-height:95vh;border-radius:8px">`;
+      document.body.appendChild(pv);
+    },
+    cancel(){
+      if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+      if(overlay){ overlay.remove(); overlay=null; }
+      onDone=null;
+    },
+    done(){
+      const result=photos.slice();
+      const cb=onDone;
+      if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+      if(overlay){ overlay.remove(); overlay=null; }
+      onDone=null;
+      if(cb) cb(result);
+    },
+  };
+})();
+
+// ═══════════════════════════════════════════════════════
+// QUICK TICKET — minimal check-in
+// ═══════════════════════════════════════════════════════
+function openQuickTicket(){
+  window._pendingRepairPhotos=[];
+  document.getElementById('modalTitle').textContent='Quick Ticket';
+  document.getElementById('modalBox').classList.add('modal-wide');
+  document.getElementById('modalBody').innerHTML=`
+    <div class="form-row form-row-2">
+      <div class="form-group"><label>Customer Name *</label><input class="form-control" id="qtName" placeholder="Full name"></div>
+      <div class="form-group"><label>Phone</label><input class="form-control" id="qtPhone" placeholder="07..."></div>
+    </div>
+    <div class="form-row form-row-2">
+      <div class="form-group"><label>Device *</label><input class="form-control" id="qtDevice" placeholder="e.g. iPhone 14 Pro"></div>
+      <div class="form-group"><label>Store</label><select class="form-control" id="qtStore">${(isAdmin()?STORES:currentUser.stores.filter(s=>s!=='Main')).map(s=>`<option${s===currentStore?' selected':''}>${s}</option>`).join('')}</select></div>
+    </div>
+    <div class="form-group"><label>Issue *</label><textarea class="form-control" id="qtIssue" placeholder="What's wrong with it?" rows="2"></textarea></div>
+    <div class="form-group"><label>Check-in Photo</label><div id="qtPhotoStrip" style="display:flex;gap:8px;flex-wrap:wrap;min-height:8px"></div><button type="button" class="btn btn-primary" style="margin-top:8px" onclick="PPCamera.open(window._pendingRepairPhotos||[], function(p){window._pendingRepairPhotos=p; renderPhotoStrip('qtPhotoStrip', p);})"><i class="fas fa-camera"></i> Take Photo</button></div>`;
+  document.getElementById('modalFooter').innerHTML=`<button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-success" onclick="saveQuickTicket()"><i class="fas fa-bolt"></i> Create Ticket</button>`;
+  openModal();
+  setTimeout(()=>{ const el=document.getElementById('qtName'); if(el) el.focus(); }, 50);
+}
+
+function saveQuickTicket(){
+  const name=(document.getElementById('qtName').value||'').trim();
+  const phone=(document.getElementById('qtPhone').value||'').trim();
+  const device=(document.getElementById('qtDevice').value||'').trim();
+  const issue=(document.getElementById('qtIssue').value||'').trim();
+  const store=document.getElementById('qtStore').value;
+  if(!name){alert('Customer name required'); return;}
+  if(!device){alert('Device required'); return;}
+  if(!issue){alert('Issue required'); return;}
+  // find or create customer
+  const custs=getCustomers();
+  let cust = phone ? custs.find(c=>c.phone===phone) : null;
+  if(!cust){
+    cust={id:uid(),name,phone,email:'',notes:'',created:now()};
+    custs.push(cust); save('customers',custs);
+  }
+  const seq=getNextRepairSeq();
+  const d=new Date();
+  const ticket='RPR'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+'-'+String(seq).padStart(5,'0');
+  const repair={id:uid(),ticket,customerId:cust.id,device,imei:'',issue,status:'Checked In',priority:'normal',cost:0,paid:0,parts:[],store,notes:'',photos:(window._pendingRepairPhotos||[]).slice(),created:now()};
+  const reps=getRepairs(); reps.push(repair); save('repairs', reps);
+  window._pendingRepairPhotos=[];
+  closeModal();
+  if(navigate) navigate('repairs'); else renderRepairs();
+  setTimeout(()=>openRepairDetail(repair.id), 100);
+}
 </script>
 </body>
 </html>
