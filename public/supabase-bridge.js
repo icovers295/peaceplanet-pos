@@ -42,6 +42,7 @@
       transfers:      [],
       purchaseOrders: [],
       users:          [],
+      customerOrders: [],
     },
     // Previous snapshot per bucket — used to diff on save()
     _prev: {},
@@ -119,6 +120,7 @@
         this._hydrateTransfers(),
         this._hydratePurchaseOrders(),
         this._hydrateUsers(),
+        this._hydrateCustomerOrders(),
       ]);
       // Take initial snapshots for diff-on-save
       for (const k of Object.keys(this._cache)) {
@@ -297,6 +299,68 @@
       }));
     },
 
+    async _hydrateCustomerOrders() {
+      const { data } = await this.client
+        .from('customer_orders')
+        .select('id,sku,product_name,supplier,store_id,customer_name,customer_phone,quantity,price,paid,notes,status,ordered_at,received_at,delivered_at,created_by,created_at,updated_at')
+        .order('created_at', { ascending: false })
+        .limit(500);
+      this._cache.customerOrders = (data || []).map(o => ({
+        id: o.id, sku: o.sku || '', name: o.product_name || '',
+        supplier: o.supplier || 'mobilesentrix',
+        store: this.storeNameById[o.store_id] || '',
+        customer_name: o.customer_name || '', customer_phone: o.customer_phone || '',
+        qty: o.quantity || 1, price: Number(o.price) || 0,
+        paid: !!o.paid, notes: o.notes || '',
+        status: o.status || 'pending',
+        ordered_at: o.ordered_at, received_at: o.received_at, delivered_at: o.delivered_at,
+        created: o.created_at, updated: o.updated_at,
+      }));
+    },
+
+    async _syncCustomerOrders(prev, next) {
+      const prevById = new Map(prev.map(o => [o.id, o]));
+      for (const o of next) {
+        const old = prevById.get(o.id);
+        if (!old) {
+          await this.client.from('customer_orders').insert({
+            id: o.id, sku: o.sku, product_name: o.name,
+            supplier: o.supplier || 'mobilesentrix',
+            store_id: this.storeIdByName[o.store] || null,
+            customer_name: o.customer_name, customer_phone: o.customer_phone || null,
+            quantity: o.qty || 1, price: o.price || 0,
+            paid: !!o.paid, notes: o.notes || null,
+            status: o.status || 'pending',
+            ordered_at: o.ordered_at || null,
+            received_at: o.received_at || null,
+            delivered_at: o.delivered_at || null,
+            created_by: this.currentUser?.id || null,
+          });
+        } else if (JSON.stringify(old) !== JSON.stringify(o)) {
+          await this.client.from('customer_orders').update({
+            sku: o.sku, product_name: o.name,
+            supplier: o.supplier || 'mobilesentrix',
+            store_id: this.storeIdByName[o.store] || null,
+            customer_name: o.customer_name, customer_phone: o.customer_phone || null,
+            quantity: o.qty || 1, price: o.price || 0,
+            paid: !!o.paid, notes: o.notes || null,
+            status: o.status || 'pending',
+            ordered_at: o.ordered_at || null,
+            received_at: o.received_at || null,
+            delivered_at: o.delivered_at || null,
+            updated_at: new Date().toISOString(),
+          }).eq('id', o.id);
+        }
+      }
+      // deletions
+      const nextIds = new Set(next.map(x => x.id));
+      for (const old of prev) {
+        if (!nextIds.has(old.id)) {
+          await this.client.from('customer_orders').delete().eq('id', old.id);
+        }
+      }
+    },
+
     async _hydrateUsers() {
       const { data: staff } = await this.client
         .from('staff')
@@ -354,6 +418,7 @@
         case 'transfers':      return this._syncTransfers(prev, next);
         case 'purchaseOrders': return this._syncPOs(prev, next);
         case 'products':       return this._syncProducts(prev, next);
+        case 'customerOrders': return this._syncCustomerOrders(prev, next);
         case 'users':          return; // staff managed directly in Supabase for now
       }
     },
@@ -531,6 +596,10 @@
       this.client.channel('pp-repairs')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'repairs' },
           async () => { await bridge._hydrateRepairs(); bridge._prev.repairs = JSON.stringify(bridge._cache.repairs); bridge._emit('repairs'); })
+        .subscribe();
+      this.client.channel('pp-corders')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'customer_orders' },
+          async () => { await bridge._hydrateCustomerOrders(); bridge._prev.customerOrders = JSON.stringify(bridge._cache.customerOrders); bridge._emit('customerOrders'); })
         .subscribe();
     },
 

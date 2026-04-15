@@ -981,6 +981,41 @@ textarea.form-control{resize:vertical;min-height:60px}
 <div class="card"><h3>Purchase Order History</h3><table><thead><tr><th>PO #</th><th>Supplier</th><th>Reference</th><th>Store</th><th>Items</th><th>Total Cost</th><th>Date</th><th>Actions</th></tr></thead><tbody id="poHistoryBody"></tbody></table></div>
 </div>
 
+<!-- 3PM ORDERS -->
+<div class="page" id="page-orders3pm">
+<div class="page-header">
+  <h1>3pm Orders <span style="font-size:12px;color:var(--g500);font-weight:400">— customer special orders to suppliers</span></h1>
+  <button class="btn btn-primary" onclick="openNew3pmOrder()"><i class="fas fa-plus"></i> New Order</button>
+</div>
+<div class="card" id="orders3pmStats" style="margin-bottom:12px"></div>
+<div class="card">
+  <div class="filter-bar">
+    <div class="search-box" style="flex:1;margin:0"><i class="fas fa-search"></i><input class="form-control" placeholder="Search SKU / customer / product..." id="o3Search" oninput="render3pmOrders()"></div>
+    <select class="form-control" style="width:auto" id="o3Status" onchange="render3pmOrders()">
+      <option value="">All Statuses</option>
+      <option value="pending">Pending (not yet ordered)</option>
+      <option value="ordered">Ordered from supplier</option>
+      <option value="received">Received in shop</option>
+      <option value="delivered">Delivered to customer</option>
+      <option value="cancelled">Cancelled</option>
+    </select>
+    <select class="form-control" style="width:auto" id="o3Store" onchange="render3pmOrders()"><option value="">All Stores</option></select>
+    <select class="form-control" style="width:auto" id="o3Supplier" onchange="render3pmOrders()">
+      <option value="">All Suppliers</option>
+      <option value="mobilesentrix">MobileSentrix</option>
+      <option value="techpoint">TechPoint</option>
+      <option value="other">Other</option>
+    </select>
+    <select class="form-control" style="width:auto" id="o3Date" onchange="render3pmOrders()">
+      <option value="today">Today</option>
+      <option value="week">This week</option>
+      <option value="all" selected>All</option>
+    </select>
+  </div>
+  <div style="overflow-x:auto"><table><thead><tr><th>Created</th><th>SKU</th><th>Product</th><th>Qty</th><th>Supplier</th><th>Store</th><th>Customer</th><th>Phone</th><th>Price</th><th>Paid</th><th>Status</th><th>Actions</th></tr></thead><tbody id="o3Body"></tbody></table></div>
+</div>
+</div>
+
 </div><!-- /main-content -->
 </div><!-- /app-layout -->
 
@@ -1109,6 +1144,7 @@ const NAV_ITEMS = [
   {id:'reports',icon:'fa-chart-bar',label:'Reports',minRole:'manager'},
   {id:'staff',icon:'fa-user-shield',label:'Staff',minRole:'manager'},
   {id:'po',icon:'fa-file-invoice',label:'Purchase Orders',minRole:'manager'},
+  {id:'orders3pm',icon:'fa-clock',label:'3pm Orders',minRole:'cashier'},
 ];
 
 function canSeeNav(item){
@@ -1142,6 +1178,7 @@ function showPage(id,el){
     case'reports':renderReports();break;
     case'staff':renderStaff();break;
     case'po':renderPO();break;
+    case'orders3pm':render3pmOrders();break;
   }
 }
 
@@ -2576,6 +2613,181 @@ function openQuickTicket(){
   document.getElementById('modalFooter').innerHTML=`<button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-success" onclick="saveQuickTicket()"><i class="fas fa-bolt"></i> Create Ticket</button>`;
   openModal();
   setTimeout(()=>{ const el=document.getElementById('qtName'); if(el) el.focus(); }, 50);
+}
+
+// ═══════════════════════════════════════════════════════
+// 3PM ORDERS — customer special orders to suppliers
+// ═══════════════════════════════════════════════════════
+function getOrders3pm(){ return load('customerOrders', []) || []; }
+
+function render3pmOrders(){
+  // populate store filter if empty
+  const storeSel=document.getElementById('o3Store');
+  if(storeSel && storeSel.options.length<=1){
+    storeSel.innerHTML='<option value="">All Stores</option>'+STORES.map(s=>`<option>${s}</option>`).join('');
+  }
+  const q=(document.getElementById('o3Search').value||'').toLowerCase();
+  const sf=document.getElementById('o3Status').value;
+  const stf=document.getElementById('o3Store').value;
+  const supf=document.getElementById('o3Supplier').value;
+  const df=document.getElementById('o3Date').value;
+  let orders=getOrders3pm();
+  if(!isAdmin()) orders=orders.filter(o=>currentUser.stores.includes(o.store));
+  if(q) orders=orders.filter(o=>(o.sku||'').toLowerCase().includes(q)||(o.name||'').toLowerCase().includes(q)||(o.customer_name||'').toLowerCase().includes(q));
+  if(sf) orders=orders.filter(o=>o.status===sf);
+  if(stf) orders=orders.filter(o=>o.store===stf);
+  if(supf) orders=orders.filter(o=>o.supplier===supf);
+  if(df!=='all'){
+    const now=new Date(); const since=new Date(now); if(df==='today'){since.setHours(0,0,0,0);} else if(df==='week'){since.setDate(since.getDate()-7);}
+    orders=orders.filter(o=>new Date(o.created)>=since);
+  }
+  orders.sort((a,b)=>new Date(b.created)-new Date(a.created));
+
+  // stats
+  const today=new Date(); today.setHours(0,0,0,0);
+  const todays=getOrders3pm().filter(o=>new Date(o.created)>=today);
+  const pend=todays.filter(o=>o.status==='pending');
+  const totValue=todays.reduce((s,o)=>s+(Number(o.price)||0)*(Number(o.qty)||1),0);
+  const paidValue=todays.filter(o=>o.paid).reduce((s,o)=>s+(Number(o.price)||0)*(Number(o.qty)||1),0);
+  document.getElementById('orders3pmStats').innerHTML=`
+    <div style="display:flex;gap:24px;flex-wrap:wrap">
+      <div><div style="font-size:12px;color:var(--g500)">Today's orders</div><div style="font-size:22px;font-weight:700">${todays.length}</div></div>
+      <div><div style="font-size:12px;color:var(--g500)">Pending for 3:30 run</div><div style="font-size:22px;font-weight:700;color:var(--warning)">${pend.length}</div></div>
+      <div><div style="font-size:12px;color:var(--g500)">Today's value</div><div style="font-size:22px;font-weight:700">${fmtMoney(totValue)}</div></div>
+      <div><div style="font-size:12px;color:var(--g500)">Paid so far</div><div style="font-size:22px;font-weight:700;color:var(--success)">${fmtMoney(paidValue)}</div></div>
+    </div>`;
+
+  const stCls={pending:'badge-warning',ordered:'badge-info',received:'badge-purple',delivered:'badge-success',cancelled:'badge-gray'};
+  document.getElementById('o3Body').innerHTML=orders.length?orders.map(o=>{
+    const line=(Number(o.price)||0)*(Number(o.qty)||1);
+    return `<tr>
+      <td style="font-size:12px">${fmtDate(o.created)}</td>
+      <td><strong>${o.sku}</strong></td>
+      <td>${o.name}${o.notes?`<br><span style="font-size:11px;color:var(--g500)">${o.notes}</span>`:''}</td>
+      <td>${o.qty}</td>
+      <td><span class="badge badge-gray">${o.supplier}</span></td>
+      <td>${o.store||'-'}</td>
+      <td>${o.customer_name||'-'}</td>
+      <td>${o.customer_phone||''}</td>
+      <td>${fmtMoney(line)}</td>
+      <td><button class="btn btn-sm ${o.paid?'btn-success':'btn-secondary'}" onclick="toggle3pmPaid('${o.id}')">${o.paid?'PAID':'unpaid'}</button></td>
+      <td><span class="badge ${stCls[o.status]||'badge-gray'}">${o.status}</span></td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-sm btn-secondary" title="Edit" onclick="openNew3pmOrder('${o.id}')"><i class="fas fa-pen"></i></button>
+        ${o.status==='pending'?`<button class="btn btn-sm btn-primary" title="Mark Ordered" onclick="set3pmStatus('${o.id}','ordered')"><i class="fas fa-paper-plane"></i></button>`:''}
+        ${o.status==='ordered'?`<button class="btn btn-sm btn-primary" title="Mark Received" onclick="set3pmStatus('${o.id}','received')"><i class="fas fa-box"></i></button>`:''}
+        ${o.status==='received'?`<button class="btn btn-sm btn-success" title="Delivered to customer" onclick="set3pmStatus('${o.id}','delivered')"><i class="fas fa-check"></i></button>`:''}
+        <button class="btn btn-sm btn-danger" title="Delete" onclick="delete3pmOrder('${o.id}')"><i class="fas fa-trash"></i></button>
+      </td>
+    </tr>`;
+  }).join(''):'<tr><td colspan="12" class="empty-state">No orders yet — click New Order to add one</td></tr>';
+}
+
+function openNew3pmOrder(id){
+  const orders=getOrders3pm();
+  const existing=id?orders.find(o=>o.id===id):null;
+  document.getElementById('modalTitle').textContent=existing?'Edit 3pm Order':'New 3pm Order';
+  document.getElementById('modalBox').classList.add('modal-wide');
+  const storeOpts=(isAdmin()?STORES:currentUser.stores.filter(s=>s!=='Main')).map(s=>`<option${existing?.store===s?' selected':(!existing&&s===currentStore?' selected':'')}>${s}</option>`).join('');
+  document.getElementById('modalBody').innerHTML=`
+    <div class="form-row form-row-3" style="align-items:end">
+      <div class="form-group"><label>SKU *</label><input class="form-control" id="o3SKU" placeholder="Paste supplier SKU..." value="${existing?.sku||''}"></div>
+      <div class="form-group"><label>Supplier</label><select class="form-control" id="o3Sup"><option value="mobilesentrix"${existing?.supplier==='mobilesentrix'?' selected':''}>MobileSentrix</option><option value="techpoint"${existing?.supplier==='techpoint'?' selected':''}>TechPoint</option><option value="other"${existing?.supplier==='other'?' selected':''}>Other</option></select></div>
+      <div class="form-group"><button type="button" class="btn btn-secondary" onclick="lookup3pmSKU()"><i class="fas fa-search"></i> Lookup in stock</button></div>
+    </div>
+    <div class="form-row form-row-3">
+      <div class="form-group" style="grid-column:span 2"><label>Product Name *</label><input class="form-control" id="o3Name" placeholder="e.g. iPhone 14 Pro Max Battery" value="${existing?.name||''}"></div>
+      <div class="form-group"><label>Qty</label><input class="form-control" type="number" id="o3Qty" value="${existing?.qty||1}" min="1"></div>
+    </div>
+    <div class="form-row form-row-3">
+      <div class="form-group"><label>Delivery Store *</label><select class="form-control" id="o3StoreSel">${storeOpts}</select></div>
+      <div class="form-group"><label>Customer Name *</label><input class="form-control" id="o3Cust" value="${existing?.customer_name||''}"></div>
+      <div class="form-group"><label>Customer Phone</label><input class="form-control" id="o3Phone" value="${existing?.customer_phone||''}"></div>
+    </div>
+    <div class="form-row form-row-3">
+      <div class="form-group"><label>Price charged to customer (£)</label><input class="form-control" type="number" step="0.01" id="o3Price" value="${existing?.price||0}"></div>
+      <div class="form-group"><label>Paid?</label><select class="form-control" id="o3Paid"><option value="false"${!existing?.paid?' selected':''}>Unpaid</option><option value="true"${existing?.paid?' selected':''}>Paid</option></select></div>
+      <div class="form-group"><label>Status</label><select class="form-control" id="o3StatSel"><option value="pending"${(existing?.status||'pending')==='pending'?' selected':''}>Pending</option><option value="ordered"${existing?.status==='ordered'?' selected':''}>Ordered</option><option value="received"${existing?.status==='received'?' selected':''}>Received</option><option value="delivered"${existing?.status==='delivered'?' selected':''}>Delivered</option><option value="cancelled"${existing?.status==='cancelled'?' selected':''}>Cancelled</option></select></div>
+    </div>
+    <div class="form-group"><label>Notes (colour / variant / urgency)</label><textarea class="form-control" id="o3Notes" rows="2">${existing?.notes||''}</textarea></div>`;
+  document.getElementById('modalFooter').innerHTML=`<button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveNew3pmOrder('${existing?.id||''}')"><i class="fas fa-save"></i> Save Order</button>`;
+  openModal();
+  setTimeout(()=>{ const el=document.getElementById('o3SKU'); if(el&&!existing) el.focus(); }, 50);
+}
+
+function lookup3pmSKU(){
+  const sku=(document.getElementById('o3SKU').value||'').trim();
+  if(!sku){alert('Paste a SKU first'); return;}
+  const prods=getProducts();
+  const hit=prods.find(p=>(p.sku||'').toLowerCase()===sku.toLowerCase());
+  if(hit){
+    document.getElementById('o3Name').value=hit.name;
+    if(hit.sell && !Number(document.getElementById('o3Price').value)) document.getElementById('o3Price').value=hit.sell;
+    alert('Found in your stock: '+hit.name+'\\nIf already in stock, you may not need to order it from supplier.');
+  } else {
+    alert('SKU not in your stock. Enter product name manually.');
+  }
+}
+
+function saveNew3pmOrder(existingId){
+  const sku=(document.getElementById('o3SKU').value||'').trim();
+  const name=(document.getElementById('o3Name').value||'').trim();
+  const store=document.getElementById('o3StoreSel').value;
+  const cust=(document.getElementById('o3Cust').value||'').trim();
+  if(!sku){alert('SKU required');return}
+  if(!name){alert('Product name required');return}
+  if(!cust){alert('Customer name required');return}
+  const rec={
+    id: existingId || uid(),
+    sku, name,
+    supplier: document.getElementById('o3Sup').value,
+    store,
+    qty: parseInt(document.getElementById('o3Qty').value)||1,
+    customer_name: cust,
+    customer_phone: (document.getElementById('o3Phone').value||'').trim(),
+    price: parseFloat(document.getElementById('o3Price').value)||0,
+    paid: document.getElementById('o3Paid').value==='true',
+    notes: (document.getElementById('o3Notes').value||'').trim(),
+    status: document.getElementById('o3StatSel').value,
+    created: existingId ? (getOrders3pm().find(o=>o.id===existingId)?.created || now()) : now(),
+  };
+  const list=getOrders3pm();
+  if(existingId){
+    const i=list.findIndex(o=>o.id===existingId);
+    if(i>=0) list[i]={...list[i], ...rec};
+  } else {
+    list.unshift(rec);
+  }
+  save('customerOrders', list);
+  closeModal();
+  render3pmOrders();
+}
+
+function toggle3pmPaid(id){
+  const list=getOrders3pm();
+  const o=list.find(x=>x.id===id); if(!o) return;
+  o.paid=!o.paid;
+  save('customerOrders', list);
+  render3pmOrders();
+}
+
+function set3pmStatus(id, status){
+  const list=getOrders3pm();
+  const o=list.find(x=>x.id===id); if(!o) return;
+  o.status=status;
+  const nowIso=now();
+  if(status==='ordered') o.ordered_at=nowIso;
+  if(status==='received') o.received_at=nowIso;
+  if(status==='delivered') o.delivered_at=nowIso;
+  save('customerOrders', list);
+  render3pmOrders();
+}
+
+function delete3pmOrder(id){
+  if(!confirm('Delete this order?')) return;
+  const list=getOrders3pm().filter(o=>o.id!==id);
+  save('customerOrders', list);
+  render3pmOrders();
 }
 
 function saveQuickTicket(){
