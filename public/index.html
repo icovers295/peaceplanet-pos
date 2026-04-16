@@ -192,20 +192,28 @@ textarea.form-control{resize:vertical;min-height:60px}
 /* RECEIPT */
 .receipt-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:1500;align-items:center;justify-content:center}
 .receipt-overlay.active{display:flex}
-.receipt-paper{background:#fff;width:320px;padding:30px 24px;border-radius:4px;font-family:'Courier New',monospace;font-size:12px;max-height:90vh;overflow-y:auto}
-.receipt-paper .r-header{text-align:center;margin-bottom:16px}
-.receipt-paper .r-header h2{font-size:18px;font-family:-apple-system,sans-serif}
-.receipt-paper .r-line{border-top:1px dashed #999;margin:10px 0}
-.receipt-paper .r-row{display:flex;justify-content:space-between;padding:2px 0}
-.receipt-paper .r-total{font-weight:700;font-size:16px;border-top:2px solid #000;padding-top:6px;margin-top:6px}
-.receipt-paper .r-footer{text-align:center;margin-top:16px;font-size:11px;color:#666}
+.receipt-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:1500;align-items:center;justify-content:center}
+.receipt-paper{background:#fff;width:320px;padding:30px 24px;border-radius:4px;font-family:'Courier New',monospace;font-size:15px;font-weight:700;color:#000;max-height:90vh;overflow-y:auto;-webkit-font-smoothing:none;letter-spacing:.02em;line-height:1.5}
+.receipt-paper *{color:#000!important}
+.receipt-paper .r-header{text-align:center;margin-bottom:18px}
+.receipt-paper .r-header h2{font-size:24px;font-weight:900;font-family:-apple-system,sans-serif;letter-spacing:-.01em}
+.receipt-paper .r-header p{font-size:14px;font-weight:700;margin:3px 0}
+.receipt-paper .r-line{border-top:2px solid #000;margin:12px 0}
+.receipt-paper .r-row{display:flex;justify-content:space-between;padding:3px 0;font-size:14px;font-weight:700}
+.receipt-paper .r-row span{font-weight:700}
+.receipt-paper .r-total{font-weight:900;font-size:20px;border-top:3px solid #000;padding-top:8px;margin-top:8px}
+.receipt-paper .r-footer{text-align:center;margin-top:18px;font-size:13px;font-weight:700;color:#000}
 .receipt-actions{display:flex;gap:10px;margin-top:16px;justify-content:center}
 
 @media print{
   body>*:not(.receipt-overlay){display:none!important}
   .receipt-overlay{position:static!important;background:none!important}
   .receipt-actions{display:none!important}
-  .receipt-paper{box-shadow:none!important}
+  .receipt-paper{box-shadow:none!important;border-radius:0!important;width:100%!important;padding:8px!important;font-size:16px!important;font-weight:900!important}
+  .receipt-paper *{font-weight:900!important;color:#000!important;-webkit-print-color-adjust:exact}
+  .receipt-paper .r-header h2{font-size:28px!important;font-weight:900!important;-webkit-text-fill-color:#000!important;background:none!important}
+  .receipt-paper .r-total{font-size:22px!important}
+  .receipt-paper .r-line{border-top:3px solid #000!important}
 }
 
 @media(max-width:900px){
@@ -299,7 +307,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
 
 /* Receipt — keep mono but prettier header */
 .receipt-paper{border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.24)}
-.receipt-paper .r-header h2{font-weight:700;letter-spacing:-.02em;background:linear-gradient(135deg,#0a84ff 0%,#5856d6 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.receipt-paper .r-header h2{font-weight:900;letter-spacing:-.02em;color:#000}
 
 /* Login — bigger iOS feel */
 .login-page{background:linear-gradient(180deg,#1c1c1e 0%,#000 50%,#1c1c1e 100%)}
@@ -1430,16 +1438,16 @@ function completeSale(method){
 function showReceipt(sale){
   const paper=document.getElementById('receiptPaper');
   paper.innerHTML=`
-    <div class="r-header"><h2>iCovers</h2><p>${sale.store} Store</p><p style="font-size:11px;color:#666">${fmtDate(sale.date)}</p><p style="font-weight:700">${sale.receipt}</p></div>
+    <div class="r-header"><h2 style="font-size:26px;font-weight:900;color:#000">iCovers</h2><p style="font-size:15px;font-weight:800;color:#000">${sale.store} Store</p><p style="font-size:13px;font-weight:700;color:#000">${fmtDate(sale.date)}</p><p style="font-size:15px;font-weight:900;color:#000">${sale.receipt}</p></div>
     <div class="r-line"></div>
-    ${sale.items.map(i=>`<div class="r-row"><span>${i.name} x${i.qty}</span><span>${fmtMoney(i.qty*i.price)}</span></div>`).join('')}
+    ${sale.items.map(i=>`<div class="r-row"><span style="font-weight:800">${i.name} x${i.qty}</span><span style="font-weight:900">${fmtMoney(i.qty*i.price)}</span></div>`).join('')}
     <div class="r-line"></div>
-    <div class="r-row"><span>Subtotal</span><span>${fmtMoney(sale.subtotal)}</span></div>
-    ${sale.discount>0?`<div class="r-row"><span>Discount</span><span>-${fmtMoney(sale.discount)}</span></div>`:''}
-    <div class="r-row r-total"><span>TOTAL</span><span>${fmtMoney(sale.total)}</span></div>
-    <div class="r-row"><span>Payment</span><span>${sale.method.toUpperCase()}</span></div>
+    <div class="r-row"><span style="font-weight:800">Subtotal</span><span style="font-weight:900">${fmtMoney(sale.subtotal)}</span></div>
+    ${sale.discount>0?`<div class="r-row"><span style="font-weight:800">Discount</span><span style="font-weight:900">-${fmtMoney(sale.discount)}</span></div>`:''}
+    <div class="r-row r-total" style="font-size:22px;font-weight:900"><span>TOTAL</span><span>${fmtMoney(sale.total)}</span></div>
+    <div class="r-row"><span style="font-weight:800">Payment</span><span style="font-weight:900">${sale.method.toUpperCase()}</span></div>
     <div class="r-line"></div>
-    <div class="r-footer">Thank you for choosing iCovers!<br>www.icovers.co.uk</div>`;
+    <div class="r-footer" style="font-size:14px;font-weight:700;color:#000">Thank you for choosing iCovers!<br>www.icovers.co.uk</div>`;
   document.getElementById('receiptOverlay').classList.add('active');
 }
 
@@ -1476,38 +1484,38 @@ function showInvoice(sale, customer){
   const custAddr  = cust ? (cust.address||'') : '';
   paper.innerHTML = `
     <div class="r-header" style="text-align:left">
-      <h2 style="margin:0">iCovers</h2>
-      <p style="margin:2px 0;font-size:11px;color:#666">Phone Repair &amp; Accessories</p>
-      <p style="margin:2px 0;font-size:11px;color:#666">${sale.store} Store, Northern Ireland</p>
-      <p style="margin:2px 0;font-size:11px;color:#666">Email: ${COMPANY_EMAIL}</p>
-      <p style="margin:2px 0;font-size:11px;color:#666">Web: www.icovers.co.uk</p>
+      <h2 style="margin:0;font-size:26px;font-weight:900;color:#000">iCovers</h2>
+      <p style="margin:3px 0;font-size:14px;font-weight:700;color:#000">Phone Repair &amp; Accessories</p>
+      <p style="margin:2px 0;font-size:13px;font-weight:700;color:#000">${sale.store} Store, Northern Ireland</p>
+      <p style="margin:2px 0;font-size:13px;font-weight:700;color:#000">Email: ${COMPANY_EMAIL}</p>
+      <p style="margin:2px 0;font-size:13px;font-weight:700;color:#000">Web: www.icovers.co.uk</p>
     </div>
     <div class="r-line"></div>
-    <div style="display:flex;justify-content:space-between;font-size:12px;margin:8px 0">
+    <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;margin:10px 0;color:#000">
       <div>
-        <div style="font-weight:700;margin-bottom:4px">INVOICE</div>
+        <div style="font-weight:900;margin-bottom:4px;font-size:16px">INVOICE</div>
         <div>No: <strong>${invNo}</strong></div>
         <div>Date: ${fmtDate(sale.date)}</div>
       </div>
       <div style="text-align:right">
-        <div style="font-weight:700;margin-bottom:4px">BILL TO</div>
-        <div>${custName||'Cash Customer'}</div>
+        <div style="font-weight:900;margin-bottom:4px;font-size:16px">BILL TO</div>
+        <div style="font-weight:800">${custName||'Cash Customer'}</div>
         ${custAddr?`<div>${custAddr}</div>`:''}
         ${custPhone?`<div>${custPhone}</div>`:''}
         ${custEmail?`<div>${custEmail}</div>`:''}
       </div>
     </div>
     <div class="r-line"></div>
-    <div class="r-row" style="font-weight:700"><span>Item</span><span>Amount</span></div>
-    ${sale.items.map(i=>`<div class="r-row"><span>${i.name} x${i.qty} @ ${fmtMoney(i.price)}</span><span>${fmtMoney(i.qty*i.price)}</span></div>`).join('')}
+    <div class="r-row" style="font-weight:900;font-size:14px"><span>Item</span><span>Amount</span></div>
+    ${sale.items.map(i=>`<div class="r-row"><span style="font-weight:800">${i.name} x${i.qty} @ ${fmtMoney(i.price)}</span><span style="font-weight:900">${fmtMoney(i.qty*i.price)}</span></div>`).join('')}
     <div class="r-line"></div>
-    <div class="r-row"><span>Subtotal</span><span>${fmtMoney(sale.subtotal)}</span></div>
-    ${sale.discount>0?`<div class="r-row"><span>Discount</span><span>-${fmtMoney(sale.discount)}</span></div>`:''}
-    <div class="r-row r-total"><span>TOTAL DUE</span><span>${fmtMoney(sale.total)}</span></div>
-    <div class="r-row"><span>Payment Method</span><span>${(sale.method||'').toUpperCase()}</span></div>
-    <div class="r-row"><span>Status</span><span>${sale.method?'PAID':'UNPAID'}</span></div>
+    <div class="r-row"><span style="font-weight:800">Subtotal</span><span style="font-weight:900">${fmtMoney(sale.subtotal)}</span></div>
+    ${sale.discount>0?`<div class="r-row"><span style="font-weight:800">Discount</span><span style="font-weight:900">-${fmtMoney(sale.discount)}</span></div>`:''}
+    <div class="r-row r-total" style="font-size:22px;font-weight:900"><span>TOTAL DUE</span><span>${fmtMoney(sale.total)}</span></div>
+    <div class="r-row"><span style="font-weight:800">Payment Method</span><span style="font-weight:900">${(sale.method||'').toUpperCase()}</span></div>
+    <div class="r-row"><span style="font-weight:800">Status</span><span style="font-weight:900">${sale.method?'PAID':'UNPAID'}</span></div>
     <div class="r-line"></div>
-    <div class="r-footer" style="font-size:10px;color:#666">
+    <div class="r-footer" style="font-size:13px;font-weight:700;color:#000">
       Thank you for your business.<br>
       For any queries please contact: ${COMPANY_EMAIL}<br>
       All repairs carry a 90-day warranty on parts &amp; labour.
