@@ -5,7 +5,7 @@ const { authMiddleware, requireRole } = require('../middleware/auth');
 
 const router = express.Router();
 
-// ── Smart search: abbreviation expansion + fuzzy word matching ──
+// ââ Smart search: abbreviation expansion + fuzzy word matching ââ
 const SEARCH_ALIASES = {
   // Phone brands - single letter shortcuts
   'f': 'iphone', 'ip': 'iphone', 'iph': 'iphone',
@@ -64,7 +64,7 @@ router.get('/', authMiddleware, (req, res) => {
   }
   if (search) {
     // Smart search: expand abbreviations, then match each word against name/SKU/category
-    // For short numeric terms (model numbers like "15", "14"), only match against name & category — not SKU
+    // For short numeric terms (model numbers like "15", "14"), only match against name & category â not SKU
     // This prevents barcode/SKU numbers from polluting model-number searches
     // If the entire search looks like a barcode/SKU (long number or starts with letters+digits), search SKU too
     const searchWords = expandSearch(search);
@@ -125,6 +125,104 @@ router.get('/', authMiddleware, (req, res) => {
   const total = db.prepare(countQuery).get(...countParams);
 
   res.json({ products, total: total.total, page: parseInt(page), limit: parseInt(limit) });
+});
+
+// Get categories
+router.get('/categories/list', authMiddleware, (req, res) => {
+  const categories = db.prepare('SELECT * FROM categories ORDER BY name').all();
+  res.json(categories);
+});
+
+// Create category
+router.post('/categories', authMiddleware, requireRole('admin', 'manager'), (req, res) => {
+  const { name, description } = req.body;
+  if (!name) return res.status(400).json({ error: 'Name required' });
+
+  const id = uuidv4();
+  db.prepare('INSERT INTO categories (id, name, description) VALUES (?, ?, ?)').run(id, name, description || '');
+  res.status(201).json({ id, name });
+});
+
+// Bulk import products + per-store stock (admin only)
+router.post('/bulk-import', authMiddleware, requireRole('admin'), (req, res) => {
+  const { products = [], stock = {} } = req.body;
+  if (!Array.isArray(products)) return res.status(400).json({ error: 'products must be array' });
+
+  const stores = db.prepare('SELECT id FROM stores').all();
+  const storeIds = stores.map(s => s.id);
+
+  // Preload categories
+  const catRows = db.prepare('SELECT id, name FROM categories').all();
+  const catMap = new Map(catRows.map(c => [c.name.toLowerCase(), c.id]));
+  const insertCat = db.prepare('INSERT INTO categories (id, name, description) VALUES (?, ?, ?)');
+
+  const existingSkus = new Map(db.prepare('SELECT id, sku FROM products').all().map(p => [p.sku, p.id]));
+  const insertProd = db.prepare('INSERT INTO products (id, sku, name, description, category_id, cost_price, sell_price, is_serialized) VALUES (?, ?, ?, ?, ?, ?, ?, 0)');
+  const updateProd = db.prepare('UPDATE products SET name=?, category_id=?, cost_price=?, sell_price=? WHERE id=?');
+  const insertInv = db.prepare('INSERT INTO inventory (id, product_id, store_id, quantity) VALUES (?, ?, ?, 0)');
+  const existingInv = db.prepare('SELECT product_id, store_id FROM inventory');
+  const updateInv = db.prepare('UPDATE inventory SET quantity = ? WHERE product_id = ? AND store_id = ?');
+
+  const stats = { categories_created: 0, products_created: 0, products_updated: 0, inventory_set: 0 };
+
+  const tx = db.transaction(() => {
+    // Create missing categories
+    for (const p of products) {
+      const key = (p.category || '').toLowerCase();
+      if (key && !catMap.has(key)) {
+        const cid = uuidv4();
+        insertCat.run(cid, p.category, '');
+        catMap.set(key, cid);
+        stats.categories_created++;
+      }
+    }
+
+    // Create or update products
+    const skuToId = new Map();
+    for (const p of products) {
+      const catId = p.category ? catMap.get(p.category.toLowerCase()) : null;
+      if (existingSkus.has(p.sku)) {
+        const id = existingSkus.get(p.sku);
+        updateProd.run(p.name, catId, p.cost_price || 0, p.sell_price || 0, id);
+        skuToId.set(p.sku, id);
+        stats.products_updated++;
+      } else {
+        const id = uuidv4();
+        insertProd.run(id, p.sku, p.name, '', catId, p.cost_price || 0, p.sell_price || 0);
+        skuToId.set(p.sku, id);
+        stats.products_created++;
+      }
+    }
+
+    // Ensure inventory rows exist for every product Ã store
+    const invSet = new Set(existingInv.all().map(r => r.product_id + '|' + r.store_id));
+    for (const pid of skuToId.values()) {
+      for (const sid of storeIds) {
+        if (!invSet.has(pid + '|' + sid)) {
+          insertInv.run(uuidv4(), pid, sid);
+          invSet.add(pid + '|' + sid);
+        }
+      }
+    }
+
+    // Apply stock
+    for (const [sku, perStore] of Object.entries(stock)) {
+      const pid = skuToId.get(sku);
+      if (!pid) continue;
+      for (const [sid, qty] of Object.entries(perStore)) {
+        updateInv.run(qty, pid, sid);
+        stats.inventory_set++;
+      }
+    }
+  });
+
+  try {
+    tx();
+    res.json({ success: true, ...stats });
+  } catch (e) {
+    console.error('Bulk import error:', e);
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // Get single product with all store inventory
@@ -293,97 +391,6 @@ router.post('/transfer', authMiddleware, requireRole('admin', 'manager'), (req, 
     .run(uuidv4(), product_id, to_store_id, 'transfer', quantity, transferId, `Transfer in from store`, req.user.id);
 
   res.json({ success: true, transfer_id: transferId });
-});
-
-// Get categories
-router.get('/categories/list', authMiddleware, (req, res) => {
-  const categories = db.prepare('SELECT * FROM categories ORDER BY name').all();
-  res.json(categories);
-});
-
-// Create category
-router.post('/categories', authMiddleware, requireRole('admin', 'manager'), (req, res) => {
-  const { name, description } = req.body;
-  if (!name) return res.status(400).json({ error: 'Name required' });
-
-  const id = uuidv4();
-  db.prepare('INSERT INTO categories (id, name, description) VALUES (?, ?, ?)').run(id, name, description || '');
-  res.status(201).json({ id, name });
-});
-
-
-// Bulk import products + per-store stock (admin only)
-router.post('/bulk-import', authMiddleware, requireRole('admin'), (req, res) => {
-  const { products = [], stock = {} } = req.body;
-  if (!Array.isArray(products)) return res.status(400).json({ error: 'products must be array' });
-
-  const stores = db.prepare('SELECT id FROM stores').all();
-  const storeIds = stores.map(s => s.id);
-
-  const catRows = db.prepare('SELECT id, name FROM categories').all();
-  const catMap = new Map(catRows.map(c => [c.name.toLowerCase(), c.id]));
-  const insertCat = db.prepare('INSERT INTO categories (id, name, description) VALUES (?, ?, ?)');
-
-  const existingSkus = new Map(db.prepare('SELECT id, sku FROM products').all().map(p => [p.sku, p.id]));
-  const insertProd = db.prepare('INSERT INTO products (id, sku, name, description, category_id, cost_price, sell_price, is_serialized) VALUES (?, ?, ?, ?, ?, ?, ?, 0)');
-  const updateProd = db.prepare('UPDATE products SET name=?, category_id=?, cost_price=?, sell_price=? WHERE id=?');
-  const insertInv = db.prepare('INSERT INTO inventory (id, product_id, store_id, quantity) VALUES (?, ?, ?, 0)');
-  const existingInv = db.prepare('SELECT product_id, store_id FROM inventory');
-  const updateInv = db.prepare('UPDATE inventory SET quantity = ? WHERE product_id = ? AND store_id = ?');
-
-  const stats = { categories_created: 0, products_created: 0, products_updated: 0, inventory_set: 0 };
-
-  const tx = db.transaction(() => {
-    for (const p of products) {
-      const key = (p.category || '').toLowerCase();
-      if (key && !catMap.has(key)) {
-        const cid = uuidv4();
-        insertCat.run(cid, p.category, '');
-        catMap.set(key, cid);
-        stats.categories_created++;
-      }
-    }
-    const skuToId = new Map();
-    for (const p of products) {
-      const catId = p.category ? catMap.get(p.category.toLowerCase()) : null;
-      if (existingSkus.has(p.sku)) {
-        const id = existingSkus.get(p.sku);
-        updateProd.run(p.name, catId, p.cost_price || 0, p.sell_price || 0, id);
-        skuToId.set(p.sku, id);
-        stats.products_updated++;
-      } else {
-        const id = uuidv4();
-        insertProd.run(id, p.sku, p.name, '', catId, p.cost_price || 0, p.sell_price || 0);
-        skuToId.set(p.sku, id);
-        stats.products_created++;
-      }
-    }
-    const invSet = new Set(existingInv.all().map(r => r.product_id + '|' + r.store_id));
-    for (const pid of skuToId.values()) {
-      for (const sid of storeIds) {
-        if (!invSet.has(pid + '|' + sid)) {
-          insertInv.run(uuidv4(), pid, sid);
-          invSet.add(pid + '|' + sid);
-        }
-      }
-    }
-    for (const [sku, perStore] of Object.entries(stock)) {
-      const pid = skuToId.get(sku);
-      if (!pid) continue;
-      for (const [sid, qty] of Object.entries(perStore)) {
-        updateInv.run(qty, pid, sid);
-        stats.inventory_set++;
-      }
-    }
-  });
-
-  try {
-    tx();
-    res.json({ success: true, ...stats });
-  } catch (e) {
-    console.error('Bulk import error:', e);
-    res.status(500).json({ error: e.message });
-  }
 });
 
 module.exports = router;
