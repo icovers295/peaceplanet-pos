@@ -2039,7 +2039,8 @@ function renderSales(){
   let sales=getSales().sort((a,b)=>new Date(b.date)-new Date(a.date));
   if(q)sales=sales.filter(s=>s.receipt.toLowerCase().includes(q));
   if(pf)sales=sales.filter(s=>s.method===pf);
-  if(!isAdmin())sales=sales.filter(s=>s.store===currentStore||currentUser.stores.includes(s.store));
+  // Admin on Main sees all stores; everyone else sees only their current store
+  if(currentStore!=='Main')sales=sales.filter(s=>s.store===currentStore);
 
   document.getElementById('saleBody').innerHTML=sales.length?sales.map(s=>{
     const itemCount=s.items.reduce((a,i)=>a+i.qty,0);
@@ -2102,7 +2103,8 @@ function renderReports(){
   else if(reportRange==='week'){const w=new Date(nowD);w.setDate(w.getDate()-7);sales=sales.filter(s=>new Date(s.date)>=w)}
   else if(reportRange==='month'){const m=new Date(nowD.getFullYear(),nowD.getMonth(),1);sales=sales.filter(s=>new Date(s.date)>=m)}
 
-  if(!isAdmin())sales=sales.filter(s=>currentUser.stores.includes(s.store));
+  // Admin on Main sees all stores; everyone else sees current store only
+  if(currentStore!=='Main')sales=sales.filter(s=>s.store===currentStore);
 
   const totalRev=sales.reduce((a,s)=>a+s.total,0);
   const totalCost=isAdmin()?sales.reduce((a,s)=>{const products=getProducts();return a+s.items.reduce((b,i)=>{const p=products.find(x=>x.id===i.productId);return b+(p?p.cost*i.qty:0)},0)},0):0;
@@ -2738,7 +2740,8 @@ function render3pmOrders(){
   const supf=document.getElementById('o3Supplier').value;
   const df=document.getElementById('o3Date').value;
   let orders=getOrders3pm();
-  if(!isAdmin()) orders=orders.filter(o=>currentUser.stores.includes(o.store));
+  // Admin on Main sees all stores; everyone else sees current store only
+  if(currentStore!=='Main') orders=orders.filter(o=>o.store===currentStore);
   if(q) orders=orders.filter(o=>(o.sku||'').toLowerCase().includes(q)||(o.name||'').toLowerCase().includes(q)||(o.customer_name||'').toLowerCase().includes(q));
   if(sf) orders=orders.filter(o=>o.status===sf);
   if(stf) orders=orders.filter(o=>o.store===stf);
