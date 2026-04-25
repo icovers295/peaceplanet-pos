@@ -158,7 +158,7 @@ router.post('/:id/parts', authMiddleware, (req, res) => {
   const id = uuidv4();
   const partCost = cost || product.cost_price;
 
-  // Note: Stock is NOT deducted here — only when repair is fully paid (key business rule)
+  // Note: Stock is NOT deducted here â only when repair is fully paid (key business rule)
   // We mark is_deducted = 0
   db.prepare('INSERT INTO repair_parts (id, repair_id, product_id, serial_item_id, quantity, cost, is_deducted) VALUES (?, ?, ?, ?, ?, ?, 0)')
     .run(id, req.params.id, product_id, serial_item_id || null, quantity || 1, partCost);
@@ -171,7 +171,7 @@ router.post('/:id/parts', authMiddleware, (req, res) => {
   res.status(201).json({ id });
 });
 
-// Process repair payment — THIS is when stock gets deducted
+// Process repair payment â THIS is when stock gets deducted
 router.post('/:id/pay', authMiddleware, (req, res) => {
   const { amount, payment_method } = req.body;
   const repair = db.prepare('SELECT * FROM repairs WHERE id = ?').get(req.params.id);
@@ -197,7 +197,7 @@ router.post('/:id/pay', authMiddleware, (req, res) => {
       db.prepare('UPDATE repair_parts SET is_deducted = 1 WHERE id = ?').run(part.id);
 
       // Log stock movement
-      db.prepare('INSERT INTO stock_movements (id, product_id, store_id, serial_item_id, movement_type, quantity, reference_id, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+      db.prepare('INSERT INTO stock_movements (id, product_id, store_id, serial_item_id, movement_type, quantity, reference_id, user_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)')
         .run(uuidv4(), part.product_id, repair.store_id, part.serial_item_id, 'repair_use', -part.quantity, repair.id, req.user.id);
 
       // Mark serialized items as used
