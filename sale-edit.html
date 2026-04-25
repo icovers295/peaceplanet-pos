@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Edit Sale — PeacePlanet POS</title>
+<title>Edit Sale â PeacePlanet POS</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -45,7 +45,6 @@
   .badge-refunded { background:rgba(255,59,48,0.15); color:#c0291f; }
   .actions { display:flex; gap:16px; margin-top:20px; padding-top:20px; border-top:1px solid #e8e8ed; }
 </style>
-<script src="/photo-capture.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -58,7 +57,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const token = localStorage.getItem('pos_token');
+const token = localStorage.getItem('pp_token');
 const saleId = new URLSearchParams(location.search).get('id');
 let sale = null;
 
@@ -81,7 +80,7 @@ async function api(path, opts={}) {
   return r.json();
 }
 
-function money(n) { return '£' + (Number(n)||0).toFixed(2); }
+function money(n) { return 'Â£' + (Number(n)||0).toFixed(2); }
 
 async function load() {
   if (!token) { location.href = '/'; return; }
@@ -111,7 +110,7 @@ function render() {
     <div class="card">
       <table>
         <thead>
-          <tr><th>Product</th><th>SKU</th><th style="width:80px">Qty</th><th style="width:110px">Unit £</th><th style="width:90px">Disc £</th><th style="width:90px">Total</th><th style="width:170px"></th></tr>
+          <tr><th>Product</th><th>SKU</th><th style="width:80px">Qty</th><th style="width:110px">Unit Â£</th><th style="width:90px">Disc Â£</th><th style="width:90px">Total</th><th style="width:170px"></th></tr>
         </thead>
         <tbody>
           ${sale.items.map(it => `
@@ -135,7 +134,7 @@ function render() {
       </table>
 
       <div class="add-row">
-        <input placeholder="Scan SKU or barcode…" id="addSku">
+        <input placeholder="Scan SKU or barcodeâ¦" id="addSku">
         <input type="number" min="1" value="1" id="addQty">
         <input type="number" step="0.01" placeholder="Price (optional)" id="addPrice">
         <button class="btn btn-primary" onclick="addItem()"><i class="fa fa-plus"></i> Add item</button>
@@ -146,19 +145,12 @@ function render() {
       <div class="totals"><span class="lbl">Tax</span><span class="val">${money(sale.tax_amount)}</span></div>
       <div class="totals total-row"><span class="lbl">Total</span><span class="val">${money(sale.total)}</span></div>
 
-      <div style="margin-top:20px;padding-top:20px;border-top:1px solid #e8e8ed">
-        <div style="font-size:13px;font-weight:700;text-transform:uppercase;color:#8e8e93;letter-spacing:0.05em;margin-bottom:12px">Photos</div>
-        <div id="photos-gallery"></div>
-      </div>
       <div class="actions">
         ${status !== 'refunded' ? `<button class="btn btn-danger" onclick="refundAll()"><i class="fa fa-ban"></i> Refund whole sale</button>` : ''}
         <button class="btn btn-primary" onclick="window.print()"><i class="fa fa-print"></i> Print receipt</button>
       </div>
     </div>
   `;
-
-  // Photos
-  if (window.renderPhotoGallery) renderPhotoGallery(document.getElementById('photos-gallery'), { entity_type: 'sale', entity_id: sale.id, tag: 'receipt' });
 
   // Enter on add-sku adds item
   document.getElementById('addSku').addEventListener('keydown', e => {
