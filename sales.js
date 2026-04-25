@@ -216,7 +216,7 @@ router.post('/:id/refund', authMiddleware, (req, res) => {
       db.prepare('UPDATE serial_items SET status = ? WHERE id = ?').run('in_stock', item.serial_item_id);
     }
 
-    db.prepare('INSERT INTO stock_movements (id, product_id, store_id, serial_item_id, movement_type, quantity, reference_id, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+    db.prepare('INSERT INTO stock_movements (id, product_id, store_id, serial_item_id, movement_type, quantity, reference_id, user_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)')
       .run(uuidv4(), item.product_id, sale.store_id, item.serial_item_id, 'return', item.quantity, sale.id, req.user.id);
   }
 
