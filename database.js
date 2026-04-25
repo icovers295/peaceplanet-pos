@@ -1,5 +1,4 @@
-// //fix
- const Database = require('better-sqlite3');
+const Database = require('better-sqlite3');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
@@ -148,6 +147,7 @@ function initialize() {
       unit_price REAL NOT NULL,
       discount REAL DEFAULT 0,
       total REAL NOT NULL,
+      refunded INTEGER DEFAULT 0,
       FOREIGN KEY (sale_id) REFERENCES sales(id),
       FOREIGN KEY (product_id) REFERENCES products(id),
       FOREIGN KEY (serial_item_id) REFERENCES serial_items(id)
@@ -203,12 +203,15 @@ function initialize() {
       store_id TEXT NOT NULL,
       supplier_name TEXT,
       supplier_contact TEXT,
+      invoice_reference TEXT,
       status TEXT DEFAULT 'draft', -- draft, ordered, partial, received, cancelled
       total REAL DEFAULT 0,
       notes TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       received_at DATETIME,
-      FOREIGN KEY (store_id) REFERENCES stores(id)
+      received_by TEXT,
+      FOREIGN KEY (store_id) REFERENCES stores(id),
+      FOREIGN KEY (received_by) REFERENCES users(id)
     );
 
     -- Purchase order items
@@ -281,6 +284,16 @@ function initialize() {
     CREATE INDEX IF NOT EXISTS idx_stock_movements_product ON stock_movements(product_id);
   `);
 
+  // Migrations for existing databases
+  const migrations = [
+    'ALTER TABLE purchase_orders ADD COLUMN invoice_reference TEXT',
+    'ALTER TABLE purchase_orders ADD COLUMN received_by TEXT REFERENCES users(id)',
+    'ALTER TABLE sale_items ADD COLUMN refunded INTEGER DEFAULT 0',
+  ];
+  for (const sql of migrations) {
+    try { db.exec(sql); } catch(e) { /* column already exists */ }
+  }
+
   // Seed default data
   seedDefaultData();
 }
@@ -291,10 +304,10 @@ function seedDefaultData() {
 
   // Create stores
   const stores = [
-    { id: uuidv4(), name: 'Main', address: 'Main Street, Northern Ireland', is_main: 1 },
-    { id: uuidv4(), name: 'Dungannon', address: 'Dungannon, Northern Ireland', is_main: 0 },
-    { id: uuidv4(), name: 'Cookstown', address: 'Cookstown, Northern Ireland', is_main: 0 },
-    { id: uuidv4(), name: 'Omagh', address: 'Omagh, Northern Ireland', is_main: 0 },
+    { id: uuidv4(), name: 'PeacePlanet - Main', address: 'Main Street, Northern Ireland', is_main: 1 },
+    { id: uuidv4(), name: 'PeacePlanet - Dungannon', address: 'Dungannon, Northern Ireland', is_main: 0 },
+    { id: uuidv4(), name: 'PeacePlanet - Cookstown', address: 'Cookstown, Northern Ireland', is_main: 0 },
+    { id: uuidv4(), name: 'PeacePlanet - Omagh', address: 'Omagh, Northern Ireland', is_main: 0 },
   ];
 
   const insertStore = db.prepare('INSERT INTO stores (id, name, address, is_main) VALUES (?, ?, ?, ?)');
