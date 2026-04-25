@@ -244,11 +244,9 @@ router.post('/:id/receive', authMiddleware, requireRole('admin', 'manager'), (re
 
     // Update PO status
     const newStatus = allReceived ? 'received' : 'partial';
-    const receivedAt = allReceived ? 'CURRENT_TIMESTAMP' : null;
-    const receivedAtClause = receivedAt ? ', received_at = CURRENT_TIMESTAMP, received_by = ?' : '';
 
-    if (receivedAtClause) {
-      db.prepare(`UPDATE purchase_orders SET status = ?${receivedAtClause} WHERE id = ?`)
+    if (allReceived) {
+      db.prepare('UPDATE purchase_orders SET status = ?, received_at = CURRENT_TIMESTAMP, received_by = ? WHERE id = ?')
         .run(newStatus, req.user.id, req.params.id);
     } else {
       db.prepare('UPDATE purchase_orders SET status = ? WHERE id = ?')
