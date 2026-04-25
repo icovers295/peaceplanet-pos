@@ -27,7 +27,7 @@ router.get('/:id', authMiddleware, (req, res) => {
   if (!store) return res.status(404).json({ error: 'Store not found' });
 
   // Non-admins can't view Main store
-  if (store.is_main && !req.user.canSeeMainStore) {
+  if (store.is_main && req.user.role !== 'admin') {
     return res.status(403).json({ error: 'No access to this store' });
   }
 
