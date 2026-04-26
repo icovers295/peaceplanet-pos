@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>iCovers POS</title>
+<title>PeacePlanet POS</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -228,7 +228,7 @@ textarea.form-control{resize:vertical;min-height:60px}
   .row{flex-direction:column}
 }
 
-/* âââââââââ iCovers Apple-style polish âââââââââ */
+/* âââââââââ PeacePlanet Apple-style polish âââââââââ */
 html,body{-webkit-tap-highlight-color:transparent}
 body{background:linear-gradient(180deg,#f5f5f7 0%,#eef1f8 100%);background-attachment:fixed;font-feature-settings:'cv11','ss01','ss03';letter-spacing:-.015em}
 body::before{content:'';position:fixed;top:-200px;right:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(175,82,222,.15) 0%,transparent 70%);pointer-events:none;z-index:0}
@@ -327,11 +327,11 @@ tr:hover td{background:rgba(10,132,255,.04)}
 ::-webkit-scrollbar-track{background:transparent}
 </style>
 
-<!-- iCovers POS â Supabase live backend -->
+<!-- PeacePlanet POS â Supabase live backend -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /*
- * iCovers POS â Supabase Bridge
+ * PeacePlanet POS â Supabase Bridge
  *
  * Replaces PREVIEW.html's in-browser localStorage with a live Supabase backend
  * so every till in every shop reads/writes the same data in real time.
@@ -880,7 +880,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
 @keyframes pp-spin{to{transform:rotate(360deg)}}
 </style>
 <div id="pp-loading-screen"><div class="box">
-  <h2>iCovers POS</h2>
+  <h2>PeacePlanet POS</h2>
   <div class="spin"></div>
   <p id="pp-loading-msg">Connecting to databaseâ¦</p>
 </div></div>
@@ -909,7 +909,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
 <!-- LOGIN -->
 <div class="login-page" id="loginPage">
 <div class="login-card">
-<h1>iCovers</h1>
+<h1>PeacePlanet</h1>
 <p class="subtitle">Point of Sale System</p>
 <form onsubmit="doLogin(event)">
 <div class="form-group"><label>Email</label><input class="form-control" type="email" id="loginEmail" value="admin@peaceplanet.com"></div>
@@ -923,7 +923,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
 <!-- APP -->
 <div class="app-layout" id="appLayout">
 <div class="sidebar">
-<div class="sidebar-header"><h2>iCovers</h2><div class="store-name">Point of Sale</div></div>
+<div class="sidebar-header"><h2>PeacePlanet</h2><div class="store-name">Point of Sale</div></div>
 <nav class="sidebar-nav" id="sidebarNav"></nav>
 <div class="sidebar-footer">
 <div class="user-name" id="footerUser">-</div>
@@ -1150,7 +1150,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
 <!-- MONITOR -->
 <div class="monitor-mode" id="monitorMode">
 <div class="monitor-header">
-<h1><i class="fas fa-screwdriver-wrench"></i> iCovers Repairs</h1>
+<h1><i class="fas fa-screwdriver-wrench"></i> PeacePlanet Repairs</h1>
 <div style="display:flex;gap:12px;align-items:center">
 <span id="monitorStore" style="font-size:16px;color:rgba(255,255,255,.5)"></span>
 <span id="monitorTime" style="font-size:14px;color:rgba(255,255,255,.3)"></span>
@@ -1438,7 +1438,7 @@ function completeSale(method){
 function showReceipt(sale){
   const paper=document.getElementById('receiptPaper');
   paper.innerHTML=`
-    <div class="r-header"><h2 style="font-size:26px;font-weight:900;color:#000">iCovers</h2><p style="font-size:15px;font-weight:800;color:#000">${sale.store} Store</p><p style="font-size:13px;font-weight:700;color:#000">${fmtDate(sale.date)}</p><p style="font-size:15px;font-weight:900;color:#000">${sale.receipt}</p></div>
+    <div class="r-header"><h2 style="font-size:26px;font-weight:900;color:#000">PeacePlanet</h2><p style="font-size:15px;font-weight:800;color:#000">${sale.store} Store</p><p style="font-size:13px;font-weight:700;color:#000">${fmtDate(sale.date)}</p><p style="font-size:15px;font-weight:900;color:#000">${sale.receipt}</p></div>
     <div class="r-line"></div>
     ${sale.items.map(i=>`<div class="r-row"><span style="font-weight:800">${i.name} x${i.qty}</span><span style="font-weight:900">${fmtMoney(i.qty*i.price)}</span></div>`).join('')}
     <div class="r-line"></div>
@@ -1447,7 +1447,7 @@ function showReceipt(sale){
     <div class="r-row r-total" style="font-size:22px;font-weight:900"><span>TOTAL</span><span>${fmtMoney(sale.total)}</span></div>
     <div class="r-row"><span style="font-weight:800">Payment</span><span style="font-weight:900">${sale.method.toUpperCase()}</span></div>
     <div class="r-line"></div>
-    <div class="r-footer" style="font-size:14px;font-weight:700;color:#000">Thank you for choosing iCovers!<br>www.icovers.co.uk</div>`;
+    <div class="r-footer" style="font-size:14px;font-weight:700;color:#000">Thank you for choosing PeacePlanet!<br>www.icovers.co.uk</div>`;
   document.getElementById('receiptOverlay').classList.add('active');
 }
 
@@ -1484,7 +1484,7 @@ function showInvoice(sale, customer){
   const custAddr  = cust ? (cust.address||'') : '';
   paper.innerHTML = `
     <div class="r-header" style="text-align:left">
-      <h2 style="margin:0;font-size:26px;font-weight:900;color:#000">iCovers</h2>
+      <h2 style="margin:0;font-size:26px;font-weight:900;color:#000">PeacePlanet</h2>
       <p style="margin:3px 0;font-size:14px;font-weight:700;color:#000">Phone Repair &amp; Accessories</p>
       <p style="margin:2px 0;font-size:13px;font-weight:700;color:#000">${sale.store} Store, Northern Ireland</p>
       <p style="margin:2px 0;font-size:13px;font-weight:700;color:#000">Email: ${COMPANY_EMAIL}</p>
@@ -1543,10 +1543,10 @@ function emailCurrentInvoice(){
   const s = currentInvoiceSale;
   const invNo = invoiceNumberFor(s);
   const to = (s.customer && s.customer.email) ? s.customer.email : '';
-  const subject = encodeURIComponent('iCovers Invoice '+invNo);
+  const subject = encodeURIComponent('PeacePlanet Invoice '+invNo);
   const lines = s.items.map(i=>`${i.name} x${i.qty}  ${fmtMoney(i.qty*i.price)}`).join('%0D%0A');
   const body = encodeURIComponent(
-    `iCovers - ${s.store} Store\n`+
+    `PeacePlanet - ${s.store} Store\n`+
     `Invoice: ${invNo}\n`+
     `Date: ${fmtDate(s.date)}\n\n`+
     s.items.map(i=>`${i.name} x${i.qty}  ${fmtMoney(i.qty*i.price)}`).join('\n')+
@@ -1555,7 +1555,7 @@ function emailCurrentInvoice(){
     `TOTAL: ${fmtMoney(s.total)}\n`+
     `Payment: ${(s.method||'').toUpperCase()}\n\n`+
     `Any queries: ${COMPANY_EMAIL}\n`+
-    `Thank you for choosing iCovers.`
+    `Thank you for choosing PeacePlanet.`
   );
   const cc = encodeURIComponent(COMPANY_EMAIL);
   window.location.href = `mailto:${to}?cc=${cc}&subject=${subject}&body=${body}`;
@@ -1672,7 +1672,7 @@ function doAdjustStock(pid){
 function printLabel(pid){
   const p=getProducts().find(x=>x.id===pid);if(!p)return;
   const w=window.open('','_blank','width=400,height=300');
-  w.document.write(`<html><head><style>body{font-family:-apple-system,sans-serif;text-align:center;padding:20px}h2{margin:0;font-size:16px}p{margin:4px 0}.price{font-size:36px;font-weight:700}.sku{font-size:12px;color:#666;font-family:monospace}.barcode{font-size:48px;letter-spacing:2px;font-family:monospace;margin:8px 0}</style></head><body><h2>iCovers</h2><p>${p.name}</p><div class="barcode">||||| |||| |||||</div><p class="price">${fmtMoney(p.sell)}</p><p class="sku">${p.sku}</p><script>setTimeout(()=>{window.print()},300)<\/script></body></html>`);
+  w.document.write(`<html><head><style>body{font-family:-apple-system,sans-serif;text-align:center;padding:20px}h2{margin:0;font-size:16px}p{margin:4px 0}.price{font-size:36px;font-weight:700}.sku{font-size:12px;color:#666;font-family:monospace}.barcode{font-size:48px;letter-spacing:2px;font-family:monospace;margin:8px 0}</style></head><body><h2>PeacePlanet</h2><p>${p.name}</p><div class="barcode">||||| |||| |||||</div><p class="price">${fmtMoney(p.sell)}</p><p class="sku">${p.sku}</p><script>setTimeout(()=>{window.print()},300)<\/script></body></html>`);
 }
 
 // âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
