@@ -1131,7 +1131,7 @@
         <div class="nav-item" data-page="transfers" onclick="navigateTo('transfers')">
           <i class="fas fa-exchange-alt"></i> Stock Transfers
         </div>
-        <div class="nav-item" data-page="purchase-orders" onclick="navigateTo('purchase-orders')">
+        <div class="nav-item admin-only" data-page="purchase-orders" style="display: none;" onclick="navigateTo('purchase-orders')">
           <i class="fas fa-clipboard-list"></i> Purchase Orders
         </div>
         <div class="nav-item" data-page="sales-history" onclick="navigateTo('sales-history')">
@@ -1373,10 +1373,10 @@
             <thead>
               <tr>
                 <th>Reference</th>
-                <th>Supplier</th>
+                <th class="cost-col">Supplier</th>
                 <th>Receiving Store</th>
                 <th>Items</th>
-                <th>Total</th>
+                <th class="cost-col">Total</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
@@ -1531,6 +1531,8 @@
     let isAdmin = false;
     let isMonitorMode = false;
 
+    function canViewCosts(){return isAdmin||(currentUser&&currentUser.permissions&&currentUser.permissions.view_costs)}
+
     // ===== SUPABASE API HELPER =====
     async function supabase(table, method = 'GET', body = null, params = '') {
       const headers = {
@@ -1567,6 +1569,7 @@
         }
 
         currentUser = result[0];
+        currentUser.permissions = currentUser.permissions || {};
         isAdmin = currentUser.role === 'admin';
 
         // Get staff stores
@@ -1608,7 +1611,7 @@
     function updateUserInfo() {
       document.getElementById('userName').textContent = currentUser.name;
       document.getElementById('userEmail').textContent = currentUser.email;
-      document.querySelector('.admin-only').style.display = isAdmin ? 'flex' : 'none';
+      document.querySelectorAll('.admin-only').forEach(el => el.style.display = isAdmin ? 'flex' : 'none');
     }
 
     // ===== NAVIGATION =====
@@ -1967,13 +1970,13 @@
 
       // Show cost price column only for admin
       const costHeader = document.getElementById('costPriceHeader');
-      costHeader.style.display = isAdmin ? '' : 'none';
+      costHeader.style.display = canViewCosts() ? '' : 'none';
 
       products.forEach(product => {
         const stock = stocks.find(s => s.product_id === product.id)?.quantity || 0;
         const row = document.createElement('tr');
         let costHtml = '';
-        if (isAdmin) {
+        if (canViewCosts()) {
           costHtml = `<td>£${parseFloat(product.cost_price || 0).toFixed(2)}</td>`;
         }
         row.innerHTML = `
@@ -2015,7 +2018,7 @@
           <label class="form-label">Sell Price</label>
           <input type="number" class="form-input" id="modalSellPrice" step="0.01" required>
         </div>
-        <div class="form-group" ${!isAdmin ? 'style="display: none;"' : ''}>
+        <div class="form-group" ${!canViewCosts() ? 'style="display: none;"' : ''}>
           <label class="form-label">Cost Price</label>
           <input type="number" class="form-input" id="modalCostPrice" step="0.01">
         </div>
@@ -2419,6 +2422,7 @@
       try {
         const pos = await supabase('purchase_orders', 'GET', null, `select=*&order=created_at.desc`);
         renderPOTable(pos);
+        document.querySelectorAll('.cost-col').forEach(el => el.style.display = canViewCosts() ? '' : 'none');
       } catch (err) {
         showAlert('poAlert', err.message, 'error');
       }
@@ -2434,10 +2438,10 @@
 
         row.innerHTML = `
           <td>${po.invoice_ref || ''}</td>
-          <td>${po.supplier_name || ''}</td>
+          <td class="cost-col">${po.supplier_name || ''}</td>
           <td>${receivingStore}</td>
           <td>-</td>
-          <td>£${parseFloat(po.total_cost || 0).toFixed(2)}</td>
+          <td class="cost-col">£${parseFloat(po.total_cost || 0).toFixed(2)}</td>
           <td><span class="badge ${po.status === 'received' ? 'badge-success' : 'badge-warning'}">${po.status === 'received' ? 'Received' : 'Draft'}</span></td>
           <td>
             <button class="btn btn-sm btn-primary" onclick="showPODetailsModal('${po.id}')">View</button>
@@ -2545,15 +2549,15 @@
 
         openModal('Purchase Order Details', `
           <div style="margin-bottom: 16px;">
-            <p><strong>Supplier:</strong> ${poData.supplier_name}</p>
+            ${canViewCosts() ? `<p><strong>Supplier:</strong> ${poData.supplier_name}</p>` : ''}
             <p><strong>Invoice Ref:</strong> ${poData.invoice_ref || '-'}</p>
             <p><strong>Receiving Store:</strong> ${receivingStore}</p>
             <p><strong>Status:</strong> ${poData.status === 'received' ? 'Received' : 'Draft'}</p>
             <p><strong>Date:</strong> ${new Date(poData.created_at).toLocaleDateString('en-GB')}</p>
-            <p><strong>Total:</strong> £${parseFloat(poData.total_cost || 0).toFixed(2)}</p>
+            ${canViewCosts() ? `<p><strong>Total:</strong> £${parseFloat(poData.total_cost || 0).toFixed(2)}</p>` : ''}
           </div>
           <table class="data-table" style="width:100%">
-            <thead><tr><th>Product</th><th>Qty</th><th>Unit Cost</th><th>Line Total</th></tr></thead>
+            <thead><tr><th>Product</th><th>Qty</th>${canViewCosts()?'<th>Unit Cost</th><th>Line Total</th>':''}</tr></thead>
             <tbody>${itemsHtml}</tbody>
           </table>
         `, [{ text: 'Close', onclick: closeModal }]);
@@ -2775,6 +2779,10 @@
           </select>
         </div>
         <div class="form-group">
+          <label class="form-label">Permissions</label>
+          <div><label style="display:inline-flex;align-items:center;gap:6px;font-weight:400;font-size:13px"><input type="checkbox" id="sPermCosts"> View Cost Prices & Suppliers</label></div>
+        </div>
+        <div class="form-group">
           <label class="form-label">Stores</label>
           <div id="storeCheckboxes"></div>
         </div>
@@ -2806,12 +2814,15 @@
         const password = document.getElementById('modalStaffPassword').value;
         const role = document.getElementById('modalStaffRole').value;
 
+        const permCosts = document.getElementById('sPermCosts')?.checked || false;
+        const permissions = {view_costs: permCosts};
         const staff = await supabase('staff', 'POST', {
           name,
           email,
           password,
           role,
-          active: true
+          active: true,
+          permissions
         });
 
         // Add store assignments
