@@ -603,6 +603,19 @@ tr:hover td{background:rgba(10,132,255,.04)}
         .select('id,supplier_name,invoice_ref,receiving_store_id,staff_id,status,total_cost,created_at')
         .order('created_at', { ascending: false })
         .limit(200);
+      // Build staff name lookup for PO "received by"
+      const staffIds = [...new Set((pos || []).map(p => p.staff_id).filter(Boolean))];
+      const staffNameById = {};
+      if (staffIds.length) {
+        const { data: staffRows } = await this.client
+          .from('staff').select('id,name').in('id', staffIds);
+        for (const s of staffRows || []) staffNameById[s.id] = s.name;
+      }
+      // Build product SKU lookup
+      const prodCache = this._cache.products || [];
+      const skuByProdId = {};
+      for (const p of prodCache) { if (p.id && p.sku) skuByProdId[p.id] = p.sku; }
+
       const ids = (pos || []).map(p => p.id);
       const itemsById = {};
       if (ids.length) {
@@ -613,16 +626,27 @@ tr:hover td{background:rgba(10,132,255,.04)}
         for (const it of items || []) {
           (itemsById[it.po_id] ||= []).push({
             product_id: it.product_id, name: it.product_name,
+            sku: skuByProdId[it.product_id] || '',
             qty: it.quantity, cost: Number(it.cost_per_item),
+            costEach: Number(it.cost_per_item),
           });
         }
       }
-      this._cache.purchaseOrders = (pos || []).map(p => ({
-        id: p.id, supplier: p.supplier_name, invoice: p.invoice_ref,
-        store: this.storeNameById[p.receiving_store_id] || '',
-        status: p.status, total: Number(p.total_cost),
-        items: itemsById[p.id] || [], date: p.created_at,
-      }));
+      this._cache.purchaseOrders = (pos || []).map(p => {
+        const itms = itemsById[p.id] || [];
+        const dt = p.created_at || '';
+        const poNum = 'PO-' + (dt ? dt.slice(0,10).replace(/-/g,'').slice(0,6) : 'XXXX') + '-' + (p.id || '').slice(0,4).toUpperCase();
+        return {
+          id: p.id, poNum, supplier: p.supplier_name,
+          invoice: p.invoice_ref, ref: p.invoice_ref,
+          store: this.storeNameById[p.receiving_store_id] || '',
+          status: p.status, total: Number(p.total_cost),
+          totalCost: Number(p.total_cost),
+          totalItems: itms.reduce((a, x) => a + x.qty, 0),
+          items: itms, date: dt,
+          userId: p.staff_id, user: staffNameById[p.staff_id] || 'System',
+        };
+      });
     },
 
     async _hydrateUsers() {
@@ -1172,7 +1196,7 @@ function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2
 function today(){return new Date().toISOString().slice(0,10)}
 function now(){return new Date().toISOString()}
 function fmtDate(iso){if(!iso)return'-';const d=new Date(iso);return d.toLocaleDateString('en-GB')+' '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}
-function fmtMoney(v){return'Â£'+Number(v||0).toFixed(2)}
+function fmtMoney(v){return'\u00A3'+Number(v||0).toFixed(2)}
 
 function load(key,def){try{const v=localStorage.getItem('pp_'+key);return v?JSON.parse(v):def}catch(e){return def}}
 function save(key,val){localStorage.setItem('pp_'+key,JSON.stringify(val))}
