@@ -402,7 +402,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
     async login(email, password) {
       const { data, error } = await this.client
         .from('staff')
-        .select('id, name, email, password, role, active, permissions')
+        .select('*')
         .eq('email', email)
         .eq('active', true)
         .maybeSingle();
@@ -652,7 +652,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
     async _hydrateUsers() {
       const { data: staff } = await this.client
         .from('staff')
-        .select('id,name,email,password,role,active,permissions');
+        .select('*');
       const { data: access } = await this.client
         .from('staff_stores')
         .select('staff_id,store_id');
