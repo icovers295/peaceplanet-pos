@@ -1435,10 +1435,26 @@ function completeSale(method){
 // âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 // RECEIPT
 // âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+
+const STORE_DETAILS = {
+  'Main': {addr:'Main Street, Dungannon, Co. Tyrone, BT71 6JT',phone:'028 8772 2222'},
+  'Dungannon': {addr:'Market Square, Dungannon, Co. Tyrone, BT70 1AB',phone:'028 8772 3333'},
+  'Cookstown': {addr:'William Street, Cookstown, Co. Tyrone, BT80 8NB',phone:'028 8676 4444'},
+  'Omagh': {addr:'High Street, Omagh, Co. Tyrone, BT78 1BQ',phone:'028 8224 5555'}
+};
 function showReceipt(sale){
   const paper=document.getElementById('receiptPaper');
   paper.innerHTML=`
-    <div class="r-header"><h2 style="font-size:26px;font-weight:900;color:#000">PeacePlanet</h2><p style="font-size:15px;font-weight:800;color:#000">${sale.store} Store</p><p style="font-size:13px;font-weight:700;color:#000">${fmtDate(sale.date)}</p><p style="font-size:15px;font-weight:900;color:#000">${sale.receipt}</p></div>
+    <div class="r-header">
+      <h2 style="font-size:28px;font-weight:900;color:#000;margin:0">PeacePlanet</h2>
+      <p style="font-size:13px;font-weight:800;color:#000;margin:2px 0">Phone Repair &amp; Accessories</p>
+      <p style="font-size:14px;font-weight:800;color:#000;margin:2px 0">${sale.store} Store</p>
+      <p style="font-size:11px;font-weight:700;color:#000;margin:1px 0">${(STORE_DETAILS[sale.store]||{}).addr||''}</p>
+      <p style="font-size:11px;font-weight:700;color:#000;margin:1px 0">Tel: ${(STORE_DETAILS[sale.store]||{}).phone||''}</p>
+      <div class="r-line"></div>
+      <p style="font-size:13px;font-weight:700;color:#000;margin:3px 0">${fmtDate(sale.date)}</p>
+      <p style="font-size:15px;font-weight:900;color:#000;margin:3px 0">${sale.receipt}</p>
+    </div>
     <div class="r-line"></div>
     ${sale.items.map(i=>`<div class="r-row"><span style="font-weight:800">${i.name} x${i.qty}</span><span style="font-weight:900">${fmtMoney(i.qty*i.price)}</span></div>`).join('')}
     <div class="r-line"></div>
@@ -1447,7 +1463,7 @@ function showReceipt(sale){
     <div class="r-row r-total" style="font-size:22px;font-weight:900"><span>TOTAL</span><span>${fmtMoney(sale.total)}</span></div>
     <div class="r-row"><span style="font-weight:800">Payment</span><span style="font-weight:900">${sale.method.toUpperCase()}</span></div>
     <div class="r-line"></div>
-    <div class="r-footer" style="font-size:14px;font-weight:700;color:#000">Thank you for choosing PeacePlanet!<br>www.icovers.co.uk</div>`;
+    <div class="r-footer" style="font-size:14px;font-weight:700;color:#000">Thank you for choosing PeacePlanet!<br>www.peaceplanetpos.com</div>`;
   document.getElementById('receiptOverlay').classList.add('active');
 }
 
@@ -1456,7 +1472,7 @@ function closeReceipt(){document.getElementById('receiptOverlay').classList.remo
 // âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 // INVOICE
 // âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-const COMPANY_EMAIL = 'icovers@hotmail.co.uk';
+const COMPANY_EMAIL = 'info@peaceplanetpos.com';
 let currentInvoiceSale = null;
 
 function invoiceNumberFor(sale){
@@ -1488,7 +1504,7 @@ function showInvoice(sale, customer){
       <p style="margin:3px 0;font-size:14px;font-weight:700;color:#000">Phone Repair &amp; Accessories</p>
       <p style="margin:2px 0;font-size:13px;font-weight:700;color:#000">${sale.store} Store, Northern Ireland</p>
       <p style="margin:2px 0;font-size:13px;font-weight:700;color:#000">Email: ${COMPANY_EMAIL}</p>
-      <p style="margin:2px 0;font-size:13px;font-weight:700;color:#000">Web: www.icovers.co.uk</p>
+      <p style="margin:2px 0;font-size:13px;font-weight:700;color:#000">Web: www.peaceplanetpos.com</p>
     </div>
     <div class="r-line"></div>
     <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;margin:10px 0;color:#000">
