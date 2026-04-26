@@ -402,7 +402,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
     async login(email, password) {
       const { data, error } = await this.client
         .from('staff')
-        .select('id, name, email, password, role, active')
+        .select('id, name, email, password, role, active, permissions')
         .eq('email', email)
         .eq('active', true)
         .maybeSingle();
@@ -420,7 +420,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
       const storesForUser = data.role === 'admin' ? STORE_NAMES : stores;
       this.currentUser = {
         id: data.id, name: data.name, email: data.email,
-        role: data.role, stores: storesForUser, active: data.active,
+        role: data.role, stores: storesForUser, active: data.active, permissions: data.permissions || {},
       };
       return this.currentUser;
     },
@@ -652,7 +652,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
     async _hydrateUsers() {
       const { data: staff } = await this.client
         .from('staff')
-        .select('id,name,email,password,role,active');
+        .select('id,name,email,password,role,active,permissions');
       const { data: access } = await this.client
         .from('staff_stores')
         .select('staff_id,store_id');
@@ -664,7 +664,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
       }
       this._cache.users = (staff || []).map(u => ({
         id: u.id, name: u.name, email: u.email, password: u.password,
-        role: u.role, active: u.active,
+        role: u.role, active: u.active, permissions: u.permissions || {},
         stores: u.role === 'admin' ? STORE_NAMES
                                    : (storesByStaff[u.id] || []).filter(Boolean),
       }));
@@ -706,7 +706,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
         case 'transfers':      return this._syncTransfers(prev, next);
         case 'purchaseOrders': return this._syncPOs(prev, next);
         case 'products':       return this._syncProducts(prev, next);
-        case 'users':          return; // staff managed directly in Supabase for now
+        case 'users':          return this._syncStaff(prev, next);
       }
     },
 
@@ -802,6 +802,38 @@ tr:hover td{background:rgba(10,132,255,.04)}
             po_id: row.id, product_id: it.product_id, product_name: it.name,
             quantity: it.qty, cost_per_item: it.cost,
           })));
+        }
+      }
+    },
+
+    async _syncStaff(prev, next) {
+      const prevById = new Map(prev.map(u => [u.id, u]));
+      for (const u of next) {
+        const old = prevById.get(u.id);
+        if (!old) {
+          // New staff member
+          const { data: row } = await this.client.from('staff').insert({
+            name: u.name, email: u.email, password: u.password,
+            role: u.role, active: u.active, permissions: u.permissions || {},
+          }).select().single();
+          if (row && u.stores?.length) {
+            await this.client.from('staff_stores').insert(
+              u.stores.map(s => ({ staff_id: row.id, store_id: this.storeIdByName[s] })).filter(r => r.store_id)
+            );
+          }
+        } else if (JSON.stringify(old) !== JSON.stringify(u)) {
+          // Updated staff
+          await this.client.from('staff').update({
+            name: u.name, email: u.email, role: u.role,
+            active: u.active, permissions: u.permissions || {},
+          }).eq('id', u.id);
+          // Re-sync store access
+          await this.client.from('staff_stores').delete().eq('staff_id', u.id);
+          if (u.stores?.length) {
+            await this.client.from('staff_stores').insert(
+              u.stores.map(s => ({ staff_id: u.id, store_id: this.storeIdByName[s] })).filter(r => r.store_id)
+            );
+          }
         }
       }
     },
@@ -1108,7 +1140,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
 <button class="btn btn-secondary" onclick="clearPO()"><i class="fas fa-times"></i> Clear</button>
 </div>
 </div>
-<div class="card"><h3>Purchase Order History</h3><table><thead><tr><th>PO #</th><th>Supplier</th><th>Reference</th><th>Store</th><th>Items</th><th>Total Cost</th><th>Date</th><th>Actions</th></tr></thead><tbody id="poHistoryBody"></tbody></table></div>
+<div class="card"><h3>Purchase Order History</h3><table><thead><tr><th>PO #</th><th class="cost-col">Supplier</th><th>Reference</th><th>Store</th><th>Items</th><th class="cost-col">Total Cost</th><th>Date</th><th>Actions</th></tr></thead><tbody id="poHistoryBody"></tbody></table></div>
 </div>
 
 <!-- 3PM ORDERS -->
@@ -1226,6 +1258,7 @@ let monitorInterval = null;
 
 function isAdmin(){return currentUser&&currentUser.role==='admin'}
 function isManager(){return currentUser&&(currentUser.role==='admin'||currentUser.role==='manager')}
+function canViewCosts(){return currentUser&&(currentUser.role==='admin'||(currentUser.permissions&&currentUser.permissions.view_costs))}
 
 async function doLogin(e){
   e.preventDefault();
@@ -1256,7 +1289,7 @@ function enterApp(){
   buildNav();
   buildStoreSelector();
   // hide cost columns for non-admin
-  document.querySelectorAll('.cost-col').forEach(el=>el.style.display=isAdmin()?'':'none');
+  document.querySelectorAll('.cost-col').forEach(el=>el.style.display=canViewCosts()?'':'none');
   showPage('dashboard');
 }
 
@@ -1273,7 +1306,7 @@ const NAV_ITEMS = [
   {id:'sales',icon:'fa-receipt',label:'Sales History',minRole:'cashier'},
   {id:'reports',icon:'fa-chart-bar',label:'Reports',minRole:'manager'},
   {id:'staff',icon:'fa-user-shield',label:'Staff',minRole:'manager'},
-  {id:'po',icon:'fa-file-invoice',label:'Purchase Orders',minRole:'manager'},
+  {id:'po',icon:'fa-file-invoice',label:'Purchase Orders',minRole:'admin'},
   {id:'orders3pm',icon:'fa-clock',label:'3pm Orders',minRole:'cashier'},
 ];
 
@@ -1624,7 +1657,7 @@ function renderInventory(){
   const catSel=document.getElementById('invCatFilter');
   if(catSel.options.length<=1){CATEGORIES.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;catSel.appendChild(o)})}
 
-  document.querySelectorAll('.cost-col').forEach(el=>el.style.display=isAdmin()?'':'none');
+  document.querySelectorAll('.cost-col').forEach(el=>el.style.display=canViewCosts()?'':'none');
 
   document.getElementById('invBody').innerHTML=products.map(p=>{
     const stk=p.stock[currentStore]||0;
@@ -1632,7 +1665,7 @@ function renderInventory(){
     const cls=stk<=0?'badge-danger':stk<=5?'badge-warning':'badge-success';
     return `<tr>
       <td><code>${p.sku}</code></td><td><strong>${p.name}</strong></td><td>${p.cat}</td>
-      <td class="cost-col" style="display:${isAdmin()?'':'none'}">${fmtMoney(p.cost)}</td>
+      <td class="cost-col" style="display:${canViewCosts()?'':'none'}">${fmtMoney(p.cost)}</td>
       <td>${fmtMoney(p.sell)}</td><td><span class="badge ${cls}">${stk}</span></td><td><span class="badge badge-gray">${total}</span></td>
       <td>
         <button class="btn btn-sm btn-secondary" onclick="openEditProduct('${p.id}')" title="Edit"><i class="fas fa-edit"></i></button>
@@ -1649,7 +1682,7 @@ function openProductModal(editId){
   document.getElementById('modalBody').innerHTML=`
     <div class="form-row form-row-2"><div class="form-group"><label>Product Name</label><input class="form-control" id="pName" value="${p?p.name:''}"></div><div class="form-group"><label>SKU</label><input class="form-control" id="pSku" value="${p?p.sku:''}"></div></div>
     <div class="form-row form-row-3"><div class="form-group"><label>Category</label><select class="form-control" id="pCat">${CATEGORIES.map(c=>`<option${p&&p.cat===c?' selected':''}>${c}</option>`).join('')}</select></div>
-    <div class="form-group"><label>Cost Price</label><input class="form-control" type="number" step="0.01" id="pCost" value="${p?p.cost:'0'}"></div>
+    <div class="form-group" style="display:${canViewCosts()?'':'none'}"><label>Cost Price</label><input class="form-control" type="number" step="0.01" id="pCost" value="${p?p.cost:'0'}"></div>
     <div class="form-group"><label>Sell Price</label><input class="form-control" type="number" step="0.01" id="pSell" value="${p?p.sell:'0'}"></div></div>
     ${!p?`<h3 style="margin:16px 0 8px">Initial Stock per Store</h3><div class="form-row form-row-4">${STORES.map(s=>`<div class="form-group"><label>${s}</label><input class="form-control" type="number" id="pStock_${s}" value="0" min="0"></div>`).join('')}</div>`:''}`;
   document.getElementById('modalFooter').innerHTML=`<button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveProduct('${editId||''}')">${p?'Update':'Add'} Product</button>`;
@@ -2197,6 +2230,7 @@ function openStaffModal(editId){
       <div class="form-group"><label>Role</label><select class="form-control" id="sRole"><option${u&&u.role==='admin'?' selected':''}>admin</option><option${u&&u.role==='manager'?' selected':''}>manager</option><option${(!u||u.role==='cashier')?' selected':''}>cashier</option></select></div>
       <div class="form-group"><label>Status</label><select class="form-control" id="sActive"><option value="true"${!u||u.active?' selected':''}>Active</option><option value="false"${u&&!u.active?' selected':''}>Inactive</option></select></div>
     </div>
+    <div class="form-group"><label>Permissions</label><div><label style="display:inline-flex;align-items:center;gap:6px;font-weight:400;font-size:13px"><input type="checkbox" id="sPermCosts"${u&&u.permissions&&u.permissions.view_costs?' checked':''}${u&&u.role==='admin'?' checked disabled':''}> View Cost Prices & Suppliers</label></div></div>
     <div class="form-group"><label>Store Access</label><div id="sStores">${STORES.map(s=>`<label style="display:inline-flex;align-items:center;gap:4px;margin-right:16px;font-weight:400;font-size:13px"><input type="checkbox" value="${s}"${u&&u.stores.includes(s)?' checked':''}> ${s}</label>`).join('')}</div></div>`;
   document.getElementById('modalFooter').innerHTML=`<button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveStaff('${editId||''}')">${u?'Update':'Add'}</button>`;
   openModal();
@@ -2210,6 +2244,8 @@ function saveStaff(editId){
   const role=document.getElementById('sRole').value;
   const active=document.getElementById('sActive').value==='true';
   const stores=Array.from(document.querySelectorAll('#sStores input:checked')).map(c=>c.value);
+  const permCosts=document.getElementById('sPermCosts').checked;
+  const permissions={view_costs:permCosts};
   if(!name||!email){alert('Name and email required');return}
   if(!stores.length){alert('Select at least one store');return}
 
@@ -2218,13 +2254,13 @@ function saveStaff(editId){
     const u=users.find(x=>x.id===editId);
     if(u){
       if(u.id===currentUser.id&&!active){alert("You can't deactivate yourself");return}
-      u.name=name;u.email=email;u.role=role;u.active=active;u.stores=stores;
+      u.name=name;u.email=email;u.role=role;u.active=active;u.stores=stores;u.permissions=permissions;
     }
   }else{
     const pass=document.getElementById('sPass').value;
     if(!pass){alert('Password required');return}
     if(users.find(u=>u.email===email)){alert('Email already exists');return}
-    users.push({id:uid(),name,email,password:pass,role,stores,active:true});
+    users.push({id:uid(),name,email,password:pass,role,stores,active:true,permissions});
   }
   save('users',users);closeModal();renderStaff();
 }
@@ -2370,7 +2406,7 @@ function renderInventory(){
     const cls = stk<=0?'badge-danger':stk<=5?'badge-warning':'badge-success';
     return `<tr>
       <td><code>${p.sku}</code></td><td><strong>${p.name}</strong></td><td>${p.cat}</td>
-      <td class="cost-col" style="display:${isAdmin()?'':'none'}">${fmtMoney(p.cost)}</td>
+      <td class="cost-col" style="display:${canViewCosts()?'':'none'}">${fmtMoney(p.cost)}</td>
       <td>${fmtMoney(p.sell)}</td><td><span class="badge ${cls}">${stk}</span></td><td><span class="badge badge-gray">${total}</span></td>
       <td>
         <button class="btn btn-sm btn-secondary" onclick="openEditProduct('${p.id}')" title="Edit"><i class="fas fa-edit"></i></button>
