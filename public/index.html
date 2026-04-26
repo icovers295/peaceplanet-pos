@@ -402,7 +402,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
     async login(email, password) {
       const { data, error } = await this.client
         .from('staff')
-        .select('*')
+        .select('id, name, email, password, role, active, permissions')
         .eq('email', email)
         .eq('active', true)
         .maybeSingle();
@@ -652,7 +652,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
     async _hydrateUsers() {
       const { data: staff } = await this.client
         .from('staff')
-        .select('*');
+        .select('id,name,email,password,role,active,permissions');
       const { data: access } = await this.client
         .from('staff_stores')
         .select('staff_id,store_id');
@@ -664,7 +664,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
       }
       this._cache.users = (staff || []).map(u => ({
         id: u.id, name: u.name, email: u.email, password: u.password,
-        role: u.role, active: u.active, permissions: u.permissions || {},
+        role: u.role, active: u.active,
         stores: u.role === 'admin' ? STORE_NAMES
                                    : (storesByStaff[u.id] || []).filter(Boolean),
       }));
@@ -814,7 +814,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
           // New staff member
           const { data: row } = await this.client.from('staff').insert({
             name: u.name, email: u.email, password: u.password,
-            role: u.role, active: u.active, permissions: u.permissions || {},
+            role: u.role, active: u.active,
           }).select().single();
           if (row && u.stores?.length) {
             await this.client.from('staff_stores').insert(
@@ -825,8 +825,12 @@ tr:hover td{background:rgba(10,132,255,.04)}
           // Updated staff
           await this.client.from('staff').update({
             name: u.name, email: u.email, role: u.role,
-            active: u.active, permissions: u.permissions || {},
+            active: u.active,
           }).eq('id', u.id);
+          // Try to save permissions (requires permissions column in staff table)
+          if (u.permissions) {
+            try { await this.client.from('staff').update({ permissions: u.permissions }).eq('id', u.id); } catch(e) { console.warn('[SBridge] permissions column not found, skipping'); }
+          }
           // Re-sync store access
           await this.client.from('staff_stores').delete().eq('staff_id', u.id);
           if (u.stores?.length) {
