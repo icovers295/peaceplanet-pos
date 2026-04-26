@@ -16,7 +16,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Initialize database
 initialize();
 
-// API Routes — stripSensitiveData removes cost prices for non-admins
+// API Routes â stripSensitiveData removes cost prices for non-admins
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/stores', require('./routes/stores'));
 app.use('/api/products', stripSensitiveData, require('./routes/products'));
@@ -27,7 +27,7 @@ app.use('/api/repairs', stripSensitiveData, require('./routes/repairs'));
 app.use('/api/customers', require('./routes/customers'));
 app.use('/api/purchase-orders', stripSensitiveData, require('./routes/purchase-orders'));
 app.use('/api/stock-orders', stripSensitiveData, require('./routes/stock-orders'));
-// ── User permissions endpoint (tells frontend what to show/hide) ──
+// ââ User permissions endpoint (tells frontend what to show/hide) ââ
 app.get('/api/permissions', authMiddleware, (req, res) => {
   res.json({
     role: req.user.role,
@@ -40,7 +40,7 @@ app.get('/api/permissions', authMiddleware, (req, res) => {
   });
 });
 
-// ── Monitor Mode: Public repair status board (no auth needed) ──
+// ââ Monitor Mode: Public repair status board (no auth needed) ââ
 app.get('/api/monitor/repairs/:storeId', (req, res) => {
   const store = db.prepare('SELECT id, name FROM stores WHERE id = ? AND is_main = 0').get(req.params.storeId);
   if (!store) return res.status(404).json({ error: 'Store not found' });
@@ -60,7 +60,7 @@ app.get('/api/monitor/repairs/:storeId', (req, res) => {
   res.json({ store, repairs });
 });
 
-// ── Stock Transfer endpoint (improved) ──
+// ââ Stock Transfer endpoint (improved) ââ
 app.get('/api/transfers', authMiddleware, (req, res) => {
   const { store_id, status } = req.query;
   let where = [];
@@ -149,14 +149,14 @@ app.post('/api/transfers', authMiddleware, (req, res) => {
 
   try {
     createTransfer();
-    res.status(201).json({ id: transferId, message: 'Transfer completed — stock moved' });
+    res.status(201).json({ id: transferId, message: 'Transfer completed â stock moved' });
   } catch (err) {
     console.error('Transfer error:', err);
     res.status(500).json({ error: 'Failed to create transfer: ' + err.message });
   }
 });
 
-// Receive a pending transfer (legacy — for transfers created without immediate completion)
+// Receive a pending transfer (legacy â for transfers created without immediate completion)
 app.post('/api/transfers/:id/receive', authMiddleware, (req, res) => {
   const transfer = db.prepare('SELECT * FROM stock_transfers WHERE id = ?').get(req.params.id);
   if (!transfer) return res.status(404).json({ error: 'Transfer not found' });
@@ -184,7 +184,7 @@ app.post('/api/transfers/:id/receive', authMiddleware, (req, res) => {
 
   try {
     receiveTransfer();
-    res.json({ success: true, message: 'Transfer received — stock updated' });
+    res.json({ success: true, message: 'Transfer received â stock updated' });
   } catch (err) {
     res.status(500).json({ error: 'Failed to receive transfer: ' + err.message });
   }
@@ -199,8 +199,8 @@ app.post('/api/print/receipt', authMiddleware, (req, res) => {
     <tr>
       <td>${item.product_name || item.name}</td>
       <td style="text-align:center">${item.quantity}</td>
-      <td style="text-align:right">£${(item.unit_price || 0).toFixed(2)}</td>
-      <td style="text-align:right">£${(item.total || 0).toFixed(2)}</td>
+      <td style="text-align:right">Â£${(item.unit_price || 0).toFixed(2)}</td>
+      <td style="text-align:right">Â£${(item.total || 0).toFixed(2)}</td>
     </tr>
   `).join('');
 
@@ -213,20 +213,20 @@ app.post('/api/print/receipt', authMiddleware, (req, res) => {
   .line { border-top: 1px dashed #000; margin: 5px 0; }
   @media print { body { margin: 0; } }
 </style></head><body>
-  <div class="center"><strong>PEACEPLANET</strong><br>${sale.store_name || ''}<br><br></div>
+  <div class="center"><strong style="font-size:16px">PEACEPLANET</strong><br>Phone Repair & Accessories<br>${sale.store_name || ''}<br>${sale.store_address || ''}<br>${sale.store_phone ? 'Tel: ' + sale.store_phone : ''}<br><br></div>
   <div>Receipt: ${sale.receipt_number}<br>Date: ${new Date(sale.created_at || Date.now()).toLocaleString('en-GB')}<br>Cashier: ${sale.cashier_name || ''}</div>
   <div class="line"></div>
   <table><tr><td><strong>Item</strong></td><td style="text-align:center"><strong>Qty</strong></td><td style="text-align:right"><strong>Price</strong></td><td style="text-align:right"><strong>Total</strong></td></tr>
   ${itemsHtml}</table>
   <div class="line"></div>
   <table>
-    <tr><td>Subtotal:</td><td style="text-align:right">£${(sale.subtotal || 0).toFixed(2)}</td></tr>
-    ${sale.discount_amount ? `<tr><td>Discount:</td><td style="text-align:right">-£${sale.discount_amount.toFixed(2)}</td></tr>` : ''}
-    <tr><td><strong>TOTAL:</strong></td><td style="text-align:right"><strong>£${(sale.total || 0).toFixed(2)}</strong></td></tr>
-    <tr><td>Paid (${sale.payment_method || 'cash'}):</td><td style="text-align:right">£${(sale.total || 0).toFixed(2)}</td></tr>
+    <tr><td>Subtotal:</td><td style="text-align:right">Â£${(sale.subtotal || 0).toFixed(2)}</td></tr>
+    ${sale.discount_amount ? `<tr><td>Discount:</td><td style="text-align:right">-Â£${sale.discount_amount.toFixed(2)}</td></tr>` : ''}
+    <tr><td><strong>TOTAL:</strong></td><td style="text-align:right"><strong>Â£${(sale.total || 0).toFixed(2)}</strong></td></tr>
+    <tr><td>Paid (${sale.payment_method || 'cash'}):</td><td style="text-align:right">Â£${(sale.total || 0).toFixed(2)}</td></tr>
   </table>
   <div class="line"></div>
-  <div class="center">Thank you for shopping at PeacePlanet!<br>www.peaceplanet.com</div>
+  <div class="center">Thank you for shopping at PeacePlanet!<br>www.peaceplanetpos.com<br><br>Returns within 14 days with receipt<br>Repairs guaranteed 90 days</div>
   <script>window.onload=function(){window.print();}</script>
 </body></html>`;
   res.json({ html });
@@ -249,7 +249,7 @@ app.post('/api/print/label', authMiddleware, (req, res) => {
       <div class="name">${product.name}</div>
       <div>SKU: ${product.sku || 'N/A'}</div>
       ${product.imei ? `<div>IMEI: ${product.imei}</div>` : ''}
-      <div class="price">£${(product.sell_price || 0).toFixed(2)}</div>
+      <div class="price">Â£${(product.sell_price || 0).toFixed(2)}</div>
       <div class="demo">DEMO UNIT</div>
       <div>${store_name || 'PeacePlanet'}</div>
       <script>window.onload=function(){window.print();}</script>
@@ -264,7 +264,7 @@ app.post('/api/print/label', authMiddleware, (req, res) => {
       <div class="name">${product.name}</div>
       <div>SKU: ${product.sku || 'N/A'}</div>
       ${product.serial_number ? `<div>S/N: ${product.serial_number}</div>` : ''}
-      <div class="price">£${(product.sell_price || 0).toFixed(2)}</div>
+      <div class="price">Â£${(product.sell_price || 0).toFixed(2)}</div>
       <div>${store_name || 'PeacePlanet'}</div>
       <script>window.onload=function(){window.print();}</script>
     </body></html>`;
@@ -272,7 +272,7 @@ app.post('/api/print/label', authMiddleware, (req, res) => {
   res.json({ html });
 });
 
-// ── CSV Import: Bulk import products from CellStore CSV ──
+// ââ CSV Import: Bulk import products from CellStore CSV ââ
 app.post('/api/import/csv-products', authMiddleware, (req, res) => {
   // Only admins can import
   if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' });
@@ -327,7 +327,7 @@ app.post('/api/import/csv-products', authMiddleware, (req, res) => {
     }
 
     // Parse all rows and group by product Id
-    const productMap = new Map(); // CellStore Id → { details, inventory: { subdomain: qty } }
+    const productMap = new Map(); // CellStore Id â { details, inventory: { subdomain: qty } }
 
     for (let i = 1; i < lines.length; i++) {
       const cols = parseCSVLine(lines[i]);
@@ -351,8 +351,8 @@ app.post('/api/import/csv-products', authMiddleware, (req, res) => {
 
       if (!productMap.has(csId)) {
         // Build full product name with brand prefix from category
-        // Categories like "iPhone - Screens" → prefix "iPhone", "Samsung - Screens" → "Samsung"
-        // "Accessories - iPad Cases" → "iPad", "iPad - LCD" → "iPad"
+        // Categories like "iPhone - Screens" â prefix "iPhone", "Samsung - Screens" â "Samsung"
+        // "Accessories - iPad Cases" â "iPad", "iPad - LCD" â "iPad"
         let brandPrefix = '';
         if (category) {
           const catLower = category.toLowerCase();
@@ -506,7 +506,7 @@ app.post('/api/import/csv-products', authMiddleware, (req, res) => {
   }
 });
 
-// ── CSV Import: Bulk import customers from CellStore CSV ──
+// ââ CSV Import: Bulk import customers from CellStore CSV ââ
 app.post('/api/import/csv-customers', authMiddleware, (req, res) => {
   if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' });
 
@@ -640,7 +640,7 @@ app.get('/monitor/:storeId', (req, res) => {
     try {
       const res = await fetch('/api/monitor/repairs/' + storeId);
       const data = await res.json();
-      document.getElementById('storeName').textContent = data.store.name + ' — Repair Status';
+      document.getElementById('storeName').textContent = data.store.name + ' â Repair Status';
       const grid = document.getElementById('repairGrid');
       if (data.repairs.length === 0) {
         grid.innerHTML = '<div class="empty"><i class="fas fa-check-circle" style="font-size:48px;margin-bottom:16px;display:block"></i>No active repairs</div>';
@@ -671,7 +671,7 @@ app.get('*', (req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`\n🟢 PeacePlanet POS running at http://localhost:${PORT}`);
+  console.log(`\nð¢ PeacePlanet POS running at http://localhost:${PORT}`);
   console.log(`   Login: admin@peaceplanet.com / admin123`);
   console.log(`   Monitor mode: http://localhost:${PORT}/monitor/{store-id}\n`);
 });
