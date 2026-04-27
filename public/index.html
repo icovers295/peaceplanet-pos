@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PeacePlanet POS</title>
+<title>iCovers POS</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -228,7 +228,7 @@ textarea.form-control{resize:vertical;min-height:60px}
   .row{flex-direction:column}
 }
 
-/* âââââââââ PeacePlanet Apple-style polish âââââââââ */
+/* ───────── iCovers Apple-style polish ───────── */
 html,body{-webkit-tap-highlight-color:transparent}
 body{background:linear-gradient(180deg,#f5f5f7 0%,#eef1f8 100%);background-attachment:fixed;font-feature-settings:'cv11','ss01','ss03';letter-spacing:-.015em}
 body::before{content:'';position:fixed;top:-200px;right:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(175,82,222,.15) 0%,transparent 70%);pointer-events:none;z-index:0}
@@ -251,7 +251,7 @@ h1,h2,h3{letter-spacing:-.024em}
 .card{background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.6);box-shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.06)}
 .stat-card{background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.6)}
 
-/* Buttons â pill, soft shadow, subtle press */
+/* Buttons — pill, soft shadow, subtle press */
 .btn{border-radius:10px;padding:9px 18px;font-weight:600;letter-spacing:-.01em;transition:transform .08s,box-shadow .15s,background .15s;font-family:inherit}
 .btn:hover{transform:translateY(-1px)}
 .btn:active{transform:translateY(0) scale(.98)}
@@ -263,7 +263,7 @@ h1,h2,h3{letter-spacing:-.024em}
 .btn-secondary:hover{background:rgba(120,120,128,.2)}
 .btn-sm{padding:6px 12px;font-size:12px;border-radius:8px}
 
-/* Inputs â larger, rounder, softer focus */
+/* Inputs — larger, rounder, softer focus */
 .form-control{border-radius:10px;padding:10px 14px;border:1px solid var(--g300);background:#fff;font-size:14px;transition:border .12s,box-shadow .12s;font-family:inherit}
 .form-control:focus{outline:none;border-color:#0a84ff;box-shadow:0 0 0 3px rgba(10,132,255,.15)}
 textarea.form-control{min-height:72px;line-height:1.4}
@@ -278,7 +278,7 @@ textarea.form-control{min-height:72px;line-height:1.4}
 .store-pill{padding:9px 18px;border-radius:24px;font-weight:600;font-size:13px;transition:all .15s}
 .store-pill.active{background:linear-gradient(180deg,#0a84ff 0%,#0066d6 100%);box-shadow:0 2px 10px rgba(10,132,255,.32)}
 
-/* Product tiles â iOS icon style */
+/* Product tiles — iOS icon style */
 .product-grid{gap:14px;grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
 .product-tile{background:rgba(255,255,255,.85);border:1px solid rgba(255,255,255,.7);border-radius:16px;padding:18px 12px;box-shadow:0 1px 3px rgba(0,0,0,.04),0 4px 14px rgba(0,0,0,.04);transition:transform .14s cubic-bezier(.22,1.2,.36,1),box-shadow .14s}
 .product-tile:hover{transform:translateY(-3px) scale(1.015);border-color:rgba(10,132,255,.5);box-shadow:0 2px 6px rgba(0,0,0,.06),0 10px 28px rgba(10,132,255,.16)}
@@ -287,7 +287,7 @@ textarea.form-control{min-height:72px;line-height:1.4}
 .product-tile .tile-price{font-size:18px;font-weight:700;letter-spacing:-.02em;color:var(--g900)}
 .product-tile .tile-stock{font-size:10px;color:var(--g500);margin-top:6px;letter-spacing:.01em}
 
-/* Tables â Apple style rows */
+/* Tables — Apple style rows */
 table{border-radius:12px;overflow:hidden}
 th{background:rgba(245,245,247,.6);font-size:10px;font-weight:600;letter-spacing:.08em;color:var(--g500)}
 td{font-size:13px}
@@ -305,11 +305,11 @@ tr:hover td{background:rgba(10,132,255,.04)}
 /* Cart */
 .cart-sidebar{background:rgba(255,255,255,.72);backdrop-filter:blur(24px) saturate(180%);border-radius:20px;border:1px solid rgba(255,255,255,.6);box-shadow:0 1px 2px rgba(0,0,0,.04),0 8px 32px rgba(0,0,0,.08)}
 
-/* Receipt â keep mono but prettier header */
+/* Receipt — keep mono but prettier header */
 .receipt-paper{border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.24)}
 .receipt-paper .r-header h2{font-weight:900;letter-spacing:-.02em;color:#000}
 
-/* Login â bigger iOS feel */
+/* Login — bigger iOS feel */
 .login-page{background:linear-gradient(180deg,#1c1c1e 0%,#000 50%,#1c1c1e 100%)}
 .login-page::before{content:'';position:fixed;top:20%;left:50%;width:600px;height:600px;transform:translateX(-50%);background:radial-gradient(circle,rgba(10,132,255,.22) 0%,transparent 60%);pointer-events:none}
 .login-card{background:rgba(255,255,255,.92);backdrop-filter:blur(40px) saturate(180%);border-radius:24px;padding:56px 44px;width:400px;box-shadow:0 30px 80px rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.4)}
@@ -327,11 +327,11 @@ tr:hover td{background:rgba(10,132,255,.04)}
 ::-webkit-scrollbar-track{background:transparent}
 </style>
 
-<!-- PeacePlanet POS â Supabase live backend -->
+<!-- iCovers POS — Supabase live backend -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /*
- * PeacePlanet POS â Supabase Bridge
+ * iCovers POS — Supabase Bridge
  *
  * Replaces PREVIEW.html's in-browser localStorage with a live Supabase backend
  * so every till in every shop reads/writes the same data in real time.
@@ -347,8 +347,8 @@ tr:hover td{background:rgba(10,132,255,.04)}
  *   - On init we hydrate every "bucket" (products, customers, sales, repairs,
  *     transfers, purchaseOrders) into SBridge._cache, shaped exactly like the
  *     arrays PREVIEW used to store in localStorage.
- *   - load(key)  â returns SBridge._cache[key]  (synchronous, like before)
- *   - save(key, v) â does a smart diff vs previous snapshot and writes only
+ *   - load(key)  → returns SBridge._cache[key]  (synchronous, like before)
+ *   - save(key, v) → does a smart diff vs previous snapshot and writes only
  *     the changes to Supabase (async, fire-and-forget, with an error log).
  *   - Realtime subscriptions on products, stock_levels, sales, repairs update
  *     the cache when another till writes, so screens reflect changes instantly.
@@ -360,11 +360,11 @@ tr:hover td{background:rgba(10,132,255,.04)}
 
   const SBridge = {
     client: null,
-    // Mapping: business-friendly names â Supabase UUIDs
-    storeIdByName:   {},      // 'Main' â uuid
-    storeNameById:   {},      // uuid â 'Main'
-    categoryIdByName: {},     // 'Accessories' â uuid
-    categoryNameById: {},     // uuid â 'Accessories'
+    // Mapping: business-friendly names ↔ Supabase UUIDs
+    storeIdByName:   {},      // 'Main' → uuid
+    storeNameById:   {},      // uuid → 'Main'
+    categoryIdByName: {},     // 'Accessories' → uuid
+    categoryNameById: {},     // uuid → 'Accessories'
     // In-memory cache (the "source of truth" the UI sees via load())
     _cache: {
       products:       [],
@@ -375,7 +375,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
       purchaseOrders: [],
       users:          [],
     },
-    // Previous snapshot per bucket â used to diff on save()
+    // Previous snapshot per bucket — used to diff on save()
     _prev: {},
     // Logged-in user
     currentUser: null,
@@ -392,17 +392,17 @@ tr:hover td{background:rgba(10,132,255,.04)}
       await this._hydrateAll();
       this._installLoadSave();
       this._subscribeRealtime();
-      console.log('[SBridge] ready â',
+      console.log('[SBridge] ready —',
         this._cache.products.length, 'products,',
         this._cache.sales.length, 'sales,',
         this._cache.repairs.length, 'repairs');
     },
 
-    // ââ Authentication: PREVIEW's login screen hits staff table directly ââ
+    // ── Authentication: PREVIEW's login screen hits staff table directly ──
     async login(email, password) {
       const { data, error } = await this.client
         .from('staff')
-        .select('id, name, email, password, role, active, permissions')
+        .select('id, name, email, password, role, active')
         .eq('email', email)
         .eq('active', true)
         .maybeSingle();
@@ -420,12 +420,12 @@ tr:hover td{background:rgba(10,132,255,.04)}
       const storesForUser = data.role === 'admin' ? STORE_NAMES : stores;
       this.currentUser = {
         id: data.id, name: data.name, email: data.email,
-        role: data.role, stores: storesForUser, active: data.active, permissions: data.permissions || {},
+        role: data.role, stores: storesForUser, active: data.active,
       };
       return this.currentUser;
     },
 
-    // ââââââââââââââââââââââââââââââ HYDRATE ââââââââââââââââââââââââââââââ
+    // ────────────────────────────── HYDRATE ──────────────────────────────
     async _loadStores() {
       const { data } = await this.client.from('stores').select('id,name');
       for (const s of data || []) {
@@ -635,6 +635,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
       this._cache.purchaseOrders = (pos || []).map(p => {
         const itms = itemsById[p.id] || [];
         const dt = p.created_at || '';
+        // Generate a PO number from date: PO-YYYYMM-NNNN style
         const poNum = 'PO-' + (dt ? dt.slice(0,10).replace(/-/g,'').slice(0,6) : 'XXXX') + '-' + (p.id || '').slice(0,4).toUpperCase();
         return {
           id: p.id, poNum, supplier: p.supplier_name,
@@ -652,7 +653,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
     async _hydrateUsers() {
       const { data: staff } = await this.client
         .from('staff')
-        .select('id,name,email,password,role,active,permissions');
+        .select('id,name,email,password,role,active');
       const { data: access } = await this.client
         .from('staff_stores')
         .select('staff_id,store_id');
@@ -670,7 +671,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
       }));
     },
 
-    // ââââââââââââââââââââââ LOAD / SAVE OVERRIDES ââââââââââââââââââââââ
+    // ────────────────────── LOAD / SAVE OVERRIDES ──────────────────────
     _installLoadSave() {
       const bridge = this;
       // Expose as globals so PREVIEW's inlined load()/save() pick these up.
@@ -687,14 +688,14 @@ tr:hover td{background:rgba(10,132,255,.04)}
           return;
         }
         bridge._cache[key] = val;
-        // Fire-and-forget diff write â errors surface in console, never block UI
+        // Fire-and-forget diff write — errors surface in console, never block UI
         bridge._syncBucket(key).catch(e => {
           console.error(`[SBridge] sync failed for ${key}:`, e);
         });
       };
     },
 
-    // âââââââââââââââââââââââââ DIFF-BASED SYNC âââââââââââââââââââââââââ
+    // ───────────────────────── DIFF-BASED SYNC ─────────────────────────
     async _syncBucket(key) {
       const next = this._cache[key];
       const prev = this._prev[key] ? JSON.parse(this._prev[key]) : [];
@@ -706,7 +707,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
         case 'transfers':      return this._syncTransfers(prev, next);
         case 'purchaseOrders': return this._syncPOs(prev, next);
         case 'products':       return this._syncProducts(prev, next);
-        case 'users':          return this._syncStaff(prev, next);
+        case 'users':          return; // staff managed directly in Supabase for now
       }
     },
 
@@ -806,42 +807,6 @@ tr:hover td{background:rgba(10,132,255,.04)}
       }
     },
 
-    async _syncStaff(prev, next) {
-      const prevById = new Map(prev.map(u => [u.id, u]));
-      for (const u of next) {
-        const old = prevById.get(u.id);
-        if (!old) {
-          // New staff member
-          const { data: row } = await this.client.from('staff').insert({
-            name: u.name, email: u.email, password: u.password,
-            role: u.role, active: u.active,
-          }).select().single();
-          if (row && u.stores?.length) {
-            await this.client.from('staff_stores').insert(
-              u.stores.map(s => ({ staff_id: row.id, store_id: this.storeIdByName[s] })).filter(r => r.store_id)
-            );
-          }
-        } else if (JSON.stringify(old) !== JSON.stringify(u)) {
-          // Updated staff
-          await this.client.from('staff').update({
-            name: u.name, email: u.email, role: u.role,
-            active: u.active,
-          }).eq('id', u.id);
-          // Try to save permissions (requires permissions column in staff table)
-          if (u.permissions) {
-            try { await this.client.from('staff').update({ permissions: u.permissions }).eq('id', u.id); } catch(e) { console.warn('[SBridge] permissions column not found, skipping'); }
-          }
-          // Re-sync store access
-          await this.client.from('staff_stores').delete().eq('staff_id', u.id);
-          if (u.stores?.length) {
-            await this.client.from('staff_stores').insert(
-              u.stores.map(s => ({ staff_id: u.id, store_id: this.storeIdByName[s] })).filter(r => r.store_id)
-            );
-          }
-        }
-      }
-    },
-
     async _syncProducts(prev, next) {
       const prevById = new Map(prev.map(p => [p.id, p]));
       for (const p of next) {
@@ -893,7 +858,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
       }
     },
 
-    // âââââââââââââââââââââââââââ REALTIME âââââââââââââââââââââââââââ
+    // ─────────────────────────── REALTIME ───────────────────────────
     _subscribeRealtime() {
       const bridge = this;
       // When someone else inserts a sale, pull fresh sales list in background.
@@ -940,9 +905,9 @@ tr:hover td{background:rgba(10,132,255,.04)}
 @keyframes pp-spin{to{transform:rotate(360deg)}}
 </style>
 <div id="pp-loading-screen"><div class="box">
-  <h2>PeacePlanet POS</h2>
+  <h2>iCovers POS</h2>
   <div class="spin"></div>
-  <p id="pp-loading-msg">Connecting to databaseâ¦</p>
+  <p id="pp-loading-msg">Connecting to database…</p>
 </div></div>
 <script>
 (function(){
@@ -951,7 +916,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
   window.addEventListener('DOMContentLoaded', async () => {
     const msg = document.getElementById('pp-loading-msg');
     try {
-      msg.textContent = 'Loading productsâ¦';
+      msg.textContent = 'Loading products…';
       await SBridge.init({ url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY });
       msg.textContent = 'Ready';
       document.getElementById('pp-loading-screen').remove();
@@ -969,10 +934,10 @@ tr:hover td{background:rgba(10,132,255,.04)}
 <!-- LOGIN -->
 <div class="login-page" id="loginPage">
 <div class="login-card">
-<h1>PeacePlanet</h1>
+<h1>iCovers</h1>
 <p class="subtitle">Point of Sale System</p>
 <form onsubmit="doLogin(event)">
-<div class="form-group"><label>Email</label><input class="form-control" type="email" id="loginEmail" value="admin@peaceplanet.com"></div>
+<div class="form-group"><label>Email</label><input class="form-control" type="email" id="loginEmail" value="admin@icovers.co.uk"></div>
 <div class="form-group"><label>Password</label><input class="form-control" type="password" id="loginPassword" value="admin123"></div>
 <div class="login-error" id="loginError">Invalid email or password</div>
 <button class="btn btn-primary btn-lg" type="submit" style="width:100%">Sign In</button>
@@ -983,7 +948,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
 <!-- APP -->
 <div class="app-layout" id="appLayout">
 <div class="sidebar">
-<div class="sidebar-header"><h2>PeacePlanet</h2><div class="store-name">Point of Sale</div></div>
+<div class="sidebar-header"><h2>iCovers</h2><div class="store-name">Point of Sale</div></div>
 <nav class="sidebar-nav" id="sidebarNav"></nav>
 <div class="sidebar-footer">
 <div class="user-name" id="footerUser">-</div>
@@ -1018,9 +983,9 @@ tr:hover td{background:rgba(10,132,255,.04)}
 <div class="pos-cart-header"><h3>Cart (<span id="cartCount">0</span>)</h3></div>
 <div class="pos-cart-items" id="cartItems"><div class="empty-state"><i class="fas fa-shopping-cart"></i><p>Click products to add</p></div></div>
 <div class="pos-cart-footer">
-<div class="totals-row"><span>Subtotal</span><span id="cartSub">Â£0.00</span></div>
-<div class="discount-row"><input class="form-control" type="number" id="discVal" value="0" min="0" step="0.01" onchange="renderCartTotals()"><button class="disc-toggle" id="discType" onclick="toggleDiscType()">Â£</button><span style="font-size:12px;color:var(--g500)">discount</span></div>
-<div class="totals-row total"><span>TOTAL</span><span id="cartTotal">Â£0.00</span></div>
+<div class="totals-row"><span>Subtotal</span><span id="cartSub">£0.00</span></div>
+<div class="discount-row"><input class="form-control" type="number" id="discVal" value="0" min="0" step="0.01" onchange="renderCartTotals()"><button class="disc-toggle" id="discType" onclick="toggleDiscType()">£</button><span style="font-size:12px;color:var(--g500)">discount</span></div>
+<div class="totals-row total"><span>TOTAL</span><span id="cartTotal">£0.00</span></div>
 <div class="payment-buttons">
 <button class="btn btn-success btn-lg" onclick="completeSale('cash')"><i class="fas fa-money-bill"></i> Cash</button>
 <button class="btn btn-primary btn-lg" onclick="completeSale('card')"><i class="fas fa-credit-card"></i> Card</button>
@@ -1063,7 +1028,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
 <div class="card">
 <h3>New Transfer</h3>
 <div class="form-row form-row-4" style="align-items:end">
-<div class="form-group" style="margin:0"><label>Product â Scan or Search</label><input class="form-control" id="trfProductSearch" placeholder="Scan barcode / type name / SKU..." oninput="trfSearchProducts()" onkeydown="if(event.key==='Enter'){event.preventDefault();trfSelectFirst()}"><div id="trfSearchResults" style="max-height:180px;overflow-y:auto;position:absolute;background:#fff;border:1px solid var(--g200);border-radius:8px;z-index:50;width:100%;box-shadow:var(--shadow);display:none"></div><input type="hidden" id="trfProduct"></div>
+<div class="form-group" style="margin:0"><label>Product — Scan or Search</label><input class="form-control" id="trfProductSearch" placeholder="Scan barcode / type name / SKU..." oninput="trfSearchProducts()" onkeydown="if(event.key==='Enter'){event.preventDefault();trfSelectFirst()}"><div id="trfSearchResults" style="max-height:180px;overflow-y:auto;position:absolute;background:#fff;border:1px solid var(--g200);border-radius:8px;z-index:50;width:100%;box-shadow:var(--shadow);display:none"></div><input type="hidden" id="trfProduct"></div>
 <div class="form-group" style="margin:0"><label>From</label><select class="form-control" id="trfFrom"></select></div>
 <div class="form-group" style="margin:0"><label>To</label><select class="form-control" id="trfTo"></select></div>
 <div class="form-group" style="margin:0"><label>Qty</label><input class="form-control" type="number" id="trfQty" value="1" min="1" style="text-align:center"></div>
@@ -1126,7 +1091,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
 <h3>Create from Supplier Invoice</h3>
 <p style="color:var(--g500);margin-bottom:12px;font-size:13px">Paste product lines from a supplier invoice or add items one by one. Matched products update stock automatically.</p>
 <div class="form-row" style="grid-template-columns:1fr auto;align-items:end;margin-bottom:12px">
-<div class="form-group" style="margin:0"><label>Quick Add â Scan or Search</label><input class="form-control" id="poQuickSearch" placeholder="Scan barcode / type product name / SKU..." oninput="poSearchProducts()" onkeydown="if(event.key==='Enter')poQuickAdd()"></div>
+<div class="form-group" style="margin:0"><label>Quick Add — Scan or Search</label><input class="form-control" id="poQuickSearch" placeholder="Scan barcode / type product name / SKU..." oninput="poSearchProducts()" onkeydown="if(event.key==='Enter')poQuickAdd()"></div>
 <button class="btn btn-success" onclick="poQuickAdd()"><i class="fas fa-plus"></i> Add</button>
 </div>
 <div id="poSearchResults" style="max-height:200px;overflow-y:auto;margin-bottom:12px"></div>
@@ -1150,7 +1115,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
 <!-- 3PM ORDERS -->
 <div class="page" id="page-orders3pm">
 <div class="page-header">
-  <h1>3pm Orders <span style="font-size:12px;color:var(--g500);font-weight:400">â customer special orders to suppliers</span></h1>
+  <h1>3pm Orders <span style="font-size:12px;color:var(--g500);font-weight:400">— customer special orders to suppliers</span></h1>
   <button class="btn btn-primary" onclick="openNew3pmOrder()"><i class="fas fa-plus"></i> New Order</button>
 </div>
 <div class="card" id="orders3pmStats" style="margin-bottom:12px"></div>
@@ -1210,7 +1175,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
 <!-- MONITOR -->
 <div class="monitor-mode" id="monitorMode">
 <div class="monitor-header">
-<h1><i class="fas fa-screwdriver-wrench"></i> PeacePlanet Repairs</h1>
+<h1><i class="fas fa-screwdriver-wrench"></i> iCovers Repairs</h1>
 <div style="display:flex;gap:12px;align-items:center">
 <span id="monitorStore" style="font-size:16px;color:rgba(255,255,255,.5)"></span>
 <span id="monitorTime" style="font-size:14px;color:rgba(255,255,255,.3)"></span>
@@ -1221,9 +1186,9 @@ tr:hover td{background:rgba(10,132,255,.04)}
 </div>
 
 <script>
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-// DATA LAYER â localStorage persistence
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
+// DATA LAYER — localStorage persistence
+// ═══════════════════════════════════════════════════════
 const STORES = ['Main','Dungannon','Cookstown','Omagh'];
 const CATEGORIES = ['Accessories','Accessories - Apple Plugs','Accessories - Devia Power Banks','Accessories - Samsung Phone Cases','Accessories - iPad Cases','Accessories - iPad Tempered Glass','Accessories - iPhone Cases','Accessories - iPhone Lens Protector','Accessories - iPhone Tempered Glass','Acer - LCD','Acer - Screens','Acer Parts','Alba - Parts','Alcatel - Screen','Amazon - Battery','Amazon - Tablet Parts','Amazon - Tablet Screens','Asus - Screens','Boardwork','Camera Lens Tempered Glass','Dell - Parts','Gogle Pixel - Parts','Google Account','Google Pixel - Phones','Google Pixel - Screens','Google pixel - Battery','HP - parts','HP laptop - screen','HUDL - Parts','Honor parts','Huawei - Batteries','Huawei - Parts','Huawei - Screens','JBL','Labour','Laptop','Laptop - Screen','Lenovo - Parts','Lenovo - Screens','Lenovo - Tab Parts','Macbook - Batteries','Macbook - Parts','Macbook - Screens','Macbook - Software','Macbook\'s','Matebook - Parts','Microsoft','Microsoft - Screens','Motorola - Parts','Motorola - Screens','Nintendo - Parts','Nintendo - Screens','Nintendo Switch - Parts','Nokia - Parts','Nokia - screens','OPPO - Parts','OPPO - Screens','Oneplus - Screens','PB - Parts','PC - Batteries','PC - Parts','Pet - Accessories','Playstation - Parts','Redmi - Parts','Redmi - Screens','Samsung - Backs','Samsung - Batteries','Samsung - Parts','Samsung - Phones','Samsung - Screens','Samsung - Tab Parts','Samsung - Tab Screens','Samsung - Tabs','Samsung - Watches','Samsung-Tab batteries','VR - Parts','Vodafone - Parts','XBOX - Parts','Xaomi - Screen','Xbox','Xperia - Batteries','Xperia - Parts','Xperia - Screens','alcatel','beats pill','blackview - screen','iPad','iPad - Batteries','iPad - Digitizer And LCD','iPad - Digitizer Screens','iPad - LCD','iPad - Parts','iPencil','iPhone - Batteries','iPhone - Glass Backs','iPhone - Parts','iPhone - Screens','iPhone Tempered Glass','iPhones','iPod - Batteries','iPod - Parts','iPod - Screens','iWatch','iWatch - Batteries','iWatch - Screens','imac','lenova - tab','microsoft - tab','microsoft surface battery','oneplus - parts','sony - parts','tom tom - parts','xiaomi - parts','zebra - LCD'];
 const STATUSES = ['Checked In','Diagnosing','Awaiting Parts','In Repair','Ready','Completed','Collected'];
@@ -1238,7 +1203,7 @@ function load(key,def){try{const v=localStorage.getItem('pp_'+key);return v?JSON
 function save(key,val){localStorage.setItem('pp_'+key,JSON.stringify(val))}
 
 // Initialize default data if not present
-function initData(){/* seed disabled â Supabase bridge is the source of truth */}
+function initData(){/* seed disabled — Supabase bridge is the source of truth */}
 
 // Getters
 function getProducts(){return load('products',[])}
@@ -1250,9 +1215,9 @@ function getUsers(){return load('users',[])}
 function getNextSaleSeq(){let s=load('saleSeq',0)+1;save('saleSeq',s);return s}
 function getNextRepairSeq(){let s=load('repairSeq',0)+1;save('repairSeq',s);return s}
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
 // AUTH & SESSION
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
 let currentUser = null;
 let currentStore = 'Dungannon';
 let cart = [];
@@ -1261,8 +1226,8 @@ let reportRange = 'today';
 let monitorInterval = null;
 
 function isAdmin(){return currentUser&&currentUser.role==='admin'}
+function canViewCosts(){return isAdmin()||(currentUser&&currentUser.permissions&&currentUser.permissions.view_costs)}
 function isManager(){return currentUser&&(currentUser.role==='admin'||currentUser.role==='manager')}
-function canViewCosts(){return currentUser&&(currentUser.role==='admin'||(currentUser.permissions&&currentUser.permissions.view_costs))}
 
 async function doLogin(e){
   e.preventDefault();
@@ -1274,9 +1239,10 @@ async function doLogin(e){
     const user=await SBridge.login(email,pass);
     if(!user){err.style.display='block';return;}
     currentUser=user;
+    currentUser.permissions = currentUser.permissions || {};
     currentStore=user.stores.includes('Dungannon')?'Dungannon':user.stores.filter(s=>s!=='Main')[0]||user.stores[0];
     enterApp();
-  }catch(ex){console.error(ex);err.textContent='Login error â see console';err.style.display='block';}
+  }catch(ex){console.error(ex);err.textContent='Login error — see console';err.style.display='block';}
 }
 
 function doLogout(){
@@ -1297,9 +1263,9 @@ function enterApp(){
   showPage('dashboard');
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
 // NAVIGATION
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
 const NAV_ITEMS = [
   {id:'dashboard',icon:'fa-home',label:'Dashboard',minRole:'cashier'},
   {id:'pos',icon:'fa-cash-register',label:'Point of Sale',minRole:'cashier'},
@@ -1310,7 +1276,7 @@ const NAV_ITEMS = [
   {id:'sales',icon:'fa-receipt',label:'Sales History',minRole:'cashier'},
   {id:'reports',icon:'fa-chart-bar',label:'Reports',minRole:'manager'},
   {id:'staff',icon:'fa-user-shield',label:'Staff',minRole:'manager'},
-  {id:'po',icon:'fa-file-invoice',label:'Purchase Orders',minRole:'admin'},
+  {id:'po',icon:'fa-file-invoice',label:'Purchase Orders',minRole:'manager'},
   {id:'orders3pm',icon:'fa-clock',label:'3pm Orders',minRole:'cashier'},
 ];
 
@@ -1372,9 +1338,9 @@ function switchStore(s,el){
   }
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
 // DASHBOARD
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
 function renderDashboard(){
   const sales=getSales().filter(s=>s.store===currentStore&&s.status==='completed');
   const todaySales=sales.filter(s=>s.date&&s.date.slice(0,10)===today());
@@ -1402,9 +1368,9 @@ function renderDashboard(){
   }).join(''):'<tr><td colspan="3" style="text-align:center;color:var(--g400)">All stocked up!</td></tr>';
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
 // POINT OF SALE
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
 function renderPOS(){
   const q=(document.getElementById('posSearch').value||'').toLowerCase();
   const products=getProducts().filter(p=>!q||p.name.toLowerCase().includes(q)||p.sku.toLowerCase().includes(q));
@@ -1458,7 +1424,7 @@ function renderCartTotals(){
 
 function toggleDiscType(){
   discountIsPercent=!discountIsPercent;
-  document.getElementById('discType').textContent=discountIsPercent?'%':'Â£';
+  document.getElementById('discType').textContent=discountIsPercent?'%':'£';
   renderCartTotals();
 }
 
@@ -1493,29 +1459,13 @@ function completeSale(method){
   renderPOS();
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
 // RECEIPT
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-
-const STORE_DETAILS = {
-  'Main': {addr:'Main Street, Dungannon, Co. Tyrone, BT71 6JT',phone:'028 8772 2222'},
-  'Dungannon': {addr:'Market Square, Dungannon, Co. Tyrone, BT70 1AB',phone:'028 8772 3333'},
-  'Cookstown': {addr:'William Street, Cookstown, Co. Tyrone, BT80 8NB',phone:'028 8676 4444'},
-  'Omagh': {addr:'High Street, Omagh, Co. Tyrone, BT78 1BQ',phone:'028 8224 5555'}
-};
+// ═══════════════════════════════════════════════════════
 function showReceipt(sale){
   const paper=document.getElementById('receiptPaper');
   paper.innerHTML=`
-    <div class="r-header">
-      <h2 style="font-size:28px;font-weight:900;color:#000;margin:0">PeacePlanet</h2>
-      <p style="font-size:13px;font-weight:800;color:#000;margin:2px 0">Phone Repair &amp; Accessories</p>
-      <p style="font-size:14px;font-weight:800;color:#000;margin:2px 0">${sale.store} Store</p>
-      <p style="font-size:11px;font-weight:700;color:#000;margin:1px 0">${(STORE_DETAILS[sale.store]||{}).addr||''}</p>
-      <p style="font-size:11px;font-weight:700;color:#000;margin:1px 0">Tel: ${(STORE_DETAILS[sale.store]||{}).phone||''}</p>
-      <div class="r-line"></div>
-      <p style="font-size:13px;font-weight:700;color:#000;margin:3px 0">${fmtDate(sale.date)}</p>
-      <p style="font-size:15px;font-weight:900;color:#000;margin:3px 0">${sale.receipt}</p>
-    </div>
+    <div class="r-header"><h2 style="font-size:26px;font-weight:900;color:#000">iCovers</h2><p style="font-size:15px;font-weight:800;color:#000">${sale.store} Store</p><p style="font-size:13px;font-weight:700;color:#000">${fmtDate(sale.date)}</p><p style="font-size:15px;font-weight:900;color:#000">${sale.receipt}</p></div>
     <div class="r-line"></div>
     ${sale.items.map(i=>`<div class="r-row"><span style="font-weight:800">${i.name} x${i.qty}</span><span style="font-weight:900">${fmtMoney(i.qty*i.price)}</span></div>`).join('')}
     <div class="r-line"></div>
@@ -1524,16 +1474,16 @@ function showReceipt(sale){
     <div class="r-row r-total" style="font-size:22px;font-weight:900"><span>TOTAL</span><span>${fmtMoney(sale.total)}</span></div>
     <div class="r-row"><span style="font-weight:800">Payment</span><span style="font-weight:900">${sale.method.toUpperCase()}</span></div>
     <div class="r-line"></div>
-    <div class="r-footer" style="font-size:14px;font-weight:700;color:#000">Thank you for choosing PeacePlanet!<br>www.peaceplanetpos.com</div>`;
+    <div class="r-footer" style="font-size:14px;font-weight:700;color:#000">Thank you for choosing iCovers!<br>www.icovers.co.uk</div>`;
   document.getElementById('receiptOverlay').classList.add('active');
 }
 
 function closeReceipt(){document.getElementById('receiptOverlay').classList.remove('active');currentInvoiceSale=null;document.getElementById('receiptEmailBtn').style.display='none';document.getElementById('receiptInvoiceBtn').style.display='';}
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
 // INVOICE
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-const COMPANY_EMAIL = 'info@peaceplanetpos.com';
+// ═══════════════════════════════════════════════════════
+const COMPANY_EMAIL = 'icovers@hotmail.co.uk';
 let currentInvoiceSale = null;
 
 function invoiceNumberFor(sale){
@@ -1561,11 +1511,11 @@ function showInvoice(sale, customer){
   const custAddr  = cust ? (cust.address||'') : '';
   paper.innerHTML = `
     <div class="r-header" style="text-align:left">
-      <h2 style="margin:0;font-size:26px;font-weight:900;color:#000">PeacePlanet</h2>
+      <h2 style="margin:0;font-size:26px;font-weight:900;color:#000">iCovers</h2>
       <p style="margin:3px 0;font-size:14px;font-weight:700;color:#000">Phone Repair &amp; Accessories</p>
       <p style="margin:2px 0;font-size:13px;font-weight:700;color:#000">${sale.store} Store, Northern Ireland</p>
       <p style="margin:2px 0;font-size:13px;font-weight:700;color:#000">Email: ${COMPANY_EMAIL}</p>
-      <p style="margin:2px 0;font-size:13px;font-weight:700;color:#000">Web: www.peaceplanetpos.com</p>
+      <p style="margin:2px 0;font-size:13px;font-weight:700;color:#000">Web: www.icovers.co.uk</p>
     </div>
     <div class="r-line"></div>
     <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;margin:10px 0;color:#000">
@@ -1620,10 +1570,10 @@ function emailCurrentInvoice(){
   const s = currentInvoiceSale;
   const invNo = invoiceNumberFor(s);
   const to = (s.customer && s.customer.email) ? s.customer.email : '';
-  const subject = encodeURIComponent('PeacePlanet Invoice '+invNo);
+  const subject = encodeURIComponent('iCovers Invoice '+invNo);
   const lines = s.items.map(i=>`${i.name} x${i.qty}  ${fmtMoney(i.qty*i.price)}`).join('%0D%0A');
   const body = encodeURIComponent(
-    `PeacePlanet - ${s.store} Store\n`+
+    `iCovers - ${s.store} Store\n`+
     `Invoice: ${invNo}\n`+
     `Date: ${fmtDate(s.date)}\n\n`+
     s.items.map(i=>`${i.name} x${i.qty}  ${fmtMoney(i.qty*i.price)}`).join('\n')+
@@ -1632,7 +1582,7 @@ function emailCurrentInvoice(){
     `TOTAL: ${fmtMoney(s.total)}\n`+
     `Payment: ${(s.method||'').toUpperCase()}\n\n`+
     `Any queries: ${COMPANY_EMAIL}\n`+
-    `Thank you for choosing PeacePlanet.`
+    `Thank you for choosing iCovers.`
   );
   const cc = encodeURIComponent(COMPANY_EMAIL);
   window.location.href = `mailto:${to}?cc=${cc}&subject=${subject}&body=${body}`;
@@ -1645,9 +1595,9 @@ function showInvoiceForSale(sid){
   showInvoice(s, s.customer);
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
 // INVENTORY
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
 function renderInventory(){
   const q=(document.getElementById('invSearch').value||'').toLowerCase();
   const cat=document.getElementById('invCatFilter').value;
@@ -1686,7 +1636,7 @@ function openProductModal(editId){
   document.getElementById('modalBody').innerHTML=`
     <div class="form-row form-row-2"><div class="form-group"><label>Product Name</label><input class="form-control" id="pName" value="${p?p.name:''}"></div><div class="form-group"><label>SKU</label><input class="form-control" id="pSku" value="${p?p.sku:''}"></div></div>
     <div class="form-row form-row-3"><div class="form-group"><label>Category</label><select class="form-control" id="pCat">${CATEGORIES.map(c=>`<option${p&&p.cat===c?' selected':''}>${c}</option>`).join('')}</select></div>
-    <div class="form-group" style="display:${canViewCosts()?'':'none'}"><label>Cost Price</label><input class="form-control" type="number" step="0.01" id="pCost" value="${p?p.cost:'0'}"></div>
+    <div class="form-group"><label>Cost Price</label><input class="form-control" type="number" step="0.01" id="pCost" value="${p?p.cost:'0'}"></div>
     <div class="form-group"><label>Sell Price</label><input class="form-control" type="number" step="0.01" id="pSell" value="${p?p.sell:'0'}"></div></div>
     ${!p?`<h3 style="margin:16px 0 8px">Initial Stock per Store</h3><div class="form-row form-row-4">${STORES.map(s=>`<div class="form-group"><label>${s}</label><input class="form-control" type="number" id="pStock_${s}" value="0" min="0"></div>`).join('')}</div>`:''}`;
   document.getElementById('modalFooter').innerHTML=`<button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveProduct('${editId||''}')">${p?'Update':'Add'} Product</button>`;
@@ -1720,7 +1670,7 @@ function openAdjustStock(pid){
   const p=getProducts().find(x=>x.id===pid);
   if(!p)return;
   const stk=p.stock[currentStore]||0;
-  document.getElementById('modalTitle').textContent='Adjust Stock â '+p.name;
+  document.getElementById('modalTitle').textContent='Adjust Stock — '+p.name;
   document.getElementById('modalBox').classList.remove('modal-wide');
   document.getElementById('modalBody').innerHTML=`
     <p style="margin-bottom:16px">Current stock at <strong>${currentStore}</strong>: <span class="badge badge-info">${stk}</span></p>
@@ -1749,12 +1699,12 @@ function doAdjustStock(pid){
 function printLabel(pid){
   const p=getProducts().find(x=>x.id===pid);if(!p)return;
   const w=window.open('','_blank','width=400,height=300');
-  w.document.write(`<html><head><style>body{font-family:-apple-system,sans-serif;text-align:center;padding:20px}h2{margin:0;font-size:16px}p{margin:4px 0}.price{font-size:36px;font-weight:700}.sku{font-size:12px;color:#666;font-family:monospace}.barcode{font-size:48px;letter-spacing:2px;font-family:monospace;margin:8px 0}</style></head><body><h2>PeacePlanet</h2><p>${p.name}</p><div class="barcode">||||| |||| |||||</div><p class="price">${fmtMoney(p.sell)}</p><p class="sku">${p.sku}</p><script>setTimeout(()=>{window.print()},300)<\/script></body></html>`);
+  w.document.write(`<html><head><style>body{font-family:-apple-system,sans-serif;text-align:center;padding:20px}h2{margin:0;font-size:16px}p{margin:4px 0}.price{font-size:36px;font-weight:700}.sku{font-size:12px;color:#666;font-family:monospace}.barcode{font-size:48px;letter-spacing:2px;font-family:monospace;margin:8px 0}</style></head><body><h2>iCovers</h2><p>${p.name}</p><div class="barcode">||||| |||| |||||</div><p class="price">${fmtMoney(p.sell)}</p><p class="sku">${p.sku}</p><script>setTimeout(()=>{window.print()},300)<\/script></body></html>`);
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
 // REPAIRS
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
 function renderRepairs(){
   const q=(document.getElementById('repSearch').value||'').toLowerCase();
   const sf=document.getElementById('repStatusFilter').value;
@@ -1795,7 +1745,7 @@ function openNewRepair(){
     </div>
     <div class="form-group"><label>Issue Description</label><textarea class="form-control" id="nrIssue" placeholder="Describe the issue..."></textarea></div>
     <div class="form-row form-row-3">
-      <div class="form-group"><label>Estimated Cost (Â£)</label><input class="form-control" type="number" step="0.01" id="nrCost" value="0"></div>
+      <div class="form-group"><label>Estimated Cost (£)</label><input class="form-control" type="number" step="0.01" id="nrCost" value="0"></div>
       <div class="form-group"><label>Priority</label><select class="form-control" id="nrPriority"><option>normal</option><option>urgent</option></select></div>
       <div class="form-group"><label>Notes</label><input class="form-control" id="nrNotes"></div>
     </div>
@@ -1863,13 +1813,13 @@ function openRepairDetail(rid){
     <h3>Status</h3>
     <div class="status-flow">${statusBtns}</div>
     <div class="form-row form-row-2" style="margin:16px 0">
-      <div class="form-group"><label>Estimated Cost (Â£)</label><input class="form-control" type="number" step="0.01" id="rdCost" value="${r.cost}" onchange="updateRepairCost('${rid}')"></div>
+      <div class="form-group"><label>Estimated Cost (£)</label><input class="form-control" type="number" step="0.01" id="rdCost" value="${r.cost}" onchange="updateRepairCost('${rid}')"></div>
       <div class="form-group"><label>Notes</label><input class="form-control" id="rdNotes" value="${r.notes||''}" onchange="updateRepairNotes('${rid}')"></div>
     </div>
     <h3>Parts</h3>
     <table><thead><tr><th>Product</th><th>Qty</th><th>Status</th><th></th></tr></thead><tbody>${partsList||'<tr><td colspan="4" style="color:var(--g400)">No parts added</td></tr>'}</tbody></table>
     <div style="margin-top:10px">
-      <div class="form-group" style="margin:0"><label>Add Part â Scan barcode or search</label><input class="form-control" id="rdPartSearch" placeholder="Scan barcode / type product name / SKU..." oninput="repairPartSearch('${r.store}')" onkeydown="if(event.key==='Enter')repairPartQuickAdd('${rid}','${r.store}')"></div>
+      <div class="form-group" style="margin:0"><label>Add Part — Scan barcode or search</label><input class="form-control" id="rdPartSearch" placeholder="Scan barcode / type product name / SKU..." oninput="repairPartSearch('${r.store}')" onkeydown="if(event.key==='Enter')repairPartQuickAdd('${rid}','${r.store}')"></div>
       <div id="rdPartResults" style="max-height:150px;overflow-y:auto;border:1px solid var(--g200);border-radius:8px;margin-top:4px"></div>
       <div class="form-row" style="grid-template-columns:80px auto;margin-top:8px;align-items:end">
         <div class="form-group" style="margin:0"><label>Qty</label><input class="form-control" type="number" id="rdPartQty" value="1" min="1" style="text-align:center"></div>
@@ -1878,7 +1828,7 @@ function openRepairDetail(rid){
     </div>
     <h3 style="margin-top:20px">Payment</h3>
     <div style="margin-bottom:8px"><strong>Total:</strong> ${fmtMoney(r.cost)} &nbsp;|&nbsp; <strong>Paid:</strong> ${fmtMoney(r.paid)} &nbsp;|&nbsp; <strong>Remaining:</strong> ${fmtMoney(remaining)} ${fullyPaid?'<span class="badge badge-success">FULLY PAID</span>':''}</div>
-    ${!fullyPaid?`<div class="form-row" style="grid-template-columns:120px auto auto;align-items:end"><div class="form-group" style="margin:0"><label>Amount (Â£)</label><input class="form-control" type="number" step="0.01" id="rdPayAmt" value="${remaining.toFixed(2)}"></div><button class="btn btn-success" onclick="makeRepairPayment('${rid}','cash')"><i class="fas fa-money-bill"></i> Cash</button><button class="btn btn-primary" onclick="makeRepairPayment('${rid}','card')"><i class="fas fa-credit-card"></i> Card</button></div>`:''}`;
+    ${!fullyPaid?`<div class="form-row" style="grid-template-columns:120px auto auto;align-items:end"><div class="form-group" style="margin:0"><label>Amount (£)</label><input class="form-control" type="number" step="0.01" id="rdPayAmt" value="${remaining.toFixed(2)}"></div><button class="btn btn-success" onclick="makeRepairPayment('${rid}','cash')"><i class="fas fa-money-bill"></i> Cash</button><button class="btn btn-primary" onclick="makeRepairPayment('${rid}','card')"><i class="fas fa-credit-card"></i> Card</button></div>`:''}`;
   document.getElementById('modalFooter').innerHTML=`<button class="btn btn-secondary" onclick="closeModal()">Close</button>`;
   openModal();
   renderPhotoStrip('rdPhotoStrip', r.photos||[]);
@@ -1976,9 +1926,9 @@ function makeRepairPayment(rid,method){
   save('repairs',repairs);openRepairDetail(rid);
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
 // TRANSFERS
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
 let trfSelectedProduct = null;
 
 function trfSearchProducts(){
@@ -2042,13 +1992,13 @@ function doTransfer(){
   transfers.push({id:uid(),productId:pid,productName:p.name,from,to,qty,userId:currentUser.id,user:currentUser.name,date:now()});
   save('transfers',transfers);
 
-  alert('Transfer complete!\n'+qty+'x '+p.name+'\n'+from+' â '+to);
+  alert('Transfer complete!\n'+qty+'x '+p.name+'\n'+from+' → '+to);
   renderTransfers();
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
 // CUSTOMERS
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
 function renderCustomers(){
   const q=(document.getElementById('custSearch').value||'').toLowerCase();
   let customers=getCustomers();
@@ -2094,7 +2044,7 @@ function saveCustomer(editId){
 function viewCustomerHistory(cid){
   const c=getCustomers().find(x=>x.id===cid);if(!c)return;
   const repairs=getRepairs().filter(r=>r.customerId===cid);
-  document.getElementById('modalTitle').textContent=c.name+' â History';
+  document.getElementById('modalTitle').textContent=c.name+' — History';
   document.getElementById('modalBox').classList.add('modal-wide');
   document.getElementById('modalBody').innerHTML=`
     <p><strong>Phone:</strong> ${c.phone||'-'} &nbsp; <strong>Email:</strong> ${c.email||'-'}</p>
@@ -2107,9 +2057,9 @@ function viewCustomerHistory(cid){
   openModal();
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
 // SALES HISTORY
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
 function renderSales(){
   const q=(document.getElementById('saleSearch').value||'').toLowerCase();
   const pf=document.getElementById('salePayFilter').value;
@@ -2163,9 +2113,9 @@ function refundSale(sid){
   closeModal();renderSales();
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
 // REPORTS
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
 function setReportRange(range){
   reportRange=range;
   document.querySelectorAll('#page-reports .filter-bar .btn').forEach(b=>{b.className='btn btn-sm btn-secondary'});
@@ -2211,9 +2161,9 @@ function renderReports(){
   document.getElementById('reportStores').innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">${Object.entries(storeMap).map(([store,d])=>`<div style="background:var(--g100);border-radius:12px;padding:16px"><div class="stat-label">${store}</div><div style="font-size:20px;font-weight:700">${fmtMoney(d.rev)}</div><div style="font-size:12px;color:var(--g500)">${d.count} sales</div></div>`).join('')}</div>`;
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
 // STAFF
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
 function renderStaff(){
   const users=getUsers();
   document.getElementById('staffBody').innerHTML=users.map(u=>{
@@ -2234,7 +2184,7 @@ function openStaffModal(editId){
       <div class="form-group"><label>Role</label><select class="form-control" id="sRole"><option${u&&u.role==='admin'?' selected':''}>admin</option><option${u&&u.role==='manager'?' selected':''}>manager</option><option${(!u||u.role==='cashier')?' selected':''}>cashier</option></select></div>
       <div class="form-group"><label>Status</label><select class="form-control" id="sActive"><option value="true"${!u||u.active?' selected':''}>Active</option><option value="false"${u&&!u.active?' selected':''}>Inactive</option></select></div>
     </div>
-    <div class="form-group"><label>Permissions</label><div><label style="display:inline-flex;align-items:center;gap:6px;font-weight:400;font-size:13px"><input type="checkbox" id="sPermCosts"${u&&u.permissions&&u.permissions.view_costs?' checked':''}${u&&u.role==='admin'?' checked disabled':''}> View Cost Prices & Suppliers</label></div></div>
+    <div class="form-group"><label>Permissions</label><div><label style="display:inline-flex;align-items:center;gap:6px;font-weight:400;font-size:13px"><input type="checkbox" id="sPermCosts"${u&&u.permissions&&u.permissions.view_costs?' checked':''}> View Cost Prices & Suppliers</label></div></div>
     <div class="form-group"><label>Store Access</label><div id="sStores">${STORES.map(s=>`<label style="display:inline-flex;align-items:center;gap:4px;margin-right:16px;font-weight:400;font-size:13px"><input type="checkbox" value="${s}"${u&&u.stores.includes(s)?' checked':''}> ${s}</label>`).join('')}</div></div>`;
   document.getElementById('modalFooter').innerHTML=`<button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveStaff('${editId||''}')">${u?'Update':'Add'}</button>`;
   openModal();
@@ -2248,8 +2198,7 @@ function saveStaff(editId){
   const role=document.getElementById('sRole').value;
   const active=document.getElementById('sActive').value==='true';
   const stores=Array.from(document.querySelectorAll('#sStores input:checked')).map(c=>c.value);
-  const permCosts=document.getElementById('sPermCosts').checked;
-  const permissions={view_costs:permCosts};
+  const viewCosts=document.getElementById('sPermCosts').checked;
   if(!name||!email){alert('Name and email required');return}
   if(!stores.length){alert('Select at least one store');return}
 
@@ -2258,20 +2207,20 @@ function saveStaff(editId){
     const u=users.find(x=>x.id===editId);
     if(u){
       if(u.id===currentUser.id&&!active){alert("You can't deactivate yourself");return}
-      u.name=name;u.email=email;u.role=role;u.active=active;u.stores=stores;u.permissions=permissions;
+      u.name=name;u.email=email;u.role=role;u.active=active;u.stores=stores;u.permissions={view_costs:viewCosts};
     }
   }else{
     const pass=document.getElementById('sPass').value;
     if(!pass){alert('Password required');return}
     if(users.find(u=>u.email===email)){alert('Email already exists');return}
-    users.push({id:uid(),name,email,password:pass,role,stores,active:true,permissions});
+    users.push({id:uid(),name,email,password:pass,role,stores,active:true,permissions:{view_costs:viewCosts}});
   }
   save('users',users);closeModal();renderStaff();
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
 // MONITOR MODE
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
 function openMonitor(){
   document.getElementById('monitorMode').style.display='block';
   document.getElementById('monitorStore').textContent=currentStore+' Store';
@@ -2295,9 +2244,9 @@ function renderMonitor(){
   }).join(''):'<div style="text-align:center;padding:80px;color:rgba(255,255,255,.3);font-size:20px;grid-column:1/-1">No active repairs</div>';
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
 // BARCODE SCANNER / SMART SEARCH (works on POS, Inventory, Repairs, POs)
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
 // Barcode scanners type fast then press Enter. We detect that.
 let posSearchTimer = null;
 
@@ -2308,7 +2257,7 @@ function posSearchHandler(){
 }
 
 function posScanEnter(){
-  // Enter pressed â check for exact SKU match (barcode scan)
+  // Enter pressed — check for exact SKU match (barcode scan)
   const q = document.getElementById('posSearch').value.trim();
   if(!q) return;
   const products = getProducts();
@@ -2344,7 +2293,7 @@ function renderPOS(){
     // Limit results for performance
     products = products.slice(0, 50);
   } else {
-    // No search â show products with stock at this store, limit to 60
+    // No search — show products with stock at this store, limit to 60
     products = products.filter(p => (p.stock[currentStore]||0) > 0).slice(0, 60);
   }
   const grid = document.getElementById('posGrid');
@@ -2365,9 +2314,9 @@ function showToast(msg){
   setTimeout(()=>{ t.style.opacity = '0' }, 2000);
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
 // IMPROVED INVENTORY RENDER (paginated for 5900+ products)
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
 let invPage = 0;
 const INV_PAGE_SIZE = 50;
 
@@ -2398,7 +2347,7 @@ function renderInventory(){
     allCats.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; catSel.appendChild(o) });
   }
 
-  document.querySelectorAll('.cost-col').forEach(el => el.style.display = isAdmin() ? '' : 'none');
+  document.querySelectorAll('.cost-col').forEach(el => el.style.display = canViewCosts() ? '' : 'none');
 
   const totalCount = products.length;
   const pageProducts = products.slice(invPage * INV_PAGE_SIZE, (invPage+1) * INV_PAGE_SIZE);
@@ -2426,16 +2375,16 @@ function renderInventory(){
     const pag = document.createElement('div');
     pag.id = 'invPagination';
     pag.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:12px 0;font-size:13px';
-    pag.innerHTML = `<span style="color:var(--g500)">${totalCount} products found â page ${invPage+1} of ${totalPages}</span><div style="display:flex;gap:6px">${invPage>0?`<button class="btn btn-sm btn-secondary" onclick="invPage--;renderInventory()"><i class="fas fa-chevron-left"></i> Prev</button>`:''}${invPage<totalPages-1?`<button class="btn btn-sm btn-secondary" onclick="invPage++;renderInventory()">Next <i class="fas fa-chevron-right"></i></button>`:''}</div>`;
+    pag.innerHTML = `<span style="color:var(--g500)">${totalCount} products found — page ${invPage+1} of ${totalPages}</span><div style="display:flex;gap:6px">${invPage>0?`<button class="btn btn-sm btn-secondary" onclick="invPage--;renderInventory()"><i class="fas fa-chevron-left"></i> Prev</button>`:''}${invPage<totalPages-1?`<button class="btn btn-sm btn-secondary" onclick="invPage++;renderInventory()">Next <i class="fas fa-chevron-right"></i></button>`:''}</div>`;
     document.getElementById('invBody').parentElement.parentElement.appendChild(pag);
   }
   // Reset page when searching
   if(q || cat) invPage = 0;
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
 // PURCHASE ORDERS
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
 let poItems = []; // [{productId, name, sku, qty, costEach}]
 let poSelectedProduct = null;
 
@@ -2601,11 +2550,12 @@ function renderPOHistory(){
   const pos = load('purchaseOrders', []).sort((a,b) => new Date(b.date) - new Date(a.date));
   document.getElementById('poHistoryBody').innerHTML = pos.length ? pos.map(po =>
     `<tr class="clickable" onclick="viewPO('${po.id}')">
-      <td><strong>${po.poNum}</strong></td><td>${po.supplier}</td><td>${po.ref||'-'}</td><td>${po.store}</td>
-      <td>${po.totalItems}</td><td>${fmtMoney(po.totalCost)}</td><td>${fmtDate(po.date)}</td>
+      <td><strong>${po.poNum}</strong></td><td class="cost-col">${po.supplier}</td><td>${po.ref||'-'}</td><td>${po.store}</td>
+      <td>${po.totalItems}</td><td class="cost-col">${fmtMoney(po.totalCost)}</td><td>${fmtDate(po.date)}</td>
       <td><button class="btn btn-sm btn-secondary"><i class="fas fa-eye"></i></button></td>
     </tr>`
   ).join('') : '<tr><td colspan="8" style="text-align:center;color:var(--g400)">No purchase orders yet</td></tr>';
+  document.querySelectorAll('.cost-col').forEach(el=>el.style.display=canViewCosts()?'':'none');
 }
 
 function viewPO(poId){
@@ -2614,11 +2564,11 @@ function viewPO(poId){
   document.getElementById('modalTitle').textContent = 'Purchase Order ' + po.poNum;
   document.getElementById('modalBox').classList.add('modal-wide');
   document.getElementById('modalBody').innerHTML = `
-    <div style="margin-bottom:12px"><strong>Supplier:</strong> ${po.supplier} &nbsp;|&nbsp; <strong>Ref:</strong> ${po.ref||'-'} &nbsp;|&nbsp; <strong>Store:</strong> ${po.store}<br><strong>Received by:</strong> ${po.user} &nbsp;|&nbsp; <strong>Date:</strong> ${fmtDate(po.date)}</div>
-    <table><thead><tr><th>Product</th><th>SKU</th><th>Qty</th><th>Cost Each</th><th>Line Total</th></tr></thead><tbody>
-    ${po.items.map(i => `<tr><td>${i.name}</td><td><code>${i.sku}</code></td><td>${i.qty}</td><td>${fmtMoney(i.costEach)}</td><td>${fmtMoney(i.qty*i.costEach)}</td></tr>`).join('')}
+    <div style="margin-bottom:12px">${canViewCosts()?`<strong>Supplier:</strong> ${po.supplier} &nbsp;|&nbsp;`:''} <strong>Ref:</strong> ${po.ref||'-'} &nbsp;|&nbsp; <strong>Store:</strong> ${po.store}<br><strong>Received by:</strong> ${po.user} &nbsp;|&nbsp; <strong>Date:</strong> ${fmtDate(po.date)}</div>
+    <table><thead><tr><th>Product</th><th>SKU</th><th>Qty</th>${canViewCosts()?'<th>Cost Each</th><th>Line Total</th>':''}</tr></thead><tbody>
+    ${po.items.map(i => `<tr><td>${i.name}</td><td><code>${i.sku}</code></td><td>${i.qty}</td>${canViewCosts()?`<td>${fmtMoney(i.costEach)}</td><td>${fmtMoney(i.qty*i.costEach)}</td>`:''}</tr>`).join('')}
     </tbody></table>
-    <div style="text-align:right;font-size:18px;font-weight:700;padding:12px 0">Total: ${fmtMoney(po.totalCost)}</div>`;
+    ${canViewCosts()?`<div style="text-align:right;font-size:18px;font-weight:700;padding:12px 0">Total: ${fmtMoney(po.totalCost)}</div>`:''}`;
   document.getElementById('modalFooter').innerHTML = '<button class="btn btn-secondary" onclick="closeModal()">Close</button>';
   openModal();
 }
@@ -2633,15 +2583,15 @@ function openNewPO(){
   document.querySelector('#page-po').scrollIntoView({behavior:'smooth'});
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
 // MODAL HELPERS
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
 function openModal(){document.getElementById('modalOverlay').classList.add('active')}
 function closeModal(){document.getElementById('modalOverlay').classList.remove('active')}
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
 // INIT
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
 initData();
 
 // Make Enter key work on PO search too
@@ -2650,9 +2600,9 @@ document.addEventListener('DOMContentLoaded', function(){
   if(poSearch) poSearch.addEventListener('keydown', function(e){ if(e.key==='Enter') poQuickAdd() });
 });
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
 // PHOTO / WEBCAM CAPTURE WIDGET
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
 function renderPhotoStrip(hostId, photos){
   const el=document.getElementById(hostId); if(!el) return;
   el.innerHTML=(photos||[]).map((p,i)=>`<div style="position:relative;width:72px;height:72px;border-radius:8px;overflow:hidden;border:1px solid var(--g200);background:#000"><img src="${p.dataUrl}" style="width:100%;height:100%;object-fit:cover" onclick="PPCamera.preview('${p.dataUrl.replace(/'/g,"\\'")}')"></div>`).join('')
@@ -2700,7 +2650,7 @@ window.PPCamera = (function(){
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="margin:0">Take Photos</h3><button type="button" class="btn btn-secondary btn-sm" onclick="PPCamera.cancel()">Close</button></div>
         <div id="ppCamArea" style="background:#000;border-radius:12px;overflow:hidden;position:relative;aspect-ratio:4/3;max-height:60vh">
           <video id="ppCamVideo" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover"></video>
-          <div id="ppCamFallback" style="display:none;color:#fff;padding:20px;text-align:center">Camera not available â use Upload instead.</div>
+          <div id="ppCamFallback" style="display:none;color:#fff;padding:20px;text-align:center">Camera not available — use Upload instead.</div>
         </div>
         <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
           <button type="button" class="btn btn-primary" onclick="PPCamera.snap()"><i class="fas fa-camera"></i> Capture</button>
@@ -2717,7 +2667,7 @@ window.PPCamera = (function(){
 
   function renderThumbs(){
     const el=document.getElementById('ppCamThumbs'); if(!el) return;
-    el.innerHTML=photos.map((p,i)=>`<div style="position:relative;width:80px;height:80px;border-radius:8px;overflow:hidden;border:2px solid #fff"><img src="${p.dataUrl}" style="width:100%;height:100%;object-fit:cover"><button onclick="PPCamera.remove(${i})" style="position:absolute;top:2px;right:2px;background:#ff3b30;color:#fff;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:12px;line-height:1">Ã</button></div>`).join('');
+    el.innerHTML=photos.map((p,i)=>`<div style="position:relative;width:80px;height:80px;border-radius:8px;overflow:hidden;border:2px solid #fff"><img src="${p.dataUrl}" style="width:100%;height:100%;object-fit:cover"><button onclick="PPCamera.remove(${i})" style="position:absolute;top:2px;right:2px;background:#ff3b30;color:#fff;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:12px;line-height:1">×</button></div>`).join('');
   }
 
   let facing='environment';
@@ -2780,9 +2730,9 @@ window.PPCamera = (function(){
   };
 })();
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-// QUICK TICKET â minimal check-in
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
+// QUICK TICKET — minimal check-in
+// ═══════════════════════════════════════════════════════
 function openQuickTicket(){
   window._pendingRepairPhotos=[];
   document.getElementById('modalTitle').textContent='Quick Ticket';
@@ -2803,9 +2753,9 @@ function openQuickTicket(){
   setTimeout(()=>{ const el=document.getElementById('qtName'); if(el) el.focus(); }, 50);
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-// 3PM ORDERS â customer special orders to suppliers
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════════
+// 3PM ORDERS — customer special orders to suppliers
+// ═══════════════════════════════════════════════════════
 function getOrders3pm(){ return load('customerOrders', []) || []; }
 
 function render3pmOrders(){
@@ -2869,7 +2819,7 @@ function render3pmOrders(){
         <button class="btn btn-sm btn-danger" title="Delete" onclick="delete3pmOrder('${o.id}')"><i class="fas fa-trash"></i></button>
       </td>
     </tr>`;
-  }).join(''):'<tr><td colspan="12" class="empty-state">No orders yet â click New Order to add one</td></tr>';
+  }).join(''):'<tr><td colspan="12" class="empty-state">No orders yet — click New Order to add one</td></tr>';
 }
 
 function openNew3pmOrder(id){
@@ -2894,7 +2844,7 @@ function openNew3pmOrder(id){
       <div class="form-group"><label>Customer Phone</label><input class="form-control" id="o3Phone" value="${existing?.customer_phone||''}"></div>
     </div>
     <div class="form-row form-row-3">
-      <div class="form-group"><label>Price charged to customer (Â£)</label><input class="form-control" type="number" step="0.01" id="o3Price" value="${existing?.price||0}"></div>
+      <div class="form-group"><label>Price charged to customer (£)</label><input class="form-control" type="number" step="0.01" id="o3Price" value="${existing?.price||0}"></div>
       <div class="form-group"><label>Paid?</label><select class="form-control" id="o3Paid"><option value="false"${!existing?.paid?' selected':''}>Unpaid</option><option value="true"${existing?.paid?' selected':''}>Paid</option></select></div>
       <div class="form-group"><label>Status</label><select class="form-control" id="o3StatSel"><option value="pending"${(existing?.status||'pending')==='pending'?' selected':''}>Pending</option><option value="ordered"${existing?.status==='ordered'?' selected':''}>Ordered</option><option value="received"${existing?.status==='received'?' selected':''}>Received</option><option value="delivered"${existing?.status==='delivered'?' selected':''}>Delivered</option><option value="cancelled"${existing?.status==='cancelled'?' selected':''}>Cancelled</option></select></div>
     </div>
