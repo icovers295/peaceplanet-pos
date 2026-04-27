@@ -707,7 +707,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
         case 'transfers':      return this._syncTransfers(prev, next);
         case 'purchaseOrders': return this._syncPOs(prev, next);
         case 'products':       return this._syncProducts(prev, next);
-        case 'users':          return; // staff managed directly in Supabase for now
+        case 'users':          return this._syncUsers(prev, next);
       }
     },
 
@@ -854,6 +854,46 @@ tr:hover td{background:rgba(10,132,255,.04)}
               });
             }
           }
+        }
+      }
+    },
+
+    async _syncUsers(prev, next) {
+      // NEW staff members
+      for (const u of this._added(prev, next)) {
+        const { data: row, error } = await this.client.from('staff').insert({
+          id: u.id, name: u.name, email: u.email, password: u.password,
+          role: u.role, active: u.active !== false,
+        }).select().single();
+        if (error) { console.error('[SBridge] staff insert failed:', error); continue; }
+        // Assign store access
+        if (u.stores?.length) {
+          const storeRows = u.stores
+            .map(s => ({ staff_id: row.id, store_id: this.storeIdByName[s] }))
+            .filter(r => r.store_id);
+          if (storeRows.length) await this.client.from('staff_stores').insert(storeRows);
+        }
+      }
+      // UPDATED staff members (name, email, role, active, stores changed)
+      for (const u of next) {
+        const p = prev.find(x => x.id === u.id);
+        if (!p) continue; // new — already handled above
+        const changed = p.name !== u.name || p.email !== u.email || p.role !== u.role || p.active !== u.active;
+        if (changed) {
+          await this.client.from('staff').update({
+            name: u.name, email: u.email, role: u.role, active: u.active,
+          }).eq('id', u.id);
+        }
+        // Store access changes
+        const oldStores = (p.stores || []).sort().join(',');
+        const newStores = (u.stores || []).sort().join(',');
+        if (oldStores !== newStores) {
+          // Remove old, insert new
+          await this.client.from('staff_stores').delete().eq('staff_id', u.id);
+          const storeRows = (u.stores || [])
+            .map(s => ({ staff_id: u.id, store_id: this.storeIdByName[s] }))
+            .filter(r => r.store_id);
+          if (storeRows.length) await this.client.from('staff_stores').insert(storeRows);
         }
       }
     },
