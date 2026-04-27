@@ -1199,6 +1199,24 @@ tr:hover td{background:rgba(10,132,255,.04)}
 <div id="restockContent"></div>
 </div>
 
+<!-- STAFF ROTA -->
+<div class="page" id="page-rota">
+<div class="page-header">
+  <h1>Staff Rota <span style="font-size:12px;color:var(--g500);font-weight:400">— two-month schedule</span></h1>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <select class="form-control" id="rotaStore" style="width:auto" onchange="renderRota()">
+      <option value="">All Stores</option>
+    </select>
+    <button class="btn btn-outline" onclick="rotaPrevMonth()"><i class="fas fa-chevron-left"></i></button>
+    <span id="rotaMonthLabel" style="font-weight:600;min-width:200px;text-align:center"></span>
+    <button class="btn btn-outline" onclick="rotaNextMonth()"><i class="fas fa-chevron-right"></i></button>
+    <button class="btn btn-primary" onclick="openRotaEditor()"><i class="fas fa-plus"></i> Add / Edit Shift</button>
+    <button class="btn btn-outline" onclick="printRota()"><i class="fas fa-print"></i> Print</button>
+  </div>
+</div>
+<div id="rotaContent" style="overflow-x:auto"></div>
+</div>
+
 </div><!-- /main-content -->
 </div><!-- /app-layout -->
 
@@ -1331,6 +1349,7 @@ const NAV_ITEMS = [
   {id:'po',icon:'fa-file-invoice',label:'Purchase Orders',minRole:'admin'},
   {id:'orders3pm',icon:'fa-clock',label:'3pm Orders',minRole:'cashier'},
   {id:'restock',icon:'fa-boxes-packing',label:'Next Restock',minRole:'manager'},
+  {id:'rota',icon:'fa-calendar-days',label:'Staff Rota',minRole:'manager'},
 ];
 
 function canSeeNav(item){
@@ -1366,6 +1385,7 @@ function showPage(id,el){
     case'po':renderPO();break;
     case'orders3pm':render3pmOrders();break;
     case'restock':renderRestock();break;
+    case'rota':renderRota();break;
   }
 }
 
@@ -3136,6 +3156,235 @@ function saveQuickTicket(){
   closeModal();
   if(navigate) navigate('repairs'); else renderRepairs();
   setTimeout(()=>openRepairDetail(repair.id), 100);
+}
+
+// ═══════════════════════════════════════════════════════
+// STAFF ROTA — two-month schedule view
+// ═══════════════════════════════════════════════════════
+let rotaStartMonth=new Date(); // 1st of the current month
+rotaStartMonth.setDate(1);
+
+function getRotaShifts(){ return load('rotaShifts', []) || []; }
+function saveRotaShifts(shifts){ save('rotaShifts', shifts); }
+
+function rotaPrevMonth(){ rotaStartMonth.setMonth(rotaStartMonth.getMonth()-1); renderRota(); }
+function rotaNextMonth(){ rotaStartMonth.setMonth(rotaStartMonth.getMonth()+1); renderRota(); }
+
+function renderRota(){
+  // Populate store filter
+  const storeSel=document.getElementById('rotaStore');
+  if(storeSel && storeSel.options.length<=1){
+    storeSel.innerHTML='<option value="">All Stores</option>'+STORES.map(s=>`<option>${s}</option>`).join('');
+  }
+  const storeFilter=storeSel?storeSel.value:'';
+
+  // Build two months of dates
+  const m1=new Date(rotaStartMonth);
+  const m2=new Date(rotaStartMonth); m2.setMonth(m2.getMonth()+1);
+  const m1Name=m1.toLocaleString('en-GB',{month:'long',year:'numeric'});
+  const m2Name=m2.toLocaleString('en-GB',{month:'long',year:'numeric'});
+  document.getElementById('rotaMonthLabel').textContent=m1Name+' — '+m2Name;
+
+  // Collect all dates for both months
+  const dates=[];
+  const d1=new Date(m1);
+  while(d1.getMonth()===m1.getMonth()){ dates.push(new Date(d1)); d1.setDate(d1.getDate()+1); }
+  const d2=new Date(m2);
+  while(d2.getMonth()===m2.getMonth()){ dates.push(new Date(d2)); d2.setDate(d2.getDate()+1); }
+
+  // Get shifts and staff
+  let shifts=getRotaShifts();
+  if(storeFilter) shifts=shifts.filter(s=>s.store===storeFilter);
+
+  const users=load('users',[])||[];
+  const staffNames=[...new Set(shifts.map(s=>s.staff))].sort();
+  // Also include all active staff who may not have shifts yet
+  users.filter(u=>u.active!==false).forEach(u=>{ if(!staffNames.includes(u.name)) staffNames.push(u.name); });
+
+  if(!staffNames.length){
+    document.getElementById('rotaContent').innerHTML='<div class="card"><div class="empty-state" style="padding:40px"><i class="fas fa-calendar-xmark"></i><p>No rota data yet. Send a photo of your rota to Claude and it will be uploaded here.</p></div></div>';
+    return;
+  }
+
+  const dayNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const fmtDate=d=>d.toISOString().split('T')[0];
+  const today=fmtDate(new Date());
+
+  // Build lookup: staff+date → shift info
+  const shiftMap={};
+  shifts.forEach(s=>{
+    const key=s.staff+'||'+s.date;
+    if(!shiftMap[key]) shiftMap[key]=[];
+    shiftMap[key].push(s);
+  });
+
+  // Colour map for stores
+  const storeColors={'Main':'#6366f1','Dungannon':'#0ea5e9','Cookstown':'#10b981','Omagh':'#f59e0b'};
+
+  let html='<div style="margin-bottom:8px;display:flex;gap:12px;flex-wrap:wrap">';
+  Object.entries(storeColors).forEach(([s,c])=>{
+    html+=`<span style="display:inline-flex;align-items:center;gap:4px;font-size:12px"><span style="width:12px;height:12px;border-radius:3px;background:${c};display:inline-block"></span>${s}</span>`;
+  });
+  html+='<span style="display:inline-flex;align-items:center;gap:4px;font-size:12px"><span style="width:12px;height:12px;border-radius:3px;background:#ef4444;display:inline-block"></span>OFF</span>';
+  html+='</div>';
+
+  // Split into two month tables
+  [m1,m2].forEach((month,mi)=>{
+    const monthDates=dates.filter(d=>d.getMonth()===month.getMonth()&&d.getFullYear()===month.getFullYear());
+    const mLabel=month.toLocaleString('en-GB',{month:'long',year:'numeric'});
+    html+=`<div class="card" style="margin-bottom:16px;overflow-x:auto"><h3 style="margin:0 0 8px;font-size:14px">${mLabel}</h3>`;
+    html+='<table style="width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed">';
+    // Header row: dates
+    html+='<thead><tr><th style="position:sticky;left:0;background:var(--g100);z-index:2;min-width:100px;padding:4px 6px;border:1px solid var(--g200);font-size:10px">Staff</th>';
+    monthDates.forEach(d=>{
+      const dn=dayNames[d.getDay()];
+      const dateStr=d.getDate();
+      const isToday=fmtDate(d)===today;
+      const isWeekend=d.getDay()===0||d.getDay()===6;
+      let bg=isToday?'var(--primary)':isWeekend?'var(--g100)':'var(--g50)';
+      let fg=isToday?'#fff':'inherit';
+      html+=`<th style="padding:2px 3px;border:1px solid var(--g200);text-align:center;background:${bg};color:${fg};min-width:38px;font-size:9px;font-weight:600">${dn}<br>${dateStr}</th>`;
+    });
+    html+='</tr></thead><tbody>';
+    // Staff rows
+    staffNames.forEach(name=>{
+      html+='<tr>';
+      html+=`<td style="position:sticky;left:0;background:#fff;z-index:1;padding:4px 6px;border:1px solid var(--g200);font-weight:600;font-size:11px;white-space:nowrap">${name}</td>`;
+      monthDates.forEach(d=>{
+        const ds=fmtDate(d);
+        const key=name+'||'+ds;
+        const cellShifts=shiftMap[key]||[];
+        const isWeekend=d.getDay()===0||d.getDay()===6;
+        let cellBg=isWeekend?'#f9fafb':'#fff';
+        let cellContent='';
+        if(cellShifts.length){
+          const s=cellShifts[0];
+          if(s.type==='off'||s.type==='OFF'){
+            cellBg='#fef2f2'; cellContent='<span style="color:#ef4444;font-weight:700;font-size:9px">OFF</span>';
+          } else if(s.type==='holiday'){
+            cellBg='#fefce8'; cellContent='<span style="color:#ca8a04;font-size:9px">HOL</span>';
+          } else {
+            const col=storeColors[s.store]||'#6b7280';
+            cellBg=col+'18';
+            const timeStr=s.start&&s.end?s.start+'-'+s.end:'';
+            const storeAbbr=s.store==='Main'?'M':s.store==='Dungannon'?'D':s.store==='Cookstown'?'C':s.store==='Omagh'?'O':'';
+            cellContent=`<span style="color:${col};font-size:8px;font-weight:600;line-height:1.1;display:block">${storeAbbr}</span>`;
+            if(timeStr) cellContent+=`<span style="font-size:7px;color:var(--g500);display:block">${timeStr}</span>`;
+          }
+        }
+        html+=`<td style="padding:1px 2px;border:1px solid var(--g200);text-align:center;background:${cellBg};vertical-align:middle;cursor:pointer" onclick="openRotaEditor('${name}','${ds}')">${cellContent}</td>`;
+      });
+      html+='</tr>';
+    });
+    html+='</tbody></table></div>';
+  });
+
+  document.getElementById('rotaContent').innerHTML=html;
+}
+
+function openRotaEditor(staffName,dateStr){
+  const users=load('users',[])||[];
+  const staffList=users.filter(u=>u.active!==false).map(u=>u.name).sort();
+  const shifts=getRotaShifts();
+  // Pre-fill if editing existing
+  let existing=null;
+  if(staffName&&dateStr) existing=shifts.find(s=>s.staff===staffName&&s.date===dateStr);
+
+  let html=`<div style="display:flex;flex-direction:column;gap:12px">
+    <div><label class="form-label">Staff Member</label>
+      <select class="form-control" id="rotaStaffSel">${staffList.map(n=>`<option ${n===staffName?'selected':''}>${n}</option>`).join('')}</select></div>
+    <div><label class="form-label">Date</label>
+      <input type="date" class="form-control" id="rotaDateInput" value="${dateStr||new Date().toISOString().split('T')[0]}"></div>
+    <div><label class="form-label">Shift Type</label>
+      <select class="form-control" id="rotaTypeSel" onchange="toggleRotaShiftFields()">
+        <option value="shift" ${!existing||existing.type==='shift'?'selected':''}>Working Shift</option>
+        <option value="off" ${existing&&existing.type==='off'?'selected':''}>Day Off</option>
+        <option value="holiday" ${existing&&existing.type==='holiday'?'selected':''}>Holiday</option>
+      </select></div>
+    <div id="rotaShiftFields" style="${existing&&(existing.type==='off'||existing.type==='holiday')?'display:none':''}">
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <div style="flex:1"><label class="form-label">Start Time</label>
+          <input type="time" class="form-control" id="rotaStartTime" value="${existing?existing.start||'09:00':'09:00'}"></div>
+        <div style="flex:1"><label class="form-label">End Time</label>
+          <input type="time" class="form-control" id="rotaEndTime" value="${existing?existing.end||'17:00':'17:00'}"></div>
+      </div>
+      <div><label class="form-label">Store</label>
+        <select class="form-control" id="rotaStoreSel">${STORES.map(s=>`<option ${existing&&existing.store===s?'selected':''}>${s}</option>`).join('')}</select></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+      ${existing?'<button class="btn" style="background:var(--danger);color:#fff" onclick="deleteRotaShift(\''+staffName+'\',\''+dateStr+'\')"><i class="fas fa-trash"></i> Delete</button>':''}
+      <button class="btn btn-primary" onclick="saveRotaShift('${staffName||''}','${dateStr||''}')"><i class="fas fa-check"></i> Save Shift</button>
+    </div>
+  </div>`;
+  openModal('Add / Edit Shift', html);
+}
+
+function toggleRotaShiftFields(){
+  const type=document.getElementById('rotaTypeSel').value;
+  document.getElementById('rotaShiftFields').style.display=(type==='off'||type==='holiday')?'none':'';
+}
+
+function saveRotaShift(origStaff,origDate){
+  const staff=document.getElementById('rotaStaffSel').value;
+  const date=document.getElementById('rotaDateInput').value;
+  const type=document.getElementById('rotaTypeSel').value;
+  const start=document.getElementById('rotaStartTime').value;
+  const end=document.getElementById('rotaEndTime').value;
+  const store=document.getElementById('rotaStoreSel').value;
+  if(!staff||!date){ toast('Please select staff and date','error'); return; }
+
+  let shifts=getRotaShifts();
+  // Remove old entry if editing
+  if(origStaff&&origDate) shifts=shifts.filter(s=>!(s.staff===origStaff&&s.date===origDate));
+  // Remove any existing for same staff+date
+  shifts=shifts.filter(s=>!(s.staff===staff&&s.date===date));
+
+  shifts.push({ id:uid(), staff, date, type, start:type==='shift'?start:'', end:type==='shift'?end:'', store:type==='shift'?store:'', created:now() });
+  saveRotaShifts(shifts);
+  closeModal();
+  renderRota();
+  toast('Shift saved','success');
+}
+
+function deleteRotaShift(staff,date){
+  let shifts=getRotaShifts();
+  shifts=shifts.filter(s=>!(s.staff===staff&&s.date===date));
+  saveRotaShifts(shifts);
+  closeModal();
+  renderRota();
+  toast('Shift deleted','success');
+}
+
+// Bulk import rota data (called by Claude after parsing a photo)
+function importRota(data){
+  // data = array of {staff, date:'YYYY-MM-DD', type:'shift'|'off'|'holiday', start:'HH:MM', end:'HH:MM', store:'StoreName'}
+  let shifts=getRotaShifts();
+  let added=0, updated=0;
+  data.forEach(entry=>{
+    const idx=shifts.findIndex(s=>s.staff===entry.staff&&s.date===entry.date);
+    if(idx>=0){ shifts[idx]={...shifts[idx],...entry, id:shifts[idx].id}; updated++; }
+    else { shifts.push({id:uid(), ...entry, created:now()}); added++; }
+  });
+  saveRotaShifts(shifts);
+  renderRota();
+  toast(`Rota imported: ${added} added, ${updated} updated`,'success');
+  return {added, updated, total:shifts.length};
+}
+
+function printRota(){
+  const content=document.getElementById('rotaContent').innerHTML;
+  const label=document.getElementById('rotaMonthLabel').textContent;
+  const w=window.open('','_blank','width=1200,height=800');
+  w.document.write(`<html><head><title>Staff Rota — ${label}</title>
+    <style>*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,sans-serif}
+    body{padding:16px}table{border-collapse:collapse;width:100%}
+    th,td{padding:3px 4px;border:1px solid #ddd;text-align:center;font-size:10px}
+    th{background:#f5f5f7;font-weight:600}.card{margin-bottom:12px;padding:8px}
+    h3{font-size:14px;margin-bottom:8px}
+    @media print{body{padding:0}}</style></head><body>
+    <h2 style="margin-bottom:12px">Staff Rota — ${label}</h2>${content}</body></html>`);
+  w.document.close();
+  w.print();
 }
 </script>
 </body>
