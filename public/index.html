@@ -1187,6 +1187,18 @@ tr:hover td{background:rgba(10,132,255,.04)}
 </div>
 </div>
 
+<!-- NEXT RESTOCK -->
+<div class="page" id="page-restock">
+<div class="page-header">
+  <h1>Next Restock <span style="font-size:12px;color:var(--g500);font-weight:400">— yesterday's sales per store, ready to restock</span></h1>
+  <div style="display:flex;gap:8px;align-items:center">
+    <input type="date" class="form-control" id="restockDate" style="width:auto" onchange="renderRestock()">
+    <button class="btn btn-primary" onclick="printRestock()"><i class="fas fa-print"></i> Print</button>
+  </div>
+</div>
+<div id="restockContent"></div>
+</div>
+
 </div><!-- /main-content -->
 </div><!-- /app-layout -->
 
@@ -1318,6 +1330,7 @@ const NAV_ITEMS = [
   {id:'staff',icon:'fa-user-shield',label:'Staff',minRole:'manager'},
   {id:'po',icon:'fa-file-invoice',label:'Purchase Orders',minRole:'admin'},
   {id:'orders3pm',icon:'fa-clock',label:'3pm Orders',minRole:'cashier'},
+  {id:'restock',icon:'fa-boxes-packing',label:'Next Restock',minRole:'manager'},
 ];
 
 function canSeeNav(item){
@@ -1352,6 +1365,7 @@ function showPage(id,el){
     case'staff':renderStaff();break;
     case'po':renderPO();break;
     case'orders3pm':render3pmOrders();break;
+    case'restock':renderRestock();break;
   }
 }
 
@@ -2796,6 +2810,134 @@ function openQuickTicket(){
 // ═══════════════════════════════════════════════════════
 // 3PM ORDERS — customer special orders to suppliers
 // ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+// NEXT RESTOCK — yesterday's sales per store for quick restocking
+// ═══════════════════════════════════════════════════════
+function renderRestock(){
+  const dateInput=document.getElementById('restockDate');
+  if(!dateInput.value){
+    // Default to yesterday
+    const y=new Date(); y.setDate(y.getDate()-1);
+    dateInput.value=y.toISOString().slice(0,10);
+  }
+  const targetDate=dateInput.value;
+  const sales=load('sales',[]);
+  const products=getProducts();
+  const prodById=new Map(products.map(p=>[p.id,p]));
+
+  // Filter sales for the target date
+  const daySales=sales.filter(s=>{
+    if(!s.date)return false;
+    return s.date.slice(0,10)===targetDate;
+  });
+
+  // Group sold items by store
+  const storeData={};
+  const storeList=isAdmin()?STORES:currentUser.stores.filter(s=>s!=='Main');
+  storeList.forEach(s=>{ storeData[s]=[]; });
+
+  for(const sale of daySales){
+    const store=sale.store;
+    if(!storeData[store]) storeData[store]=[];
+    for(const item of (sale.items||[])){
+      storeData[store].push({
+        product_id:item.product_id,
+        name:item.name,
+        qty:item.qty||1,
+        price:item.price||0,
+      });
+    }
+  }
+
+  // Merge duplicates per store (same product sold multiple times)
+  for(const store of Object.keys(storeData)){
+    const merged={};
+    for(const item of storeData[store]){
+      const key=item.product_id||item.name;
+      if(!merged[key]) merged[key]={...item, totalQty:0};
+      merged[key].totalQty+=item.qty;
+    }
+    storeData[store]=Object.values(merged);
+  }
+
+  const container=document.getElementById('restockContent');
+  let totalItems=0;
+  let html='';
+
+  for(const store of storeList){
+    const items=storeData[store]||[];
+    if(store==='Main') continue; // Main is the warehouse, not a shop to restock
+    totalItems+=items.length;
+    const storeTotal=items.reduce((s,i)=>s+i.totalQty,0);
+
+    html+=`<div class="card" style="margin-bottom:16px">
+      <h3 style="display:flex;justify-content:space-between;align-items:center">
+        <span><i class="fas fa-store" style="color:var(--primary);margin-right:8px"></i>${store}</span>
+        <span class="badge ${items.length?'badge-warning':'badge-success'}">${items.length?storeTotal+' items to restock':'All stocked'}</span>
+      </h3>`;
+
+    if(!items.length){
+      html+=`<div class="empty-state" style="padding:20px"><i class="fas fa-check-circle"></i><p>No sales on ${targetDate} — nothing to restock</p></div>`;
+    }else{
+      html+=`<div style="overflow-x:auto"><table><thead><tr>
+        <th>SKU / Barcode</th>
+        <th>Product</th>
+        <th>Qty Sold</th>
+        <th>Current Stock (${store})</th>
+        <th>Main Stock</th>
+        <th>Status</th>
+      </tr></thead><tbody>`;
+
+      for(const item of items.sort((a,b)=>b.totalQty-a.totalQty)){
+        const p=prodById.get(item.product_id);
+        const sku=p?p.sku:'—';
+        const storeStock=p?(p.stock[store]||0):'?';
+        const mainStock=p?(p.stock['Main']||0):'?';
+        const low=typeof storeStock==='number'&&storeStock<=2;
+        const noMain=typeof mainStock==='number'&&mainStock===0;
+        let statusBadge='<span class="badge badge-success">OK</span>';
+        if(noMain) statusBadge='<span class="badge badge-danger">No main stock</span>';
+        else if(low) statusBadge='<span class="badge badge-warning">Low</span>';
+
+        html+=`<tr>
+          <td><code style="font-size:13px;background:var(--g100);padding:3px 8px;border-radius:4px">${sku}</code></td>
+          <td>${item.name}</td>
+          <td style="font-weight:700;text-align:center">${item.totalQty}</td>
+          <td style="text-align:center;${low?'color:var(--danger);font-weight:700':''}">${storeStock}</td>
+          <td style="text-align:center;${noMain?'color:var(--danger);font-weight:700':''}">${mainStock}</td>
+          <td>${statusBadge}</td>
+        </tr>`;
+      }
+      html+=`</tbody></table></div>`;
+    }
+    html+=`</div>`;
+  }
+
+  if(!totalItems){
+    html=`<div class="card"><div class="empty-state" style="padding:40px"><i class="fas fa-box-open"></i><p>No sales found for ${targetDate} — nothing to restock</p></div></div>`;
+  }
+
+  container.innerHTML=html;
+}
+
+function printRestock(){
+  const content=document.getElementById('restockContent').innerHTML;
+  const date=document.getElementById('restockDate').value||'Restock';
+  const w=window.open('','','width=900,height=700');
+  w.document.write(`<html><head><title>Restock — ${date}</title>
+    <style>body{font-family:-apple-system,sans-serif;padding:20px;font-size:13px}
+    h3{margin:18px 0 8px;font-size:16px}table{width:100%;border-collapse:collapse}
+    th,td{padding:6px 10px;border:1px solid #ddd;text-align:left;font-size:12px}
+    th{background:#f5f5f7;font-weight:600;text-transform:uppercase;font-size:10px}
+    code{font-size:12px}.badge{font-size:10px;padding:2px 6px;border-radius:10px}
+    .badge-success{background:#d4edda;color:#155724}.badge-warning{background:#fff3cd;color:#856404}
+    .badge-danger{background:#f8d7da;color:#721c24}.empty-state{text-align:center;color:#999}
+    @media print{body{padding:0}}</style></head><body>
+    <h2>Next Restock — ${date}</h2>${content}</body></html>`);
+  w.document.close();
+  w.print();
+}
+
 function getOrders3pm(){ return load('customerOrders', []) || []; }
 
 function render3pmOrders(){
