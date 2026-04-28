@@ -3235,7 +3235,7 @@ function renderRota(){
     html+=`<div class="card" style="margin-bottom:16px;overflow-x:auto"><h3 style="margin:0 0 8px;font-size:14px">${mLabel}</h3>`;
     html+='<table style="width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed">';
     // Header row: dates
-    html+='<thead><tr><th style="position:sticky;left:0;background:var(--g100);z-index:2;min-width:100px;padding:4px 6px;border:1px solid var(--g200);font-size:10px">Staff</th>';
+    html+='<thead><tr><th style="position:sticky;left:0;background:var(--g100);z-index:2;width:70px;max-width:70px;padding:4px 6px;border:1px solid var(--g200);font-size:10px;overflow:hidden">Staff</th>';
     monthDates.forEach(d=>{
       const dn=dayNames[d.getDay()];
       const dateStr=d.getDate();
@@ -3249,7 +3249,7 @@ function renderRota(){
     // Staff rows
     staffNames.forEach(name=>{
       html+='<tr>';
-      html+=`<td style="position:sticky;left:0;background:#fff;z-index:1;padding:4px 6px;border:1px solid var(--g200);font-weight:600;font-size:11px;white-space:nowrap">${name}</td>`;
+      html+=`<td style="position:sticky;left:0;background:#fff;z-index:1;width:70px;max-width:70px;padding:4px 6px;border:1px solid var(--g200);font-weight:600;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</td>`;
       monthDates.forEach(d=>{
         const ds=fmtDate(d);
         const key=name+'||'+ds;
@@ -3394,10 +3394,10 @@ function printRota(){
 window.addEventListener('load', function(){
   setTimeout(function seedRotaData(){
     try{
-    if(localStorage.getItem('rotaSeeded_v5')) return;
+    if(localStorage.getItem('rotaSeeded_v6')) return;
     const R=[];
-    const PE=['Paul Bullock','Elaine Bullock'];
-    const ALL=['JD','Gavin','Dale','Darren','Martha','Janine','Amy','Paul Bullock','Elaine Bullock'];
+    const PE=['Paul','Elaine'];
+    const ALL=['JD','Gavin','Dale','Darren','Martha','Janine','Amy','Paul','Elaine'];
     const uid=()=>Math.random().toString(36).substr(2,9)+Date.now().toString(36);
     const ts=()=>new Date().toISOString();
     function s(staff,date,store){R.push({id:uid(),staff,date,type:'shift',start:'09:00',end:new Date(date+'T12:00:00').getDay()===6?'17:00':'17:30',store,created:ts()})}
@@ -3426,25 +3426,25 @@ window.addEventListener('load', function(){
     // ── WEEK 2: 11-16 May 2026 ──
     day('2026-05-11',['Darren'],[],['Janine','Dale'],['JD'],['Gavin','Martha']);
     day('2026-05-12',['JD'],[],['Janine','Dale'],['Gavin'],['Darren','Martha']);
-    day('2026-05-13',['Gavin','Dale'],[],['Janine','Paul Bullock'],['JD'],['Darren','Martha'],['Elaine Bullock']);
+    day('2026-05-13',['Gavin','Dale'],[],['Janine','Paul'],['JD'],['Darren','Martha'],['Elaine']);
     day('2026-05-14',['Janine'],[],['Dale','Gavin'],['JD'],['Martha','Darren']);
     day('2026-05-15',[],[],['Janine','Gavin','Dale'],['JD'],['Martha','Darren']);
-    day('2026-05-16',['Gavin','JD'],[],['Janine','Paul Bullock'],['Darren'],['Martha','Dale'],['Elaine Bullock']);
+    day('2026-05-16',['Gavin','JD'],[],['Janine','Paul'],['Darren'],['Martha','Dale'],['Elaine']);
 
     // ── WEEK 3: 18-23 May 2026 ── (P+E on holiday Tue-Sat)
     day('2026-05-18',['Darren'],[],['Janine','Dale'],['JD'],['Martha','Gavin']);
-    day('2026-05-19',['Dale'],['Paul Bullock','Elaine Bullock'],['Janine','Gavin'],['JD'],['Martha','Darren']);
-    day('2026-05-20',['Gavin'],['Paul Bullock','Elaine Bullock'],['Janine','Dale'],['JD'],['Darren','Martha']);
-    day('2026-05-21',['Janine'],['Paul Bullock','Elaine Bullock'],['Gavin','Dale'],['JD'],['Martha','Darren']);
-    day('2026-05-22',['Janine'],['Paul Bullock','Elaine Bullock'],['Martha','Dale'],['JD'],['Gavin','Darren']);
-    day('2026-05-23',['Martha','JD'],['Paul Bullock','Elaine Bullock'],['Janine','Dale'],['Gavin'],['Amy','Darren']);
+    day('2026-05-19',['Dale'],['Paul','Elaine'],['Janine','Gavin'],['JD'],['Martha','Darren']);
+    day('2026-05-20',['Gavin'],['Paul','Elaine'],['Janine','Dale'],['JD'],['Darren','Martha']);
+    day('2026-05-21',['Janine'],['Paul','Elaine'],['Gavin','Dale'],['JD'],['Martha','Darren']);
+    day('2026-05-22',['Janine'],['Paul','Elaine'],['Martha','Dale'],['JD'],['Gavin','Darren']);
+    day('2026-05-23',['Martha','JD'],['Paul','Elaine'],['Janine','Dale'],['Gavin'],['Amy','Darren']);
 
     // ── WEEK 4: 25-30 May 2026 ── (Gavin on holiday all week, P+E holiday Mon-Wed)
     closed('2026-05-25');
-    day('2026-05-26',[],['Gavin','Paul Bullock','Elaine Bullock'],['Janine','Dale'],['JD'],['Martha','Darren']);
-    day('2026-05-27',['Martha'],['Gavin','Paul Bullock','Elaine Bullock'],['Janine','Dale'],['JD'],['Darren']);
-    day('2026-05-28',['Darren'],['Gavin'],['Janine','Dale'],['JD'],['Paul Bullock','Martha'],['Elaine Bullock']);
-    day('2026-05-29',['JD'],['Gavin'],['Janine','Paul Bullock'],['Darren'],['Dale','Martha'],['Elaine Bullock']);
+    day('2026-05-26',[],['Gavin','Paul','Elaine'],['Janine','Dale'],['JD'],['Martha','Darren']);
+    day('2026-05-27',['Martha'],['Gavin','Paul','Elaine'],['Janine','Dale'],['JD'],['Darren']);
+    day('2026-05-28',['Darren'],['Gavin'],['Janine','Dale'],['JD'],['Paul','Martha'],['Elaine']);
+    day('2026-05-29',['JD'],['Gavin'],['Janine','Paul'],['Darren'],['Dale','Martha'],['Elaine']);
     day('2026-05-30',['Janine'],['Gavin'],['Martha','Dale'],['JD'],['Amy','Darren']);
 
     // ── WEEK 5: 1-6 June 2026 ──
@@ -3460,7 +3460,7 @@ window.addEventListener('load', function(){
     day('2026-06-09',['Darren'],[],['Janine','Dale'],['JD'],['Martha','Gavin']);
     day('2026-06-10',['Gavin'],[],['Janine','Dale'],['JD'],['Martha','Darren']);
     day('2026-06-11',[],['JD'],['Janine','Dale'],['Gavin'],['Martha','Darren']);
-    day('2026-06-12',['JD'],['Martha'],['Janine','Paul Bullock'],['Gavin'],['Dale','Darren'],['Elaine Bullock']);
+    day('2026-06-12',['JD'],['Martha'],['Janine','Paul'],['Gavin'],['Dale','Darren'],['Elaine']);
     day('2026-06-13',['Dale','Martha'],[],['Janine','Gavin'],['JD'],['Amy','Darren']);
 
     // ── WEEK 7: 15-20 June 2026 ──
@@ -3486,7 +3486,7 @@ window.addEventListener('load', function(){
 
     // Write directly to localStorage with pp_ prefix (matching load/save functions)
     localStorage.setItem('pp_rotaShifts', JSON.stringify(clean));
-    localStorage.setItem('rotaSeeded_v5','1');
+    localStorage.setItem('rotaSeeded_v6','1');
     console.log('[Rota] Seeded '+clean.length+' shift entries (May-June 2026)');
 
     // If rota page is visible, re-render it
