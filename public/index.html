@@ -3164,8 +3164,9 @@ function saveQuickTicket(){
 let rotaStartMonth=new Date(); // 1st of the current month
 rotaStartMonth.setDate(1);
 
-function getRotaShifts(){ return load('rotaShifts', []) || []; }
-function saveRotaShifts(shifts){ save('rotaShifts', shifts); }
+// Rota uses localStorage directly (not SBridge cache, which doesn't sync this bucket)
+function getRotaShifts(){ try{var v=localStorage.getItem('pp_rotaShifts');return v?JSON.parse(v):[]}catch(e){return[]} }
+function saveRotaShifts(shifts){ localStorage.setItem('pp_rotaShifts',JSON.stringify(shifts)); }
 
 function rotaPrevMonth(){ rotaStartMonth.setMonth(rotaStartMonth.getMonth()-1); renderRota(); }
 function rotaNextMonth(){ rotaStartMonth.setMonth(rotaStartMonth.getMonth()+1); renderRota(); }
@@ -3394,7 +3395,7 @@ function printRota(){
 window.addEventListener('load', function(){
   setTimeout(function seedRotaData(){
     try{
-    if(localStorage.getItem('rotaSeeded_v7')) return;
+    if(localStorage.getItem('rotaSeeded_v8')) return;
     const R=[];
     const PE=['Paul','Elaine'];
     const ALL=['JD','Gavin','Dale','Darren','Martha','Janine','Amy','Paul','Elaine'];
@@ -3484,9 +3485,9 @@ window.addEventListener('load', function(){
       clean.push(nonShift||arr[0]);
     });
 
-    // Save through app's save() function so SBridge syncs to Supabase
-    save('rotaShifts', clean);
-    localStorage.setItem('rotaSeeded_v7','1');
+    // Write directly to localStorage (SBridge doesn't sync this bucket)
+    localStorage.setItem('pp_rotaShifts', JSON.stringify(clean));
+    localStorage.setItem('rotaSeeded_v8','1');
     console.log('[Rota] Seeded '+clean.length+' shift entries (May-June 2026)');
 
     // If rota page is visible, re-render it
