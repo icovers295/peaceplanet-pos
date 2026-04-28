@@ -3172,108 +3172,139 @@ function rotaPrevMonth(){ rotaStartMonth.setMonth(rotaStartMonth.getMonth()-1); 
 function rotaNextMonth(){ rotaStartMonth.setMonth(rotaStartMonth.getMonth()+1); renderRota(); }
 
 function renderRota(){
-  // Populate store filter
-  const storeSel=document.getElementById('rotaStore');
+  var storeSel=document.getElementById('rotaStore');
   if(storeSel && storeSel.options.length<=1){
-    storeSel.innerHTML='<option value="">All Stores</option>'+STORES.map(s=>`<option>${s}</option>`).join('');
+    storeSel.innerHTML='<option value="">All Stores</option>'+STORES.map(function(s){return '<option>'+s+'</option>'}).join('');
   }
-  const storeFilter=storeSel?storeSel.value:'';
+  var storeFilter=storeSel?storeSel.value:'';
 
-  // Build single month of dates
-  const m1=new Date(rotaStartMonth);
-  const m1Name=m1.toLocaleString('en-GB',{month:'long',year:'numeric'});
+  var m1=new Date(rotaStartMonth);
+  var m1Name=m1.toLocaleString('en-GB',{month:'long',year:'numeric'});
   document.getElementById('rotaMonthLabel').textContent=m1Name;
 
-  // Collect all dates for this month
-  const dates=[];
-  const d1=new Date(m1);
+  // Collect weeks that overlap this month (Mon-Sun rows)
+  var dates=[];
+  var d1=new Date(m1);
   while(d1.getMonth()===m1.getMonth()){ dates.push(new Date(d1)); d1.setDate(d1.getDate()+1); }
 
-  // Get shifts and staff
-  let shifts=getRotaShifts();
-  if(storeFilter) shifts=shifts.filter(s=>s.store===storeFilter);
+  // Group into weeks (Mon=start)
+  var weeks=[];
+  var firstDay=new Date(dates[0]);
+  // Rewind to Monday
+  while(firstDay.getDay()!==1) firstDay.setDate(firstDay.getDate()-1);
+  var lastDay=new Date(dates[dates.length-1]);
+  // Forward to Sunday
+  while(lastDay.getDay()!==0) lastDay.setDate(lastDay.getDate()+1);
+  var cur=new Date(firstDay);
+  var week=[];
+  while(cur<=lastDay){
+    week.push(new Date(cur));
+    if(week.length===7){ weeks.push(week); week=[]; }
+    cur.setDate(cur.getDate()+1);
+  }
+  if(week.length) weeks.push(week);
 
-  const users=load('users',[])||[];
-  const staffNames=[...new Set(shifts.map(s=>s.staff))].sort();
-  // Also include all active staff who may not have shifts yet
-  users.filter(u=>u.active!==false).forEach(u=>{ if(!staffNames.includes(u.name)) staffNames.push(u.name); });
+  var shifts=getRotaShifts();
+  if(storeFilter) shifts=shifts.filter(function(s){return s.store===storeFilter});
+
+  var users=load('users',[])||[];
+  var staffNames=[...new Set(shifts.map(function(s){return s.staff}))].sort();
+  users.filter(function(u){return u.active!==false}).forEach(function(u){ if(!staffNames.includes(u.name)) staffNames.push(u.name); });
 
   if(!staffNames.length){
     document.getElementById('rotaContent').innerHTML='<div class="card"><div class="empty-state" style="padding:40px"><i class="fas fa-calendar-xmark"></i><p>No rota data yet. Send a photo of your rota to Claude and it will be uploaded here.</p></div></div>';
     return;
   }
 
-  const dayNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  const fmtDate=d=>d.toISOString().split('T')[0];
-  const today=fmtDate(new Date());
+  var dayLabels=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  var fmtDate=function(d){return d.toISOString().split('T')[0]};
+  var today=fmtDate(new Date());
 
-  // Build lookup: staff+date → shift info
-  const shiftMap={};
-  shifts.forEach(s=>{
-    const key=s.staff+'||'+s.date;
+  var shiftMap={};
+  shifts.forEach(function(s){
+    var key=s.staff+'||'+s.date;
     if(!shiftMap[key]) shiftMap[key]=[];
     shiftMap[key].push(s);
   });
 
-  // Colour map for stores
-  const storeColors={'Main':'#6366f1','Dungannon':'#0ea5e9','Cookstown':'#10b981','Omagh':'#f59e0b'};
+  var storeColors={'Main':'#6366f1','Dungannon':'#0ea5e9','Cookstown':'#10b981','Omagh':'#f59e0b'};
 
-  let html='<div style="margin-bottom:8px;display:flex;gap:12px;flex-wrap:wrap">';
-  Object.entries(storeColors).forEach(([s,c])=>{
-    html+=`<span style="display:inline-flex;align-items:center;gap:4px;font-size:12px"><span style="width:12px;height:12px;border-radius:3px;background:${c};display:inline-block"></span>${s}</span>`;
+  // Legend
+  var html='<div style="margin-bottom:12px;display:flex;gap:16px;flex-wrap:wrap;align-items:center">';
+  Object.keys(storeColors).forEach(function(s){
+    var c=storeColors[s];
+    html+='<span style="display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:500"><span style="width:16px;height:16px;border-radius:4px;background:'+c+';display:inline-block"></span>'+s+'</span>';
   });
-  html+='<span style="display:inline-flex;align-items:center;gap:4px;font-size:12px"><span style="width:12px;height:12px;border-radius:3px;background:#ef4444;display:inline-block"></span>OFF</span>';
+  html+='<span style="display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:500"><span style="width:16px;height:16px;border-radius:4px;background:#ef4444;display:inline-block"></span>OFF</span>';
+  html+='<span style="display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:500"><span style="width:16px;height:16px;border-radius:4px;background:#eab308;display:inline-block"></span>Holiday</span>';
   html+='</div>';
 
-  // Single month table
-  {
-    const monthDates=dates;
-    html+=`<div class="card" style="margin-bottom:16px;overflow-x:auto">`;
-    html+='<table style="width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed">';
-    // Header row: dates
-    html+='<thead><tr><th style="position:sticky;left:0;background:var(--g100);z-index:2;width:80px;max-width:80px;padding:6px 8px;border:1px solid var(--g200);font-size:12px;overflow:hidden">Staff</th>';
-    monthDates.forEach(d=>{
-      const dn=dayNames[d.getDay()];
-      const dateStr=d.getDate();
-      const isToday=fmtDate(d)===today;
-      const isWeekend=d.getDay()===0||d.getDay()===6;
-      let bg=isToday?'var(--primary)':isWeekend?'var(--g100)':'var(--g50)';
-      let fg=isToday?'#fff':'inherit';
-      html+=`<th style="padding:4px 3px;border:1px solid var(--g200);text-align:center;background:${bg};color:${fg};min-width:44px;font-size:11px;font-weight:600">${dn}<br>${dateStr}</th>`;
+  // One table per week
+  weeks.forEach(function(weekDates,wi){
+    var weekStart=weekDates[0];
+    var weekEnd=weekDates[6]||weekDates[weekDates.length-1];
+    var weekLabel='Week '+(wi+1)+': '+weekStart.getDate()+' '+weekStart.toLocaleString('en-GB',{month:'short'})+' – '+weekEnd.getDate()+' '+weekEnd.toLocaleString('en-GB',{month:'short'});
+
+    html+='<div class="card" style="margin-bottom:16px;overflow-x:auto;padding:0">';
+    html+='<div style="padding:10px 16px;background:var(--g50);border-bottom:2px solid var(--g200);font-weight:700;font-size:15px;color:var(--g800)">'+weekLabel+'</div>';
+    html+='<table style="width:100%;border-collapse:collapse;table-layout:fixed">';
+
+    // Header
+    html+='<thead><tr><th style="position:sticky;left:0;background:var(--g100);z-index:2;width:110px;min-width:110px;padding:10px 12px;border:1px solid var(--g200);font-size:14px;font-weight:700;text-align:left">Staff</th>';
+    weekDates.forEach(function(d){
+      var dn=dayLabels[((d.getDay()+6)%7)];
+      var dateStr=d.getDate();
+      var isToday=fmtDate(d)===today;
+      var isWeekend=d.getDay()===0||d.getDay()===6;
+      var inMonth=d.getMonth()===m1.getMonth();
+      var bg=isToday?'var(--primary)':isWeekend?'var(--g150,#e5e7eb)':'var(--g100)';
+      var fg=isToday?'#fff':inMonth?'var(--g800)':'var(--g400)';
+      html+='<th style="padding:8px 4px;border:1px solid var(--g200);text-align:center;background:'+bg+';color:'+fg+';font-size:14px;font-weight:700">'+dn+'<br><span style="font-size:16px">'+dateStr+'</span></th>';
     });
     html+='</tr></thead><tbody>';
+
     // Staff rows
-    staffNames.forEach(name=>{
+    staffNames.forEach(function(name){
       html+='<tr>';
-      html+=`<td style="position:sticky;left:0;background:#fff;z-index:1;width:80px;max-width:80px;padding:6px 8px;border:1px solid var(--g200);font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</td>`;
-      monthDates.forEach(d=>{
-        const ds=fmtDate(d);
-        const key=name+'||'+ds;
-        const cellShifts=shiftMap[key]||[];
-        const isWeekend=d.getDay()===0||d.getDay()===6;
-        let cellBg=isWeekend?'#f9fafb':'#fff';
-        let cellContent='';
+      html+='<td style="position:sticky;left:0;background:#fff;z-index:1;width:110px;min-width:110px;padding:10px 12px;border:1px solid var(--g200);font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+name+'</td>';
+      weekDates.forEach(function(d){
+        var ds=fmtDate(d);
+        var key=name+'||'+ds;
+        var cellShifts=shiftMap[key]||[];
+        var isWeekend=d.getDay()===0||d.getDay()===6;
+        var isToday=ds===today;
+        var inMonth=d.getMonth()===m1.getMonth();
+        var cellBg=isWeekend?'#f3f4f6':'#fff';
+        if(!inMonth) cellBg='#f9fafb';
+        var cellContent='';
+        var borderCol='var(--g200)';
+
         if(cellShifts.length){
-          const s=cellShifts[0];
+          var s=cellShifts[0];
           if(s.type==='off'||s.type==='OFF'){
-            cellBg='#fef2f2'; cellContent='<span style="color:#ef4444;font-weight:700;font-size:11px">OFF</span>';
+            cellBg='#fef2f2';
+            cellContent='<div style="background:#ef4444;color:#fff;border-radius:6px;padding:6px 4px;font-weight:800;font-size:14px;letter-spacing:1px">OFF</div>';
           } else if(s.type==='holiday'){
-            cellBg='#fefce8'; cellContent='<span style="color:#ca8a04;font-size:11px">HOL</span>';
+            cellBg='#fefce8';
+            cellContent='<div style="background:#eab308;color:#fff;border-radius:6px;padding:6px 4px;font-weight:800;font-size:13px">HOL</div>';
           } else {
-            const col=storeColors[s.store]||'#6b7280';
-            cellBg=col+'18';
-            const timeStr=s.start&&s.end?s.start+'-'+s.end:'';
-            const storeAbbr=s.store==='Main'?'M':s.store==='Dungannon'?'D':s.store==='Cookstown'?'C':s.store==='Omagh'?'O':'';
-            cellContent=`<span style="color:${col};font-size:11px;font-weight:700;line-height:1.2;display:block">${storeAbbr}</span>`;
-            if(timeStr) cellContent+=`<span style="font-size:9px;color:var(--g500);display:block">${timeStr}</span>`;
+            var col=storeColors[s.store]||'#6b7280';
+            cellBg=col+'15';
+            borderCol=col+'40';
+            var storeName=s.store||'';
+            var timeStr=s.start&&s.end?s.start+' - '+s.end:'';
+            cellContent='<div style="font-weight:800;font-size:15px;color:'+col+';line-height:1.3">'+storeName+'</div>';
+            if(timeStr) cellContent+='<div style="font-size:12px;color:var(--g600);margin-top:2px;font-weight:500">'+timeStr+'</div>';
           }
         }
-        html+=`<td style="padding:4px 3px;border:1px solid var(--g200);text-align:center;background:${cellBg};vertical-align:middle;cursor:pointer;height:36px" onclick="openRotaEditor('${name}','${ds}')">${cellContent}</td>`;
+
+        var todayBorder=isToday?'border:2px solid var(--primary);':'border:1px solid '+borderCol+';';
+        html+='<td style="padding:6px;'+todayBorder+'text-align:center;background:'+cellBg+';vertical-align:middle;cursor:pointer;height:56px" onclick="openRotaEditor(\''+name+'\',\''+ds+'\')">'+cellContent+'</td>';
       });
       html+='</tr>';
     });
     html+='</tbody></table></div>';
-  }
+  });
 
   document.getElementById('rotaContent').innerHTML=html;
 }
