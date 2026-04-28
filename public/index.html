@@ -3421,13 +3421,19 @@ function printRota(){
 window.addEventListener('load', function(){
   setTimeout(function seedRotaData(){
     try{
-    if(localStorage.getItem('rotaSeeded_v8')) return;
+    if(localStorage.getItem('rotaSeeded_v9')) return;
     const R=[];
     const PE=['Paul','Elaine'];
     const ALL=['JD','Gavin','Dale','Darren','Martha','Janine','Amy','Paul','Elaine'];
     const uid=()=>Math.random().toString(36).substr(2,9)+Date.now().toString(36);
     const ts=()=>new Date().toISOString();
-    function s(staff,date,store){R.push({id:uid(),staff,date,type:'shift',start:'09:00',end:new Date(date+'T12:00:00').getDay()===6?'17:00':'17:30',store,created:ts()})}
+    function s(staff,date,store){
+      var dow=new Date(date+'T12:00:00').getDay();
+      var isSat=dow===6;
+      var startT=(!isSat&&store==='Omagh')?'09:30':'09:00';
+      var endT=isSat?'15:00':'17:00';
+      R.push({id:uid(),staff,date,type:'shift',start:startT,end:endT,store,created:ts()});
+    }
     function off(staff,date){R.push({id:uid(),staff,date,type:'off',start:'',end:'',store:'',created:ts()})}
     function hol(staff,date){R.push({id:uid(),staff,date,type:'holiday',start:'',end:'',store:'',created:ts()})}
     function day(date,offList,holList,dgn,cooks,omagh,mainOverride){
@@ -3513,7 +3519,7 @@ window.addEventListener('load', function(){
 
     // Write directly to localStorage (SBridge doesn't sync this bucket)
     localStorage.setItem('pp_rotaShifts', JSON.stringify(clean));
-    localStorage.setItem('rotaSeeded_v8','1');
+    localStorage.setItem('rotaSeeded_v9','1');
     console.log('[Rota] Seeded '+clean.length+' shift entries (May-June 2026)');
 
     // If rota page is visible, re-render it
