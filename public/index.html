@@ -3389,118 +3389,111 @@ function printRota(){
 
 // ═══════════════════════════════════════════════════════
 // ROTA SEED DATA — parsed from handwritten rota photos
-// Runs once per browser (checks localStorage flag)
+// Runs once per browser after page fully loads
 // ═══════════════════════════════════════════════════════
-(function seedRotaData(){
-  if(localStorage.getItem('rotaSeeded_v2')) return;
-  const R=[]; // will hold all shift entries
-  const PE=['Paul Bullock','Elaine Bullock'];
-  const ALL=['JD','Gavin','Dale','Darren','Martha','Janine','Amy','Paul Bullock','Elaine Bullock'];
-  function s(staff,date,store){R.push({staff,date,type:'shift',start:'09:00',end:new Date(date).getDay()===6?'17:00':'17:30',store})}
-  function off(staff,date){R.push({staff,date,type:'off',start:'',end:'',store:''})}
-  function hol(staff,date){R.push({staff,date,type:'holiday',start:'',end:'',store:''})}
-  function day(date,offList,holList,dgn,cooks,omagh,mainOverride){
-    offList.forEach(n=>off(n,date));
-    holList.forEach(n=>hol(n,date));
-    dgn.forEach(n=>s(n,date,'Dungannon'));
-    cooks.forEach(n=>s(n,date,'Cookstown'));
-    omagh.forEach(n=>s(n,date,'Omagh'));
-    // Paul+Elaine default to Main unless listed elsewhere or off/holiday
-    const listed=[...offList,...holList,...dgn,...cooks,...omagh,...(mainOverride||[])];
-    PE.forEach(p=>{if(!listed.includes(p)){s(p,date,'Main')}});
-    if(mainOverride) mainOverride.forEach(n=>{if(!PE.includes(n))s(n,date,'Main')});
-  }
-  function closed(date){ALL.forEach(n=>off(n,date))}
+window.addEventListener('load', function(){
+  setTimeout(function seedRotaData(){
+    try{
+    if(localStorage.getItem('rotaSeeded_v4')) return;
+    const R=[];
+    const PE=['Paul Bullock','Elaine Bullock'];
+    const ALL=['JD','Gavin','Dale','Darren','Martha','Janine','Amy','Paul Bullock','Elaine Bullock'];
+    const uid=()=>Math.random().toString(36).substr(2,9)+Date.now().toString(36);
+    const ts=()=>new Date().toISOString();
+    function s(staff,date,store){R.push({id:uid(),staff,date,type:'shift',start:'09:00',end:new Date(date+'T12:00:00').getDay()===6?'17:00':'17:30',store,created:ts()})}
+    function off(staff,date){R.push({id:uid(),staff,date,type:'off',start:'',end:'',store:'',created:ts()})}
+    function hol(staff,date){R.push({id:uid(),staff,date,type:'holiday',start:'',end:'',store:'',created:ts()})}
+    function day(date,offList,holList,dgn,cooks,omagh,mainOverride){
+      offList.forEach(n=>off(n,date));
+      holList.forEach(n=>hol(n,date));
+      dgn.forEach(n=>s(n,date,'Dungannon'));
+      cooks.forEach(n=>s(n,date,'Cookstown'));
+      omagh.forEach(n=>s(n,date,'Omagh'));
+      const listed=[...offList,...holList,...dgn,...cooks,...omagh,...(mainOverride||[])];
+      PE.forEach(p=>{if(!listed.includes(p)){s(p,date,'Main')}});
+      if(mainOverride) mainOverride.forEach(n=>{if(!PE.includes(n))s(n,date,'Main')});
+    }
+    function closed(date){ALL.forEach(n=>off(n,date))}
 
-  // ── WEEK 1: 4-9 May 2026 ──
-  closed('2026-05-04'); // Bank Holiday Monday — CLOSED
-  day('2026-05-05',['JD'],[],['Janine','Dale'],['Gavin'],['Martha','Darren']);
-  day('2026-05-06',['Gavin'],[],['Janine','Dale'],['JD'],['Darren','Martha']);
-  day('2026-05-07',['Janine'],[],['Gavin','Dale'],['JD'],['Martha','Darren']);
-  day('2026-05-08',['Darren'],[],['Janine','Gavin'],['JD'],['Dale','Martha']);
-  day('2026-05-09',['Martha','Dale'],[],['Janine','Gavin'],['JD'],['Amy','Darren']);
+    // ── WEEK 1: 4-9 May 2026 ──
+    closed('2026-05-04');
+    day('2026-05-05',['JD'],[],['Janine','Dale'],['Gavin'],['Martha','Darren']);
+    day('2026-05-06',['Gavin'],[],['Janine','Dale'],['JD'],['Darren','Martha']);
+    day('2026-05-07',['Janine'],[],['Gavin','Dale'],['JD'],['Martha','Darren']);
+    day('2026-05-08',['Darren'],[],['Janine','Gavin'],['JD'],['Dale','Martha']);
+    day('2026-05-09',['Martha','Dale'],[],['Janine','Gavin'],['JD'],['Amy','Darren']);
 
-  // ── WEEK 2: 11-16 May 2026 ──
-  day('2026-05-11',['Darren'],[],['Janine','Dale'],['JD'],['Gavin','Martha']);
-  day('2026-05-12',['JD'],[],['Janine','Dale'],['Gavin'],['Darren','Martha']);
-  day('2026-05-13',['Gavin','Dale'],[],['Janine','Paul Bullock'],['JD'],['Darren','Martha'],['Elaine Bullock']);
-  day('2026-05-14',['Janine'],[],['Dale','Gavin'],['JD'],['Martha','Darren']);
-  day('2026-05-15',[],[],['Janine','Gavin','Dale'],['JD'],['Martha','Darren']);
-  day('2026-05-16',['Gavin','JD'],[],['Janine','Paul Bullock'],['Darren'],['Martha','Dale'],['Elaine Bullock']);
+    // ── WEEK 2: 11-16 May 2026 ──
+    day('2026-05-11',['Darren'],[],['Janine','Dale'],['JD'],['Gavin','Martha']);
+    day('2026-05-12',['JD'],[],['Janine','Dale'],['Gavin'],['Darren','Martha']);
+    day('2026-05-13',['Gavin','Dale'],[],['Janine','Paul Bullock'],['JD'],['Darren','Martha'],['Elaine Bullock']);
+    day('2026-05-14',['Janine'],[],['Dale','Gavin'],['JD'],['Martha','Darren']);
+    day('2026-05-15',[],[],['Janine','Gavin','Dale'],['JD'],['Martha','Darren']);
+    day('2026-05-16',['Gavin','JD'],[],['Janine','Paul Bullock'],['Darren'],['Martha','Dale'],['Elaine Bullock']);
 
-  // ── WEEK 3: 18-23 May 2026 ──
-  day('2026-05-18',['Darren'],[],['Janine','Dale'],['JD'],['Martha','Gavin']);
-  day('2026-05-19',['Dale'],[],['Janine','Gavin'],['JD'],['Martha','Darren']);
-  hol('Paul Bullock','2026-05-19'); hol('Elaine Bullock','2026-05-19');
-  day('2026-05-20',['Gavin'],[],['Janine','Dale'],['JD'],['Darren','Martha']);
-  hol('Paul Bullock','2026-05-20'); hol('Elaine Bullock','2026-05-20');
-  day('2026-05-21',['Janine'],[],['Gavin','Dale'],['JD'],['Martha','Darren']);
-  hol('Paul Bullock','2026-05-21'); hol('Elaine Bullock','2026-05-21');
-  day('2026-05-22',['Janine'],[],['Martha','Dale'],['JD'],['Gavin','Darren']);
-  hol('Paul Bullock','2026-05-22'); hol('Elaine Bullock','2026-05-22');
-  day('2026-05-23',['Martha','JD'],[],['Janine','Dale'],['Gavin'],['Amy','Darren']);
-  hol('Paul Bullock','2026-05-23'); hol('Elaine Bullock','2026-05-23');
+    // ── WEEK 3: 18-23 May 2026 ── (P+E on holiday Tue-Sat)
+    day('2026-05-18',['Darren'],[],['Janine','Dale'],['JD'],['Martha','Gavin']);
+    day('2026-05-19',['Dale'],['Paul Bullock','Elaine Bullock'],['Janine','Gavin'],['JD'],['Martha','Darren']);
+    day('2026-05-20',['Gavin'],['Paul Bullock','Elaine Bullock'],['Janine','Dale'],['JD'],['Darren','Martha']);
+    day('2026-05-21',['Janine'],['Paul Bullock','Elaine Bullock'],['Gavin','Dale'],['JD'],['Martha','Darren']);
+    day('2026-05-22',['Janine'],['Paul Bullock','Elaine Bullock'],['Martha','Dale'],['JD'],['Gavin','Darren']);
+    day('2026-05-23',['Martha','JD'],['Paul Bullock','Elaine Bullock'],['Janine','Dale'],['Gavin'],['Amy','Darren']);
 
-  // ── WEEK 4: 25-30 May 2026 ──
-  closed('2026-05-25'); // Bank Holiday Monday — CLOSED
-  day('2026-05-26',[],['Gavin','Paul Bullock','Elaine Bullock'],['Janine','Dale'],['JD'],['Martha','Darren']);
-  day('2026-05-27',['Martha'],['Gavin','Paul Bullock','Elaine Bullock'],['Janine','Dale'],['JD'],['Darren']);
-  day('2026-05-28',['Darren'],['Gavin'],['Janine','Dale'],['JD'],['Paul Bullock','Martha'],['Elaine Bullock']);
-  day('2026-05-29',['JD'],['Gavin'],['Janine','Paul Bullock'],['Darren'],['Dale','Martha'],['Elaine Bullock']);
-  day('2026-05-30',['Janine'],['Gavin'],['Martha','Dale'],['JD'],['Amy','Darren']);
+    // ── WEEK 4: 25-30 May 2026 ── (Gavin on holiday all week, P+E holiday Mon-Wed)
+    closed('2026-05-25');
+    day('2026-05-26',[],['Gavin','Paul Bullock','Elaine Bullock'],['Janine','Dale'],['JD'],['Martha','Darren']);
+    day('2026-05-27',['Martha'],['Gavin','Paul Bullock','Elaine Bullock'],['Janine','Dale'],['JD'],['Darren']);
+    day('2026-05-28',['Darren'],['Gavin'],['Janine','Dale'],['JD'],['Paul Bullock','Martha'],['Elaine Bullock']);
+    day('2026-05-29',['JD'],['Gavin'],['Janine','Paul Bullock'],['Darren'],['Dale','Martha'],['Elaine Bullock']);
+    day('2026-05-30',['Janine'],['Gavin'],['Martha','Dale'],['JD'],['Amy','Darren']);
 
-  // ── WEEK 5: 1-6 June 2026 ──
-  day('2026-06-01',['Darren'],[],['Dale','Janine'],['JD'],['Martha','Gavin']);
-  day('2026-06-02',['Dale'],[],['Janine','Gavin'],['JD'],['Darren','Martha']);
-  day('2026-06-03',['Gavin'],[],['Janine','Dale'],['JD'],['Darren','Martha']);
-  day('2026-06-04',['Martha'],[],['Gavin','Janine'],['JD'],['Dale','Darren']);
-  day('2026-06-05',[],[],['Janine','Gavin','Dale'],['JD'],['Martha','Darren']);
-  day('2026-06-06',['Janine','JD'],[],['Martha','Dale'],['Gavin'],['Amy','Darren']);
+    // ── WEEK 5: 1-6 June 2026 ──
+    day('2026-06-01',['Darren'],[],['Dale','Janine'],['JD'],['Martha','Gavin']);
+    day('2026-06-02',['Dale'],[],['Janine','Gavin'],['JD'],['Darren','Martha']);
+    day('2026-06-03',['Gavin'],[],['Janine','Dale'],['JD'],['Darren','Martha']);
+    day('2026-06-04',['Martha'],[],['Gavin','Janine'],['JD'],['Dale','Darren']);
+    day('2026-06-05',[],[],['Janine','Gavin','Dale'],['JD'],['Martha','Darren']);
+    day('2026-06-06',['Janine','JD'],[],['Martha','Dale'],['Gavin'],['Amy','Darren']);
 
-  // ── WEEK 6: 8-13 June 2026 ──
-  day('2026-06-08',['Janine'],[],['Gavin','Dale'],['JD'],['Martha','Darren']);
-  day('2026-06-09',['Darren'],[],['Janine','Dale'],['JD'],['Martha','Gavin']);
-  day('2026-06-10',['Gavin'],[],['Janine','Dale'],['JD'],['Martha','Darren']);
-  day('2026-06-11',[],['JD'],['Janine','Dale'],['Gavin'],['Martha','Darren']);
-  day('2026-06-12',['JD'],['Martha'],['Janine','Paul Bullock'],['Gavin'],['Dale','Darren'],['Elaine Bullock']);
-  day('2026-06-13',['Dale','Martha'],[],['Janine','Gavin'],['JD'],['Amy','Darren']);
+    // ── WEEK 6: 8-13 June 2026 ──
+    day('2026-06-08',['Janine'],[],['Gavin','Dale'],['JD'],['Martha','Darren']);
+    day('2026-06-09',['Darren'],[],['Janine','Dale'],['JD'],['Martha','Gavin']);
+    day('2026-06-10',['Gavin'],[],['Janine','Dale'],['JD'],['Martha','Darren']);
+    day('2026-06-11',[],['JD'],['Janine','Dale'],['Gavin'],['Martha','Darren']);
+    day('2026-06-12',['JD'],['Martha'],['Janine','Paul Bullock'],['Gavin'],['Dale','Darren'],['Elaine Bullock']);
+    day('2026-06-13',['Dale','Martha'],[],['Janine','Gavin'],['JD'],['Amy','Darren']);
 
-  // ── WEEK 7: 15-20 June 2026 ──
-  day('2026-06-15',['JD'],[],['Dale','Janine'],['Gavin'],['Martha','Darren']);
-  day('2026-06-16',['Darren'],[],['Janine','Gavin'],['JD'],['Martha','Dale']);
-  day('2026-06-17',['Gavin'],[],['Janine','Dale'],['JD'],['Darren','Martha']);
-  day('2026-06-18',['Martha'],[],['Janine','Dale'],['JD'],['Gavin','Darren']);
-  day('2026-06-19',['Gavin'],[],['Dale','Janine'],['JD'],['Martha','Darren']);
-  day('2026-06-20',['Janine','Dale'],[],['Martha','Gavin'],['JD'],['Amy','Darren']);
+    // ── WEEK 7: 15-20 June 2026 ──
+    day('2026-06-15',['JD'],[],['Dale','Janine'],['Gavin'],['Martha','Darren']);
+    day('2026-06-16',['Darren'],[],['Janine','Gavin'],['JD'],['Martha','Dale']);
+    day('2026-06-17',['Gavin'],[],['Janine','Dale'],['JD'],['Darren','Martha']);
+    day('2026-06-18',['Martha'],[],['Janine','Dale'],['JD'],['Gavin','Darren']);
+    day('2026-06-19',['Gavin'],[],['Dale','Janine'],['JD'],['Martha','Darren']);
+    day('2026-06-20',['Janine','Dale'],[],['Martha','Gavin'],['JD'],['Amy','Darren']);
 
-  // Remove duplicate P+E entries (from days where they were added by day() but also manually set as hol)
-  const seen=new Set();
-  const clean=R.filter(e=>{
-    const key=e.staff+'|'+e.date+'|'+e.type;
-    if(seen.has(key)) return false;
-    seen.add(key);
-    // If staff has both a shift and holiday/off on same date, keep only the holiday/off
-    const hasOff=R.some(x=>x.staff===e.staff&&x.date===e.date&&(x.type==='off'||x.type==='holiday'));
-    if(e.type==='shift'&&hasOff) return false;
-    return true;
-  });
-
-  // Import using existing function
-  if(typeof importRota==='function'){
-    importRota(clean);
-  } else {
-    // Fallback: save directly
-    let shifts=JSON.parse(localStorage.getItem('rotaShifts')||'[]');
-    clean.forEach(entry=>{
-      const idx=shifts.findIndex(s=>s.staff===entry.staff&&s.date===entry.date);
-      if(idx>=0) shifts[idx]={...shifts[idx],...entry};
-      else shifts.push({id:Math.random().toString(36).substr(2,9),...entry,created:new Date().toISOString()});
+    // Dedup: if staff has both shift and off/holiday on same date, keep only off/holiday
+    const byKey={};
+    R.forEach(e=>{
+      const k=e.staff+'|'+e.date;
+      if(!byKey[k]) byKey[k]=[];
+      byKey[k].push(e);
     });
-    localStorage.setItem('rotaShifts',JSON.stringify(shifts));
-  }
-  localStorage.setItem('rotaSeeded_v2','1');
-  console.log('[Rota] Seeded '+clean.length+' shift entries (May-June 2026)');
-})();
+    const clean=[];
+    Object.values(byKey).forEach(arr=>{
+      const nonShift=arr.find(e=>e.type==='off'||e.type==='holiday');
+      clean.push(nonShift||arr[0]);
+    });
+
+    // Write directly to localStorage (bypass save/SBridge which may not be ready)
+    localStorage.setItem('rotaShifts', JSON.stringify(clean));
+    localStorage.setItem('rotaSeeded_v4','1');
+    console.log('[Rota] Seeded '+clean.length+' shift entries (May-June 2026)');
+
+    // If rota page is visible, re-render it
+    if(typeof renderRota==='function') try{renderRota()}catch(e){}
+    }catch(err){console.error('[Rota seed error]',err)}
+  }, 2000); // wait 2s for everything to initialize
+});
 </script>
 </body>
 </html>
