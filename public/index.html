@@ -1202,7 +1202,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
 <!-- STAFF ROTA -->
 <div class="page" id="page-rota">
 <div class="page-header">
-  <h1>Staff Rota <span style="font-size:12px;color:var(--g500);font-weight:400">— two-month schedule</span></h1>
+  <h1>Staff Rota <span style="font-size:12px;color:var(--g500);font-weight:400">— monthly schedule</span></h1>
   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
     <select class="form-control" id="rotaStore" style="width:auto" onchange="renderRota()">
       <option value="">All Stores</option>
@@ -3179,19 +3179,15 @@ function renderRota(){
   }
   const storeFilter=storeSel?storeSel.value:'';
 
-  // Build two months of dates
+  // Build single month of dates
   const m1=new Date(rotaStartMonth);
-  const m2=new Date(rotaStartMonth); m2.setMonth(m2.getMonth()+1);
   const m1Name=m1.toLocaleString('en-GB',{month:'long',year:'numeric'});
-  const m2Name=m2.toLocaleString('en-GB',{month:'long',year:'numeric'});
-  document.getElementById('rotaMonthLabel').textContent=m1Name+' — '+m2Name;
+  document.getElementById('rotaMonthLabel').textContent=m1Name;
 
-  // Collect all dates for both months
+  // Collect all dates for this month
   const dates=[];
   const d1=new Date(m1);
   while(d1.getMonth()===m1.getMonth()){ dates.push(new Date(d1)); d1.setDate(d1.getDate()+1); }
-  const d2=new Date(m2);
-  while(d2.getMonth()===m2.getMonth()){ dates.push(new Date(d2)); d2.setDate(d2.getDate()+1); }
 
   // Get shifts and staff
   let shifts=getRotaShifts();
@@ -3229,14 +3225,13 @@ function renderRota(){
   html+='<span style="display:inline-flex;align-items:center;gap:4px;font-size:12px"><span style="width:12px;height:12px;border-radius:3px;background:#ef4444;display:inline-block"></span>OFF</span>';
   html+='</div>';
 
-  // Split into two month tables
-  [m1,m2].forEach((month,mi)=>{
-    const monthDates=dates.filter(d=>d.getMonth()===month.getMonth()&&d.getFullYear()===month.getFullYear());
-    const mLabel=month.toLocaleString('en-GB',{month:'long',year:'numeric'});
-    html+=`<div class="card" style="margin-bottom:16px;overflow-x:auto"><h3 style="margin:0 0 8px;font-size:14px">${mLabel}</h3>`;
-    html+='<table style="width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed">';
+  // Single month table
+  {
+    const monthDates=dates;
+    html+=`<div class="card" style="margin-bottom:16px;overflow-x:auto">`;
+    html+='<table style="width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed">';
     // Header row: dates
-    html+='<thead><tr><th style="position:sticky;left:0;background:var(--g100);z-index:2;width:70px;max-width:70px;padding:4px 6px;border:1px solid var(--g200);font-size:10px;overflow:hidden">Staff</th>';
+    html+='<thead><tr><th style="position:sticky;left:0;background:var(--g100);z-index:2;width:80px;max-width:80px;padding:6px 8px;border:1px solid var(--g200);font-size:12px;overflow:hidden">Staff</th>';
     monthDates.forEach(d=>{
       const dn=dayNames[d.getDay()];
       const dateStr=d.getDate();
@@ -3244,13 +3239,13 @@ function renderRota(){
       const isWeekend=d.getDay()===0||d.getDay()===6;
       let bg=isToday?'var(--primary)':isWeekend?'var(--g100)':'var(--g50)';
       let fg=isToday?'#fff':'inherit';
-      html+=`<th style="padding:2px 3px;border:1px solid var(--g200);text-align:center;background:${bg};color:${fg};min-width:38px;font-size:9px;font-weight:600">${dn}<br>${dateStr}</th>`;
+      html+=`<th style="padding:4px 3px;border:1px solid var(--g200);text-align:center;background:${bg};color:${fg};min-width:44px;font-size:11px;font-weight:600">${dn}<br>${dateStr}</th>`;
     });
     html+='</tr></thead><tbody>';
     // Staff rows
     staffNames.forEach(name=>{
       html+='<tr>';
-      html+=`<td style="position:sticky;left:0;background:#fff;z-index:1;width:70px;max-width:70px;padding:4px 6px;border:1px solid var(--g200);font-weight:600;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</td>`;
+      html+=`<td style="position:sticky;left:0;background:#fff;z-index:1;width:80px;max-width:80px;padding:6px 8px;border:1px solid var(--g200);font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</td>`;
       monthDates.forEach(d=>{
         const ds=fmtDate(d);
         const key=name+'||'+ds;
@@ -3261,24 +3256,24 @@ function renderRota(){
         if(cellShifts.length){
           const s=cellShifts[0];
           if(s.type==='off'||s.type==='OFF'){
-            cellBg='#fef2f2'; cellContent='<span style="color:#ef4444;font-weight:700;font-size:9px">OFF</span>';
+            cellBg='#fef2f2'; cellContent='<span style="color:#ef4444;font-weight:700;font-size:11px">OFF</span>';
           } else if(s.type==='holiday'){
-            cellBg='#fefce8'; cellContent='<span style="color:#ca8a04;font-size:9px">HOL</span>';
+            cellBg='#fefce8'; cellContent='<span style="color:#ca8a04;font-size:11px">HOL</span>';
           } else {
             const col=storeColors[s.store]||'#6b7280';
             cellBg=col+'18';
             const timeStr=s.start&&s.end?s.start+'-'+s.end:'';
             const storeAbbr=s.store==='Main'?'M':s.store==='Dungannon'?'D':s.store==='Cookstown'?'C':s.store==='Omagh'?'O':'';
-            cellContent=`<span style="color:${col};font-size:8px;font-weight:600;line-height:1.1;display:block">${storeAbbr}</span>`;
-            if(timeStr) cellContent+=`<span style="font-size:7px;color:var(--g500);display:block">${timeStr}</span>`;
+            cellContent=`<span style="color:${col};font-size:11px;font-weight:700;line-height:1.2;display:block">${storeAbbr}</span>`;
+            if(timeStr) cellContent+=`<span style="font-size:9px;color:var(--g500);display:block">${timeStr}</span>`;
           }
         }
-        html+=`<td style="padding:1px 2px;border:1px solid var(--g200);text-align:center;background:${cellBg};vertical-align:middle;cursor:pointer" onclick="openRotaEditor('${name}','${ds}')">${cellContent}</td>`;
+        html+=`<td style="padding:4px 3px;border:1px solid var(--g200);text-align:center;background:${cellBg};vertical-align:middle;cursor:pointer;height:36px" onclick="openRotaEditor('${name}','${ds}')">${cellContent}</td>`;
       });
       html+='</tr>';
     });
     html+='</tbody></table></div>';
-  });
+  }
 
   document.getElementById('rotaContent').innerHTML=html;
 }
