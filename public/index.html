@@ -3394,7 +3394,7 @@ function printRota(){
 window.addEventListener('load', function(){
   setTimeout(function seedRotaData(){
     try{
-    if(localStorage.getItem('rotaSeeded_v6')) return;
+    if(localStorage.getItem('rotaSeeded_v7')) return;
     const R=[];
     const PE=['Paul','Elaine'];
     const ALL=['JD','Gavin','Dale','Darren','Martha','Janine','Amy','Paul','Elaine'];
@@ -3484,9 +3484,9 @@ window.addEventListener('load', function(){
       clean.push(nonShift||arr[0]);
     });
 
-    // Write directly to localStorage with pp_ prefix (matching load/save functions)
-    localStorage.setItem('pp_rotaShifts', JSON.stringify(clean));
-    localStorage.setItem('rotaSeeded_v6','1');
+    // Save through app's save() function so SBridge syncs to Supabase
+    save('rotaShifts', clean);
+    localStorage.setItem('rotaSeeded_v7','1');
     console.log('[Rota] Seeded '+clean.length+' shift entries (May-June 2026)');
 
     // If rota page is visible, re-render it
