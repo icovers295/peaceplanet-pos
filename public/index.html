@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>iCovers POS</title>
+<title>PeacePlanet POS</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -689,9 +689,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
         }
         bridge._cache[key] = val;
         // Fire-and-forget diff write — errors surface in console, never block UI
-        bridge._syncBucket(key).catch(e => {
-          console.error(`[SBridge] sync failed for ${key}:`, e);
-        });
+        bridge._syncBucket(key);
       };
     },
 
@@ -699,15 +697,22 @@ tr:hover td{background:rgba(10,132,255,.04)}
     async _syncBucket(key) {
       const next = this._cache[key];
       const prev = this._prev[key] ? JSON.parse(this._prev[key]) : [];
-      this._prev[key] = JSON.stringify(next);
-      switch (key) {
-        case 'sales':          return this._syncSales(prev, next);
-        case 'repairs':        return this._syncRepairs(prev, next);
-        case 'customers':      return this._syncCustomers(prev, next);
-        case 'transfers':      return this._syncTransfers(prev, next);
-        case 'purchaseOrders': return this._syncPOs(prev, next);
-        case 'products':       return this._syncProducts(prev, next);
-        case 'users':          return this._syncUsers(prev, next);
+      const snapshot = JSON.stringify(next);
+      try {
+        switch (key) {
+          case 'sales':          await this._syncSales(prev, next); break;
+          case 'repairs':        await this._syncRepairs(prev, next); break;
+          case 'customers':      await this._syncCustomers(prev, next); break;
+          case 'transfers':      await this._syncTransfers(prev, next); break;
+          case 'purchaseOrders': await this._syncPOs(prev, next); break;
+          case 'products':       await this._syncProducts(prev, next); break;
+          case 'users':          await this._syncUsers(prev, next); break;
+        }
+        // Only update _prev AFTER successful sync
+        this._prev[key] = snapshot;
+      } catch(e) {
+        console.error(`[SBridge] sync failed for ${key}, will retry on next save:`, e);
+        // Don't update _prev — next save will re-diff from the same baseline
       }
     },
 
@@ -945,7 +950,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
 @keyframes pp-spin{to{transform:rotate(360deg)}}
 </style>
 <div id="pp-loading-screen"><div class="box">
-  <h2>iCovers POS</h2>
+  <h2>PeacePlanet POS</h2>
   <div class="spin"></div>
   <p id="pp-loading-msg">Connecting to database…</p>
 </div></div>
@@ -974,7 +979,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
 <!-- LOGIN -->
 <div class="login-page" id="loginPage">
 <div class="login-card">
-<h1>iCovers</h1>
+<h1>PeacePlanet</h1>
 <p class="subtitle">Point of Sale System</p>
 <form onsubmit="doLogin(event)">
 <div class="form-group"><label>Email</label><input class="form-control" type="email" id="loginEmail" value="admin@icovers.co.uk"></div>
@@ -988,7 +993,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
 <!-- APP -->
 <div class="app-layout" id="appLayout">
 <div class="sidebar">
-<div class="sidebar-header"><h2>iCovers</h2><div class="store-name">Point of Sale</div></div>
+<div class="sidebar-header"><h2>PeacePlanet</h2><div class="store-name">Point of Sale</div></div>
 <nav class="sidebar-nav" id="sidebarNav"></nav>
 <div class="sidebar-footer">
 <div class="user-name" id="footerUser">-</div>
@@ -1245,7 +1250,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
 <!-- MONITOR -->
 <div class="monitor-mode" id="monitorMode">
 <div class="monitor-header">
-<h1><i class="fas fa-screwdriver-wrench"></i> iCovers Repairs</h1>
+<h1><i class="fas fa-screwdriver-wrench"></i> PeacePlanet Repairs</h1>
 <div style="display:flex;gap:12px;align-items:center">
 <span id="monitorStore" style="font-size:16px;color:rgba(255,255,255,.5)"></span>
 <span id="monitorTime" style="font-size:14px;color:rgba(255,255,255,.3)"></span>
@@ -1366,6 +1371,9 @@ function buildNav(){
 }
 
 function showPage(id,el){
+  // Role guard — check permission before rendering
+  const navItem=NAV_ITEMS.find(n=>n.id===id);
+  if(navItem && !canSeeNav(navItem)){ toast('You don\'t have access to this page','error'); return; }
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   const pg=document.getElementById('page-'+id);
   if(pg)pg.classList.add('active');
@@ -1511,7 +1519,7 @@ function completeSale(method){
   const total=sub-disc;
   const seq=getNextSaleSeq();
   const d=new Date();
-  const receipt='IC'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'-'+String(seq).padStart(4,'0');
+  const receipt='PP'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'-'+String(seq).padStart(4,'0');
 
   // Deduct stock
   const products=getProducts();
@@ -1539,16 +1547,17 @@ function completeSale(method){
 function showReceipt(sale){
   const paper=document.getElementById('receiptPaper');
   paper.innerHTML=`
-    <div class="r-header"><h2 style="font-size:26px;font-weight:900;color:#000">iCovers</h2><p style="font-size:15px;font-weight:800;color:#000">${sale.store} Store</p><p style="font-size:13px;font-weight:700;color:#000">${fmtDate(sale.date)}</p><p style="font-size:15px;font-weight:900;color:#000">${sale.receipt}</p></div>
+    <div class="r-header"><h2 style="font-size:26px;font-weight:900;color:#000">PeacePlanet</h2><p style="font-size:13px;font-weight:700;color:#000">Phone Repair &amp; Accessories</p><p style="font-size:15px;font-weight:800;color:#000">${sale.store} Store</p>${(STORE_INFO[sale.store]||{}).addr?`<p style="font-size:12px;font-weight:600;color:#333">${STORE_INFO[sale.store].addr}</p>`:''}<p style="font-size:13px;font-weight:700;color:#000">${fmtDate(sale.date)}</p><p style="font-size:15px;font-weight:900;color:#000">${sale.receipt}</p>${sale.cashier?`<p style="font-size:12px;font-weight:600;color:#555">Served by: ${sale.cashier}</p>`:''}</div>
     <div class="r-line"></div>
     ${sale.items.map(i=>`<div class="r-row"><span style="font-weight:800">${i.name} x${i.qty}</span><span style="font-weight:900">${fmtMoney(i.qty*i.price)}</span></div>`).join('')}
     <div class="r-line"></div>
     <div class="r-row"><span style="font-weight:800">Subtotal</span><span style="font-weight:900">${fmtMoney(sale.subtotal)}</span></div>
     ${sale.discount>0?`<div class="r-row"><span style="font-weight:800">Discount</span><span style="font-weight:900">-${fmtMoney(sale.discount)}</span></div>`:''}
     <div class="r-row r-total" style="font-size:22px;font-weight:900"><span>TOTAL</span><span>${fmtMoney(sale.total)}</span></div>
+    <div class="r-row"><span style="font-weight:800">Includes VAT</span><span style="font-weight:900">${fmtMoney(sale.total - sale.total/1.2)}</span></div>
     <div class="r-row"><span style="font-weight:800">Payment</span><span style="font-weight:900">${sale.method.toUpperCase()}</span></div>
     <div class="r-line"></div>
-    <div class="r-footer" style="font-size:14px;font-weight:700;color:#000">Thank you for choosing iCovers!<br>www.icovers.co.uk</div>`;
+    <div class="r-footer" style="font-size:14px;font-weight:700;color:#000">Thank you for choosing PeacePlanet!<br>${(STORE_INFO[sale.store]||{}).phone||''}<br>www.peaceplanet.co.uk</div>`;
   document.getElementById('receiptOverlay').classList.add('active');
 }
 
@@ -1557,7 +1566,13 @@ function closeReceipt(){document.getElementById('receiptOverlay').classList.remo
 // ═══════════════════════════════════════════════════════
 // INVOICE
 // ═══════════════════════════════════════════════════════
-const COMPANY_EMAIL = 'icovers@hotmail.co.uk';
+const COMPANY_EMAIL = 'info@peaceplanet.co.uk';
+const STORE_INFO = {
+  'Main':      {addr:'Northern Ireland',phone:''},
+  'Dungannon': {addr:'Market Square, Dungannon, BT70 1AB',phone:'028 8772 7007'},
+  'Cookstown': {addr:'William Street, Cookstown, BT80 8NA',phone:'028 8676 6007'},
+  'Omagh':     {addr:'Market Street, Omagh, BT78 1EE',phone:'028 8225 9007'}
+};
 let currentInvoiceSale = null;
 
 function invoiceNumberFor(sale){
@@ -1585,11 +1600,13 @@ function showInvoice(sale, customer){
   const custAddr  = cust ? (cust.address||'') : '';
   paper.innerHTML = `
     <div class="r-header" style="text-align:left">
-      <h2 style="margin:0;font-size:26px;font-weight:900;color:#000">iCovers</h2>
+      <h2 style="margin:0;font-size:26px;font-weight:900;color:#000">PeacePlanet</h2>
       <p style="margin:3px 0;font-size:14px;font-weight:700;color:#000">Phone Repair &amp; Accessories</p>
-      <p style="margin:2px 0;font-size:13px;font-weight:700;color:#000">${sale.store} Store, Northern Ireland</p>
+      <p style="margin:2px 0;font-size:13px;font-weight:700;color:#000">${sale.store} Store</p>
+      <p style="margin:2px 0;font-size:12px;font-weight:600;color:#333">${(STORE_INFO[sale.store]||{}).addr||'Northern Ireland'}</p>
+      ${(STORE_INFO[sale.store]||{}).phone?`<p style="margin:2px 0;font-size:12px;font-weight:600;color:#333">Tel: ${STORE_INFO[sale.store].phone}</p>`:''}
       <p style="margin:2px 0;font-size:13px;font-weight:700;color:#000">Email: ${COMPANY_EMAIL}</p>
-      <p style="margin:2px 0;font-size:13px;font-weight:700;color:#000">Web: www.icovers.co.uk</p>
+      <p style="margin:2px 0;font-size:13px;font-weight:700;color:#000">Web: www.peaceplanet.co.uk</p>
     </div>
     <div class="r-line"></div>
     <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;margin:10px 0;color:#000">
@@ -1612,6 +1629,8 @@ function showInvoice(sale, customer){
     <div class="r-line"></div>
     <div class="r-row"><span style="font-weight:800">Subtotal</span><span style="font-weight:900">${fmtMoney(sale.subtotal)}</span></div>
     ${sale.discount>0?`<div class="r-row"><span style="font-weight:800">Discount</span><span style="font-weight:900">-${fmtMoney(sale.discount)}</span></div>`:''}
+    <div class="r-row"><span style="font-weight:800">Net (excl. VAT)</span><span style="font-weight:900">${fmtMoney(sale.total/1.2)}</span></div>
+    <div class="r-row"><span style="font-weight:800">VAT (20%)</span><span style="font-weight:900">${fmtMoney(sale.total - sale.total/1.2)}</span></div>
     <div class="r-row r-total" style="font-size:22px;font-weight:900"><span>TOTAL DUE</span><span>${fmtMoney(sale.total)}</span></div>
     <div class="r-row"><span style="font-weight:800">Payment Method</span><span style="font-weight:900">${(sale.method||'').toUpperCase()}</span></div>
     <div class="r-row"><span style="font-weight:800">Status</span><span style="font-weight:900">${sale.method?'PAID':'UNPAID'}</span></div>
@@ -1644,10 +1663,10 @@ function emailCurrentInvoice(){
   const s = currentInvoiceSale;
   const invNo = invoiceNumberFor(s);
   const to = (s.customer && s.customer.email) ? s.customer.email : '';
-  const subject = encodeURIComponent('iCovers Invoice '+invNo);
+  const subject = encodeURIComponent('PeacePlanet Invoice '+invNo);
   const lines = s.items.map(i=>`${i.name} x${i.qty}  ${fmtMoney(i.qty*i.price)}`).join('%0D%0A');
   const body = encodeURIComponent(
-    `iCovers - ${s.store} Store\n`+
+    `PeacePlanet - ${s.store} Store\n`+
     `Invoice: ${invNo}\n`+
     `Date: ${fmtDate(s.date)}\n\n`+
     s.items.map(i=>`${i.name} x${i.qty}  ${fmtMoney(i.qty*i.price)}`).join('\n')+
@@ -1656,7 +1675,7 @@ function emailCurrentInvoice(){
     `TOTAL: ${fmtMoney(s.total)}\n`+
     `Payment: ${(s.method||'').toUpperCase()}\n\n`+
     `Any queries: ${COMPANY_EMAIL}\n`+
-    `Thank you for choosing iCovers.`
+    `Thank you for choosing PeacePlanet.`
   );
   const cc = encodeURIComponent(COMPANY_EMAIL);
   window.location.href = `mailto:${to}?cc=${cc}&subject=${subject}&body=${body}`;
@@ -1773,7 +1792,7 @@ function doAdjustStock(pid){
 function printLabel(pid){
   const p=getProducts().find(x=>x.id===pid);if(!p)return;
   const w=window.open('','_blank','width=400,height=300');
-  w.document.write(`<html><head><style>body{font-family:-apple-system,sans-serif;text-align:center;padding:20px}h2{margin:0;font-size:16px}p{margin:4px 0}.price{font-size:36px;font-weight:700}.sku{font-size:12px;color:#666;font-family:monospace}.barcode{font-size:48px;letter-spacing:2px;font-family:monospace;margin:8px 0}</style></head><body><h2>iCovers</h2><p>${p.name}</p><div class="barcode">||||| |||| |||||</div><p class="price">${fmtMoney(p.sell)}</p><p class="sku">${p.sku}</p><script>setTimeout(()=>{window.print()},300)<\/script></body></html>`);
+  w.document.write(`<html><head><style>body{font-family:-apple-system,sans-serif;text-align:center;padding:20px}h2{margin:0;font-size:16px}p{margin:4px 0}.price{font-size:36px;font-weight:700}.sku{font-size:12px;color:#666;font-family:monospace}.barcode{font-size:48px;letter-spacing:2px;font-family:monospace;margin:8px 0}</style></head><body><h2>PeacePlanet</h2><p>${p.name}</p><div class="barcode">||||| |||| |||||</div><p class="price">${fmtMoney(p.sell)}</p><p class="sku">${p.sku}</p><script>setTimeout(()=>{window.print()},300)<\/script></body></html>`);
 }
 
 // ═══════════════════════════════════════════════════════
