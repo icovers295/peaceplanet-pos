@@ -3270,9 +3270,18 @@ function saveQuickTicket(){
   const repair={id:uid(),ticket,customerId:cust.id,device,imei:'',issue,status:'Checked In',priority:'normal',cost:0,paid:0,parts:[],store,notes:'',photos:(window._pendingRepairPhotos||[]).slice(),created:now()};
   const reps=getRepairs(); reps.push(repair); save('repairs', reps);
   window._pendingRepairPhotos=[];
-  closeModal();
-  if(navigate) navigate('repairs'); else renderRepairs();
-  setTimeout(()=>openRepairDetail(repair.id), 100);
+  // Show success with Print Ticket option
+  document.getElementById('modalTitle').textContent='Ticket Created';
+  document.getElementById('modalBody').innerHTML=`
+    <div style="text-align:center;padding:24px 0">
+      <i class="fas fa-check-circle" style="font-size:48px;color:var(--success);margin-bottom:16px"></i>
+      <h3 style="margin:0 0 8px">${ticket}</h3>
+      <p style="margin:0;color:var(--text-muted)">${name} — ${device}</p>
+      <p style="margin:8px 0 0;color:var(--text-muted)">${issue}</p>
+    </div>`;
+  document.getElementById('modalFooter').innerHTML=`
+    <button class="btn btn-secondary" onclick="closeModal();if(navigate)navigate('repairs');else renderRepairs();setTimeout(function(){openRepairDetail('${repair.id}')},100)">Close</button>
+    <button class="btn btn-primary" onclick="printRepairTicket('${repair.id}')"><i class="fas fa-print"></i> Print Ticket</button>`;
 }
 
 // ═══════════════════════════════════════════════════════
