@@ -1549,7 +1549,7 @@ function completeSale(method){
 function showReceipt(sale){
   const paper=document.getElementById('receiptPaper');
   paper.innerHTML=`
-    <div class="r-header"><h2 style="font-size:26px;font-weight:900;color:#000">PeacePlanet</h2><p style="font-size:13px;font-weight:700;color:#000">Phone Repair &amp; Accessories</p><p style="font-size:15px;font-weight:800;color:#000">${sale.store} Store</p>${(STORE_INFO[sale.store]||{}).addr?`<p style="font-size:12px;font-weight:600;color:#333">${STORE_INFO[sale.store].addr}</p>`:''}<p style="font-size:13px;font-weight:700;color:#000">${fmtDate(sale.date)}</p><p style="font-size:15px;font-weight:900;color:#000">${sale.receipt}</p>${sale.cashier?`<p style="font-size:12px;font-weight:600;color:#555">Served by: ${sale.cashier}</p>`:''}</div>
+    <div class="r-header"><h2 style="font-size:26px;font-weight:900;color:#000">iCovers</h2><p style="font-size:13px;font-weight:700;color:#000">Phone Repair &amp; Accessories</p><p style="font-size:15px;font-weight:800;color:#000">${sale.store} Store</p>${(STORE_INFO[sale.store]||{}).addr?`<p style="font-size:12px;font-weight:600;color:#333">${STORE_INFO[sale.store].addr}</p>`:''}<p style="font-size:13px;font-weight:700;color:#000">${fmtDate(sale.date)}</p><p style="font-size:15px;font-weight:900;color:#000">${sale.receipt}</p>${sale.cashier?`<p style="font-size:12px;font-weight:600;color:#555">Served by: ${sale.cashier}</p>`:''}</div>
     <div class="r-line"></div>
     ${sale.items.map(i=>`<div class="r-row"><span style="font-weight:800">${i.name} x${i.qty}</span><span style="font-weight:900">${fmtMoney(i.qty*i.price)}</span></div>`).join('')}
     <div class="r-line"></div>
@@ -1559,7 +1559,7 @@ function showReceipt(sale){
     <div class="r-row"><span style="font-weight:800">Includes VAT</span><span style="font-weight:900">${fmtMoney(sale.total - sale.total/1.2)}</span></div>
     <div class="r-row"><span style="font-weight:800">Payment</span><span style="font-weight:900">${sale.method.toUpperCase()}</span></div>
     <div class="r-line"></div>
-    <div class="r-footer" style="font-size:14px;font-weight:700;color:#000">Thank you for choosing PeacePlanet!<br>${(STORE_INFO[sale.store]||{}).phone||''}<br>www.peaceplanet.co.uk</div>`;
+    <div class="r-footer" style="font-size:14px;font-weight:700;color:#000">Thank you for choosing iCovers!<br>${(STORE_INFO[sale.store]||{}).phone||''}<br>www.icovers.co.uk</div>`;
   document.getElementById('receiptOverlay').classList.add('active');
 }
 
@@ -1611,7 +1611,7 @@ function printRepairTicket(rid){
     '.footer{text-align:center;font-size:11px;color:#666;margin-top:16px}'+
     '@media print{body{padding:8px;margin:0}}'+
     '</style></head><body>'+
-    '<div style="text-align:center"><h2>PeacePlanet</h2><p style="font-size:13px;margin:2px 0">Phone Repair &amp; Accessories</p>'+
+    '<div style="text-align:center"><h2>iCovers</h2><p style="font-size:13px;margin:2px 0">Phone Repair &amp; Accessories</p>'+
     '<p style="font-size:12px;margin:2px 0">'+r.store+' Store'+(storeInfo.addr?' — '+storeInfo.addr:'')+'</p>'+
     (storeInfo.phone?'<p style="font-size:12px;margin:2px 0">Tel: '+storeInfo.phone+'</p>':'')+
     '</div>'+
@@ -1638,7 +1638,7 @@ function printRepairTicket(rid){
     'Please retain this ticket for collection.<br>'+
     'All repairs carry a 90-day warranty on parts &amp; labour.<br>'+
     'Devices uncollected after 90 days may be recycled.<br>'+
-    'PeacePlanet — www.peaceplanet.co.uk'+
+    'iCovers — www.icovers.co.uk'+
     '</div></body></html>');
   w.document.close();
   setTimeout(function(){ w.print(); }, 300);
@@ -1681,13 +1681,13 @@ function showInvoice(sale, customer){
   const custAddr  = cust ? (cust.address||'') : '';
   paper.innerHTML = `
     <div class="r-header" style="text-align:left">
-      <h2 style="margin:0;font-size:26px;font-weight:900;color:#000">PeacePlanet</h2>
+      <h2 style="margin:0;font-size:26px;font-weight:900;color:#000">iCovers</h2>
       <p style="margin:3px 0;font-size:14px;font-weight:700;color:#000">Phone Repair &amp; Accessories</p>
       <p style="margin:2px 0;font-size:13px;font-weight:700;color:#000">${sale.store} Store</p>
       <p style="margin:2px 0;font-size:12px;font-weight:600;color:#333">${(STORE_INFO[sale.store]||{}).addr||'Northern Ireland'}</p>
       ${(STORE_INFO[sale.store]||{}).phone?`<p style="margin:2px 0;font-size:12px;font-weight:600;color:#333">Tel: ${STORE_INFO[sale.store].phone}</p>`:''}
       <p style="margin:2px 0;font-size:13px;font-weight:700;color:#000">Email: ${COMPANY_EMAIL}</p>
-      <p style="margin:2px 0;font-size:13px;font-weight:700;color:#000">Web: www.peaceplanet.co.uk</p>
+      <p style="margin:2px 0;font-size:13px;font-weight:700;color:#000">Web: www.icovers.co.uk</p>
     </div>
     <div class="r-line"></div>
     <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;margin:10px 0;color:#000">
@@ -1744,10 +1744,10 @@ function emailCurrentInvoice(){
   const s = currentInvoiceSale;
   const invNo = invoiceNumberFor(s);
   const to = (s.customer && s.customer.email) ? s.customer.email : '';
-  const subject = encodeURIComponent('PeacePlanet Invoice '+invNo);
+  const subject = encodeURIComponent('iCovers Invoice '+invNo);
   const lines = s.items.map(i=>`${i.name} x${i.qty}  ${fmtMoney(i.qty*i.price)}`).join('%0D%0A');
   const body = encodeURIComponent(
-    `PeacePlanet - ${s.store} Store\n`+
+    `iCovers - ${s.store} Store\n`+
     `Invoice: ${invNo}\n`+
     `Date: ${fmtDate(s.date)}\n\n`+
     s.items.map(i=>`${i.name} x${i.qty}  ${fmtMoney(i.qty*i.price)}`).join('\n')+
@@ -1756,7 +1756,7 @@ function emailCurrentInvoice(){
     `TOTAL: ${fmtMoney(s.total)}\n`+
     `Payment: ${(s.method||'').toUpperCase()}\n\n`+
     `Any queries: ${COMPANY_EMAIL}\n`+
-    `Thank you for choosing PeacePlanet.`
+    `Thank you for choosing iCovers.`
   );
   const cc = encodeURIComponent(COMPANY_EMAIL);
   window.location.href = `mailto:${to}?cc=${cc}&subject=${subject}&body=${body}`;
@@ -1873,7 +1873,7 @@ function doAdjustStock(pid){
 function printLabel(pid){
   const p=getProducts().find(x=>x.id===pid);if(!p)return;
   const w=window.open('','_blank','width=400,height=300');
-  w.document.write(`<html><head><style>body{font-family:-apple-system,sans-serif;text-align:center;padding:20px}h2{margin:0;font-size:16px}p{margin:4px 0}.price{font-size:36px;font-weight:700}.sku{font-size:12px;color:#666;font-family:monospace}.barcode{font-size:48px;letter-spacing:2px;font-family:monospace;margin:8px 0}</style></head><body><h2>PeacePlanet</h2><p>${p.name}</p><div class="barcode">||||| |||| |||||</div><p class="price">${fmtMoney(p.sell)}</p><p class="sku">${p.sku}</p><script>setTimeout(()=>{window.print()},300)<\/script></body></html>`);
+  w.document.write(`<html><head><style>body{font-family:-apple-system,sans-serif;text-align:center;padding:20px}h2{margin:0;font-size:16px}p{margin:4px 0}.price{font-size:36px;font-weight:700}.sku{font-size:12px;color:#666;font-family:monospace}.barcode{font-size:48px;letter-spacing:2px;font-family:monospace;margin:8px 0}</style></head><body><h2>iCovers</h2><p>${p.name}</p><div class="barcode">||||| |||| |||||</div><p class="price">${fmtMoney(p.sell)}</p><p class="sku">${p.sku}</p><script>setTimeout(()=>{window.print()},300)<\/script></body></html>`);
 }
 
 // ═══════════════════════════════════════════════════════
