@@ -374,6 +374,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
       repairs:        [],
       transfers:      [],
       purchaseOrders: [],
+      customerOrders: [],
       users:          [],
     },
     // Previous snapshot per bucket — used to diff on save()
@@ -452,6 +453,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
         this._hydrateRepairs(),
         this._hydrateTransfers(),
         this._hydratePurchaseOrders(),
+        this._hydrateCustomerOrders(),
         this._hydrateUsers(),
       ]);
       // Take initial snapshots for diff-on-save
@@ -652,6 +654,23 @@ tr:hover td{background:rgba(10,132,255,.04)}
       });
     },
 
+    async _hydrateCustomerOrders() {
+      const { data } = await this.client
+        .from('customer_orders')
+        .select('id,sku,name,customer_name,customer_phone,price,qty,supplier,store_id,status,paid,notes,ordered_at,received_at,delivered_at,created_at,updated_at')
+        .order('created_at', { ascending: false })
+        .limit(500);
+      this._cache.customerOrders = (data || []).map(o => ({
+        id: o.id, sku: o.sku || '', name: o.name || '',
+        customer_name: o.customer_name || '', customer_phone: o.customer_phone || '',
+        price: Number(o.price) || 0, qty: Number(o.qty) || 1,
+        supplier: o.supplier || '', store: this.storeNameById[o.store_id] || '',
+        status: o.status || 'pending', paid: !!o.paid, notes: o.notes || '',
+        ordered_at: o.ordered_at, received_at: o.received_at,
+        delivered_at: o.delivered_at, created: o.created_at,
+      }));
+    },
+
     async _hydrateUsers() {
       const { data: staff } = await this.client
         .from('staff')
@@ -708,6 +727,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
           case 'transfers':      await this._syncTransfers(prev, next); break;
           case 'purchaseOrders': await this._syncPOs(prev, next); break;
           case 'products':       await this._syncProducts(prev, next); break;
+          case 'customerOrders': await this._syncCustomerOrders(prev, next); break;
           case 'users':          await this._syncUsers(prev, next); break;
         }
         // Only update _prev AFTER successful sync
@@ -905,6 +925,51 @@ tr:hover td{background:rgba(10,132,255,.04)}
       }
     },
 
+    async _syncCustomerOrders(prev, next) {
+      // NEW orders
+      for (const o of this._added(prev, next)) {
+        await this.client.from('customer_orders').insert({
+          id: o.id, sku: o.sku || null, name: o.name,
+          customer_name: o.customer_name, customer_phone: o.customer_phone || null,
+          price: o.price || 0, qty: o.qty || 1,
+          supplier: o.supplier || null,
+          store_id: this.storeIdByName[o.store] || null,
+          status: o.status || 'pending', paid: !!o.paid,
+          notes: o.notes || null,
+          ordered_at: o.ordered_at || null,
+          received_at: o.received_at || null,
+          delivered_at: o.delivered_at || null,
+          created_at: o.created || new Date().toISOString(),
+        });
+      }
+      // UPDATED orders (status, paid, timestamps)
+      for (const o of next) {
+        const p = prev.find(x => x.id === o.id);
+        if (!p) continue;
+        if (p.status !== o.status || p.paid !== o.paid || p.price !== o.price
+            || p.qty !== o.qty || p.notes !== o.notes || p.sku !== o.sku
+            || p.name !== o.name || p.customer_name !== o.customer_name) {
+          await this.client.from('customer_orders').update({
+            sku: o.sku, name: o.name, customer_name: o.customer_name,
+            customer_phone: o.customer_phone, price: o.price, qty: o.qty,
+            supplier: o.supplier, status: o.status, paid: !!o.paid,
+            notes: o.notes,
+            ordered_at: o.ordered_at || null,
+            received_at: o.received_at || null,
+            delivered_at: o.delivered_at || null,
+            updated_at: new Date().toISOString(),
+          }).eq('id', o.id);
+        }
+      }
+      // DELETED orders
+      const nextIds = new Set(next.map(x => x.id));
+      for (const p of prev) {
+        if (!nextIds.has(p.id)) {
+          await this.client.from('customer_orders').delete().eq('id', p.id);
+        }
+      }
+    },
+
     // ─────────────────────────── REALTIME ───────────────────────────
     _subscribeRealtime() {
       const bridge = this;
@@ -920,6 +985,10 @@ tr:hover td{background:rgba(10,132,255,.04)}
       this.client.channel('pp-repairs')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'repairs' },
           async () => { await bridge._hydrateRepairs(); bridge._prev.repairs = JSON.stringify(bridge._cache.repairs); bridge._emit('repairs'); })
+        .subscribe();
+      this.client.channel('pp-customer-orders')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'customer_orders' },
+          async () => { await bridge._hydrateCustomerOrders(); bridge._prev.customerOrders = JSON.stringify(bridge._cache.customerOrders); bridge._emit('customerOrders'); })
         .subscribe();
     },
 
