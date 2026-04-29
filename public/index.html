@@ -1616,7 +1616,7 @@ function printRepairTicket(rid){
     (storeInfo.phone?'<p style="font-size:12px;margin:2px 0">Tel: '+storeInfo.phone+'</p>':'')+
     '</div>'+
     '<div class="line"></div>'+
-    '<div style="text-align:center"><div class="label">Repair Ticket</div><div class="ticket-num">'+r.ticket+'</div></div>'+
+    '<div style="text-align:center"><div class="label">Repair Ticket</div><div class="ticket-num">'+r.ticket+'</div><svg id="ticketBarcode"></svg></div>'+
     '<div class="line"></div>'+
     '<div class="row"><span class="label">Customer</span><span class="value">'+(c?c.name:'Walk-in')+'</span></div>'+
     (c&&c.phone?'<div class="row"><span class="label">Phone</span><span class="value">'+c.phone+'</span></div>':'')+
@@ -1639,9 +1639,12 @@ function printRepairTicket(rid){
     'All repairs carry a 90-day warranty on parts &amp; labour.<br>'+
     'Devices uncollected after 90 days may be recycled.<br>'+
     'iCovers — www.icovers.co.uk'+
-    '</div></body></html>');
+    '</div>'+
+    '<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script>'+
+    '<script>try{JsBarcode("#ticketBarcode","'+r.ticket+'",{format:"CODE128",width:2,height:50,displayValue:false,margin:0})}catch(e){}<\/script>'+
+    '</body></html>');
   w.document.close();
-  setTimeout(function(){ w.print(); }, 300);
+  setTimeout(function(){ w.print(); }, 500);
 }
 
 // ═══════════════════════════════════════════════════════
