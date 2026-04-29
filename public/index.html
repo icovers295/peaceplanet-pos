@@ -1241,7 +1241,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
 <div>
 <div class="receipt-paper" id="receiptPaper"></div>
 <div class="receipt-actions">
-<button class="btn btn-primary" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
+<button class="btn btn-primary" onclick="printReceiptWindow()"><i class="fas fa-print"></i> Print</button>
 <button class="btn btn-success" id="receiptInvoiceBtn" onclick="showInvoiceFromReceipt()"><i class="fas fa-file-invoice"></i> Invoice</button>
 <button class="btn btn-secondary" id="receiptEmailBtn" onclick="emailCurrentInvoice()" style="display:none"><i class="fas fa-envelope"></i> Email</button>
 <button class="btn btn-secondary" onclick="closeReceipt()">Close</button>
@@ -1564,6 +1564,85 @@ function showReceipt(sale){
 }
 
 function closeReceipt(){document.getElementById('receiptOverlay').classList.remove('active');currentInvoiceSale=null;document.getElementById('receiptEmailBtn').style.display='none';document.getElementById('receiptInvoiceBtn').style.display='';}
+
+function printReceiptWindow(){
+  var content = document.getElementById('receiptPaper').innerHTML;
+  var w = window.open('','_blank','width=400,height=700');
+  w.document.write('<html><head><style>'+
+    'body{margin:0;padding:20px;font-family:"Courier New",monospace;font-size:15px;font-weight:700;color:#000;-webkit-font-smoothing:none}'+
+    '*{color:#000!important;font-weight:700!important}'+
+    '.r-header{text-align:center;margin-bottom:18px}'+
+    '.r-header h2{font-size:24px;font-weight:900!important;font-family:-apple-system,sans-serif;margin:0}'+
+    '.r-header p{font-size:14px;margin:3px 0}'+
+    '.r-line{border-top:2px solid #000;margin:12px 0}'+
+    '.r-row{display:flex;justify-content:space-between;padding:3px 0;font-size:14px}'+
+    '.r-total{font-weight:900!important;font-size:20px;border-top:3px solid #000;padding-top:8px;margin-top:8px}'+
+    '.r-footer{text-align:center;margin-top:18px;font-size:13px}'+
+    '@media print{body{padding:8px;margin:0}}'+
+    '</style></head><body>'+content+'</body></html>');
+  w.document.close();
+  setTimeout(function(){ w.print(); }, 300);
+}
+
+function printRepairTicket(rid){
+  var repairs=getRepairs();
+  var r=repairs.find(function(x){return x.id===rid});if(!r)return;
+  var customers=getCustomers();
+  var c=customers.find(function(x){return x.id===r.customerId});
+  var products=getProducts();
+  var partsHtml=r.parts.map(function(pt){
+    var prod=products.find(function(x){return x.id===pt.productId});
+    return '<tr><td style="padding:4px 8px;border:1px solid #ccc">'+(prod?prod.name:'Part')+'</td><td style="padding:4px 8px;border:1px solid #ccc;text-align:center">'+pt.qty+'</td></tr>';
+  }).join('');
+
+  var storeInfo=STORE_INFO[r.store]||{};
+  var w=window.open('','_blank','width=400,height=700');
+  w.document.write('<html><head><style>'+
+    'body{margin:0;padding:20px;font-family:-apple-system,sans-serif;font-size:14px;color:#000}'+
+    'h2{margin:0;font-size:22px;font-weight:800}'+
+    '.line{border-top:2px solid #000;margin:10px 0}'+
+    '.dashed{border-top:1px dashed #999;margin:10px 0}'+
+    '.row{display:flex;justify-content:space-between;padding:2px 0}'+
+    '.label{font-weight:700;color:#333;font-size:12px;text-transform:uppercase;letter-spacing:.03em}'+
+    '.value{font-weight:600;font-size:14px}'+
+    'table{width:100%;border-collapse:collapse;font-size:13px;margin:8px 0}'+
+    'th{background:#f0f0f0;padding:4px 8px;border:1px solid #ccc;text-align:left;font-size:11px;text-transform:uppercase}'+
+    '.ticket-num{font-size:28px;font-weight:900;text-align:center;margin:8px 0;letter-spacing:2px}'+
+    '.footer{text-align:center;font-size:11px;color:#666;margin-top:16px}'+
+    '@media print{body{padding:8px;margin:0}}'+
+    '</style></head><body>'+
+    '<div style="text-align:center"><h2>PeacePlanet</h2><p style="font-size:13px;margin:2px 0">Phone Repair &amp; Accessories</p>'+
+    '<p style="font-size:12px;margin:2px 0">'+r.store+' Store'+(storeInfo.addr?' — '+storeInfo.addr:'')+'</p>'+
+    (storeInfo.phone?'<p style="font-size:12px;margin:2px 0">Tel: '+storeInfo.phone+'</p>':'')+
+    '</div>'+
+    '<div class="line"></div>'+
+    '<div style="text-align:center"><div class="label">Repair Ticket</div><div class="ticket-num">'+r.ticket+'</div></div>'+
+    '<div class="line"></div>'+
+    '<div class="row"><span class="label">Customer</span><span class="value">'+(c?c.name:'Walk-in')+'</span></div>'+
+    (c&&c.phone?'<div class="row"><span class="label">Phone</span><span class="value">'+c.phone+'</span></div>':'')+
+    '<div class="row"><span class="label">Device</span><span class="value">'+r.device+'</span></div>'+
+    (r.imei?'<div class="row"><span class="label">IMEI</span><span class="value">'+r.imei+'</span></div>':'')+
+    '<div class="row"><span class="label">Date In</span><span class="value">'+fmtDate(r.created)+'</span></div>'+
+    '<div class="row"><span class="label">Status</span><span class="value">'+r.status+'</span></div>'+
+    (r.priority==='urgent'?'<div class="row"><span class="label">Priority</span><span class="value" style="color:red;font-weight:800">URGENT</span></div>':'')+
+    '<div class="dashed"></div>'+
+    '<div class="label">Issue Reported</div>'+
+    '<p style="margin:6px 0;font-size:13px">'+r.issue+'</p>'+
+    (r.notes?'<div class="dashed"></div><div class="label">Notes</div><p style="margin:6px 0;font-size:13px">'+r.notes+'</p>':'')+
+    (r.parts.length?'<div class="dashed"></div><div class="label">Parts</div><table><thead><tr><th>Part</th><th>Qty</th></tr></thead><tbody>'+partsHtml+'</tbody></table>':'')+
+    '<div class="line"></div>'+
+    '<div class="row" style="font-size:18px;font-weight:800"><span>Estimated Cost</span><span>'+fmtMoney(r.cost)+'</span></div>'+
+    '<div class="row"><span class="label">Paid</span><span class="value">'+fmtMoney(r.paid)+'</span></div>'+
+    '<div class="row"><span class="label">Remaining</span><span class="value">'+fmtMoney(Math.max(0,r.cost-r.paid))+'</span></div>'+
+    '<div class="footer">'+
+    'Please retain this ticket for collection.<br>'+
+    'All repairs carry a 90-day warranty on parts &amp; labour.<br>'+
+    'Devices uncollected after 90 days may be recycled.<br>'+
+    'PeacePlanet — www.peaceplanet.co.uk'+
+    '</div></body></html>');
+  w.document.close();
+  setTimeout(function(){ w.print(); }, 300);
+}
 
 // ═══════════════════════════════════════════════════════
 // INVOICE
@@ -1924,7 +2003,7 @@ function openRepairDetail(rid){
     <h3 style="margin-top:20px">Payment</h3>
     <div style="margin-bottom:8px"><strong>Total:</strong> ${fmtMoney(r.cost)} &nbsp;|&nbsp; <strong>Paid:</strong> ${fmtMoney(r.paid)} &nbsp;|&nbsp; <strong>Remaining:</strong> ${fmtMoney(remaining)} ${fullyPaid?'<span class="badge badge-success">FULLY PAID</span>':''}</div>
     ${!fullyPaid?`<div class="form-row" style="grid-template-columns:120px auto auto;align-items:end"><div class="form-group" style="margin:0"><label>Amount (£)</label><input class="form-control" type="number" step="0.01" id="rdPayAmt" value="${remaining.toFixed(2)}"></div><button class="btn btn-success" onclick="makeRepairPayment('${rid}','cash')"><i class="fas fa-money-bill"></i> Cash</button><button class="btn btn-primary" onclick="makeRepairPayment('${rid}','card')"><i class="fas fa-credit-card"></i> Card</button></div>`:''}`;
-  document.getElementById('modalFooter').innerHTML=`<button class="btn btn-secondary" onclick="closeModal()">Close</button>`;
+  document.getElementById('modalFooter').innerHTML=`<button class="btn btn-primary" onclick="printRepairTicket('${rid}')"><i class="fas fa-print"></i> Print Ticket</button> <button class="btn btn-secondary" onclick="closeModal()">Close</button>`;
   openModal();
   renderPhotoStrip('rdPhotoStrip', r.photos||[]);
 }
