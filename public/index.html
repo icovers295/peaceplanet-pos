@@ -329,6 +329,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
 
 <!-- iCovers POS — Supabase live backend -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
 <script>
 /*
  * iCovers POS — Supabase Bridge
@@ -2663,15 +2664,25 @@ function viewPO(poId){
   document.getElementById('modalBox').classList.add('modal-wide');
   document.getElementById('modalBody').innerHTML = `
     <div style="margin-bottom:12px">${canViewCosts()?`<strong>Supplier:</strong> ${po.supplier} &nbsp;|&nbsp;`:''} <strong>Ref:</strong> ${po.ref||'-'} &nbsp;|&nbsp; <strong>Store:</strong> ${po.store}<br><strong>Received by:</strong> ${po.user} &nbsp;|&nbsp; <strong>Date:</strong> ${fmtDate(po.date)}</div>
-    <table><thead><tr><th>Product</th><th>SKU</th><th>Qty</th>${canViewCosts()?'<th>Cost Each</th><th>Line Total</th>':''}</tr></thead><tbody>
-    ${po.items.map(i => {
-      const sku = i.sku || skuById[i.product_id] || skuByName[i.name] || '';
-      return `<tr><td>${i.name}</td><td><code>${sku}</code></td><td>${i.qty}</td>${canViewCosts()?`<td>${fmtMoney(i.costEach)}</td><td>${fmtMoney(i.qty*i.costEach)}</td>`:''}</tr>`;
+    <table><thead><tr><th>Product</th><th>SKU / Barcode</th><th>Qty</th>${canViewCosts()?'<th>Cost Each</th><th>Line Total</th>':''}</tr></thead><tbody>
+    ${po.items.map(function(i,idx){
+      var sku = i.sku || skuById[i.product_id] || skuByName[i.name] || '';
+      return '<tr><td>'+i.name+'</td><td style="text-align:center">'+(sku?'<svg id="poBarcode'+idx+'"></svg><br><code style="font-size:11px">'+sku+'</code>':'—')+'</td><td>'+i.qty+'</td>'+(canViewCosts()?'<td>'+fmtMoney(i.costEach)+'</td><td>'+fmtMoney(i.qty*i.costEach)+'</td>':'')+'</tr>';
     }).join('')}
     </tbody></table>
     ${canViewCosts()?`<div style="text-align:right;font-size:18px;font-weight:700;padding:12px 0">Total: ${fmtMoney(po.totalCost)}</div>`:''}`;
   document.getElementById('modalFooter').innerHTML = '<button class="btn btn-secondary" onclick="closeModal()">Close</button>';
   openModal();
+  // Render barcodes after modal is visible
+  setTimeout(function(){
+    po.items.forEach(function(i,idx){
+      var sku = i.sku || skuById[i.product_id] || skuByName[i.name] || '';
+      var el = document.getElementById('poBarcode'+idx);
+      if(el && sku && typeof JsBarcode !== 'undefined'){
+        try{ JsBarcode(el, sku, { format:'CODE128', width:1.2, height:35, fontSize:0, margin:2, displayValue:false }); }catch(e){}
+      }
+    });
+  }, 100);
 }
 
 function openNewPO(){
