@@ -2950,7 +2950,7 @@ function openQuickTicket(){
       <div class="form-group"><label>Device *</label><input class="form-control" id="qtDevice" placeholder="e.g. iPhone 14 Pro"></div>
       <div class="form-group"><label>Store</label><select class="form-control" id="qtStore">${(isAdmin()?STORES:currentUser.stores.filter(s=>s!=='Main')).map(s=>`<option${s===currentStore?' selected':''}>${s}</option>`).join('')}</select></div>
     </div>
-    <div class="form-group"><label>Issue *</label><textarea class="form-control" id="qtIssue" placeholder="What's wrong with it?" rows="2"></textarea></div>
+    <div class="form-group"><label>Issue</label><textarea class="form-control" id="qtIssue" placeholder="What's wrong with it? (optional)" rows="2"></textarea></div>
     <div class="form-group"><label>Check-in Photo</label><div id="qtPhotoStrip" style="display:flex;gap:8px;flex-wrap:wrap;min-height:8px"></div><button type="button" class="btn btn-primary" style="margin-top:8px" onclick="PPCamera.open(window._pendingRepairPhotos||[], function(p){window._pendingRepairPhotos=p; renderPhotoStrip('qtPhotoStrip', p);})"><i class="fas fa-camera"></i> Take Photo</button></div>`;
   document.getElementById('modalFooter').innerHTML=`<button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveQuickTicket(true)"><i class="fas fa-print"></i> Create & Print</button><button class="btn btn-success" onclick="saveQuickTicket()"><i class="fas fa-bolt"></i> Create Ticket</button>`;
   openModal();
@@ -3269,7 +3269,6 @@ function saveQuickTicket(andPrint){
   const store=document.getElementById('qtStore').value;
   if(!name){alert('Customer name required'); return;}
   if(!device){alert('Device required'); return;}
-  if(!issue){alert('Issue required'); return;}
   // find or create customer
   const custs=getCustomers();
   let cust = phone ? custs.find(c=>c.phone===phone) : null;
