@@ -443,8 +443,9 @@ tr:hover td{background:rgba(10,132,255,.04)}
     },
 
     async _hydrateAll() {
+      // Products must load first — PO hydration needs the SKU lookup from products cache
+      await this._hydrateProducts();
       await Promise.all([
-        this._hydrateProducts(),
         this._hydrateCustomers(),
         this._hydrateSales(),
         this._hydrateRepairs(),
