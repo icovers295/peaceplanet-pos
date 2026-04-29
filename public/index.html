@@ -3165,7 +3165,7 @@ function openNew3pmOrder(id){
   const storeOpts=(isAdmin()?STORES:currentUser.stores.filter(s=>s!=='Main')).map(s=>`<option${existing?.store===s?' selected':(!existing&&s===currentStore?' selected':'')}>${s}</option>`).join('');
   document.getElementById('modalBody').innerHTML=`
     <div class="form-row form-row-3" style="align-items:end">
-      <div class="form-group"><label>SKU *</label><input class="form-control" id="o3SKU" placeholder="Paste supplier SKU..." value="${existing?.sku||''}"></div>
+      <div class="form-group"><label>SKU</label><input class="form-control" id="o3SKU" placeholder="Paste supplier SKU (optional)..." value="${existing?.sku||''}"></div>
       <div class="form-group"><label>Supplier</label><select class="form-control" id="o3Sup"><option value="mobilesentrix"${existing?.supplier==='mobilesentrix'?' selected':''}>MobileSentrix</option><option value="techpoint"${existing?.supplier==='techpoint'?' selected':''}>TechPoint</option><option value="other"${existing?.supplier==='other'?' selected':''}>Other</option></select></div>
       <div class="form-group"><button type="button" class="btn btn-secondary" onclick="lookup3pmSKU()"><i class="fas fa-search"></i> Lookup in stock</button></div>
     </div>
@@ -3208,7 +3208,6 @@ function saveNew3pmOrder(existingId){
   const name=(document.getElementById('o3Name').value||'').trim();
   const store=document.getElementById('o3StoreSel').value;
   const cust=(document.getElementById('o3Cust').value||'').trim();
-  if(!sku){alert('SKU required');return}
   if(!name){alert('Product name required');return}
   if(!cust){alert('Customer name required');return}
   const rec={
