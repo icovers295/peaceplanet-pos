@@ -18,4 +18,5 @@ ENV DB_PATH=/app/data/peaceplanet.db
 
 EXPOSE 3000
 
+# Build: v1.0.1
 CMD ["node", "server.js"]
