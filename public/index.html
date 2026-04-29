@@ -1926,11 +1926,11 @@ function openNewRepair(){
     <div class="form-group"><label>Check-in Photos</label><div id="nrPhotoStrip" style="display:flex;gap:8px;flex-wrap:wrap;min-height:8px"></div><button type="button" class="btn btn-secondary" style="margin-top:8px" onclick="PPCamera.open(window._pendingRepairPhotos||[], function(p){window._pendingRepairPhotos=p; renderPhotoStrip('nrPhotoStrip', p);})"><i class="fas fa-camera"></i> Take Photo</button></div>`;
   window._pendingRepairPhotos=[];
   document.getElementById('nrCust').onchange=function(){document.getElementById('newCustFields').style.display=this.value==='__new'?'block':'none'};
-  document.getElementById('modalFooter').innerHTML=`<button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveNewRepair()">Create Repair</button>`;
+  document.getElementById('modalFooter').innerHTML=`<button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveNewRepair(true)"><i class="fas fa-print"></i> Create & Print</button><button class="btn btn-success" onclick="saveNewRepair()">Create Repair</button>`;
   openModal();
 }
 
-function saveNewRepair(){
+function saveNewRepair(andPrint){
   let custId=document.getElementById('nrCust').value;
   if(custId==='__new'){
     const name=document.getElementById('ncName').value.trim();
@@ -1965,6 +1965,7 @@ function saveNewRepair(){
   document.getElementById('modalFooter').innerHTML=`
     <button class="btn btn-secondary" onclick="closeModal();renderRepairs();setTimeout(function(){openRepairDetail('${repair.id}')},100)">Close</button>
     <button class="btn btn-primary" onclick="printRepairTicket('${repair.id}')"><i class="fas fa-print"></i> Print Ticket</button>`;
+  if(andPrint) setTimeout(function(){ printRepairTicket(repair.id); }, 200);
 }
 
 function openRepairDetail(rid){
@@ -2951,7 +2952,7 @@ function openQuickTicket(){
     </div>
     <div class="form-group"><label>Issue *</label><textarea class="form-control" id="qtIssue" placeholder="What's wrong with it?" rows="2"></textarea></div>
     <div class="form-group"><label>Check-in Photo</label><div id="qtPhotoStrip" style="display:flex;gap:8px;flex-wrap:wrap;min-height:8px"></div><button type="button" class="btn btn-primary" style="margin-top:8px" onclick="PPCamera.open(window._pendingRepairPhotos||[], function(p){window._pendingRepairPhotos=p; renderPhotoStrip('qtPhotoStrip', p);})"><i class="fas fa-camera"></i> Take Photo</button></div>`;
-  document.getElementById('modalFooter').innerHTML=`<button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-success" onclick="saveQuickTicket()"><i class="fas fa-bolt"></i> Create Ticket</button>`;
+  document.getElementById('modalFooter').innerHTML=`<button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveQuickTicket(true)"><i class="fas fa-print"></i> Create & Print</button><button class="btn btn-success" onclick="saveQuickTicket()"><i class="fas fa-bolt"></i> Create Ticket</button>`;
   openModal();
   setTimeout(()=>{ const el=document.getElementById('qtName'); if(el) el.focus(); }, 50);
 }
@@ -3260,7 +3261,7 @@ function delete3pmOrder(id){
   render3pmOrders();
 }
 
-function saveQuickTicket(){
+function saveQuickTicket(andPrint){
   const name=(document.getElementById('qtName').value||'').trim();
   const phone=(document.getElementById('qtPhone').value||'').trim();
   const device=(document.getElementById('qtDevice').value||'').trim();
@@ -3294,6 +3295,7 @@ function saveQuickTicket(){
   document.getElementById('modalFooter').innerHTML=`
     <button class="btn btn-secondary" onclick="closeModal();if(navigate)navigate('repairs');else renderRepairs();setTimeout(function(){openRepairDetail('${repair.id}')},100)">Close</button>
     <button class="btn btn-primary" onclick="printRepairTicket('${repair.id}')"><i class="fas fa-print"></i> Print Ticket</button>`;
+  if(andPrint) setTimeout(function(){ printRepairTicket(repair.id); }, 200);
 }
 
 // ═══════════════════════════════════════════════════════
