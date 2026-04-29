@@ -1,6 +1,6 @@
 {
   "name": "peaceplanet-pos",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "POS system for PeacePlanet phone repair shops",
   "main": "server.js",
   "scripts": {
