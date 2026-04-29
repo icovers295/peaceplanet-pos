@@ -1949,10 +1949,22 @@ function saveNewRepair(){
   const d=new Date();
   const ticket='RPR'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+'-'+String(seq).padStart(5,'0');
 
-  const repair={id:uid(),ticket,customerId:custId,device,imei:document.getElementById('nrImei').value.trim(),issue,status:'Checked In',priority:document.getElementById('nrPriority').value,cost:parseFloat(document.getElementById('nrCost').value)||0,paid:0,parts:[],store:document.getElementById('nrStore').value,notes:document.getElementById('nrNotes').value.trim(),photos:(window._pendingRepairPhotos||[]).slice(),created:now()};
+  const store=document.getElementById('nrStore').value;
+  const repair={id:uid(),ticket,customerId:custId,device,imei:document.getElementById('nrImei').value.trim(),issue,status:'Checked In',priority:document.getElementById('nrPriority').value,cost:parseFloat(document.getElementById('nrCost').value)||0,paid:0,parts:[],store,notes:document.getElementById('nrNotes').value.trim(),photos:(window._pendingRepairPhotos||[]).slice(),created:now()};
   const repairs=getRepairs();repairs.push(repair);save('repairs',repairs);
   window._pendingRepairPhotos=[];
-  closeModal();renderRepairs();
+  // Show success with Print Ticket option
+  document.getElementById('modalTitle').textContent='Repair Created';
+  document.getElementById('modalBody').innerHTML=`
+    <div style="text-align:center;padding:24px 0">
+      <i class="fas fa-check-circle" style="font-size:48px;color:var(--success);margin-bottom:16px"></i>
+      <h3 style="margin:0 0 8px">${ticket}</h3>
+      <p style="margin:0;color:var(--text-muted)">${device}</p>
+      <p style="margin:8px 0 0;color:var(--text-muted)">${issue}</p>
+    </div>`;
+  document.getElementById('modalFooter').innerHTML=`
+    <button class="btn btn-secondary" onclick="closeModal();renderRepairs();setTimeout(function(){openRepairDetail('${repair.id}')},100)">Close</button>
+    <button class="btn btn-primary" onclick="printRepairTicket('${repair.id}')"><i class="fas fa-print"></i> Print Ticket</button>`;
 }
 
 function openRepairDetail(rid){
