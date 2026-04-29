@@ -2655,12 +2655,19 @@ function renderPOHistory(){
 function viewPO(poId){
   const pos = load('purchaseOrders', []);
   const po = pos.find(x => x.id === poId); if(!po) return;
+  // Build SKU lookup from products cache in case hydration missed it
+  const products = getProducts();
+  const skuById = {}; const skuByName = {};
+  products.forEach(function(p){ if(p.id) skuById[p.id]=p.sku; if(p.name) skuByName[p.name]=p.sku; });
   document.getElementById('modalTitle').textContent = 'Purchase Order ' + po.poNum;
   document.getElementById('modalBox').classList.add('modal-wide');
   document.getElementById('modalBody').innerHTML = `
     <div style="margin-bottom:12px">${canViewCosts()?`<strong>Supplier:</strong> ${po.supplier} &nbsp;|&nbsp;`:''} <strong>Ref:</strong> ${po.ref||'-'} &nbsp;|&nbsp; <strong>Store:</strong> ${po.store}<br><strong>Received by:</strong> ${po.user} &nbsp;|&nbsp; <strong>Date:</strong> ${fmtDate(po.date)}</div>
     <table><thead><tr><th>Product</th><th>SKU</th><th>Qty</th>${canViewCosts()?'<th>Cost Each</th><th>Line Total</th>':''}</tr></thead><tbody>
-    ${po.items.map(i => `<tr><td>${i.name}</td><td><code>${i.sku}</code></td><td>${i.qty}</td>${canViewCosts()?`<td>${fmtMoney(i.costEach)}</td><td>${fmtMoney(i.qty*i.costEach)}</td>`:''}</tr>`).join('')}
+    ${po.items.map(i => {
+      const sku = i.sku || skuById[i.product_id] || skuByName[i.name] || '';
+      return `<tr><td>${i.name}</td><td><code>${sku}</code></td><td>${i.qty}</td>${canViewCosts()?`<td>${fmtMoney(i.costEach)}</td><td>${fmtMoney(i.qty*i.costEach)}</td>`:''}</tr>`;
+    }).join('')}
     </tbody></table>
     ${canViewCosts()?`<div style="text-align:right;font-size:18px;font-weight:700;padding:12px 0">Total: ${fmtMoney(po.totalCost)}</div>`:''}`;
   document.getElementById('modalFooter').innerHTML = '<button class="btn btn-secondary" onclick="closeModal()">Close</button>';
