@@ -1099,6 +1099,7 @@ tr:hover td{background:rgba(10,132,255,.04)}
 <div class="pos-cart-header"><h3>Cart (<span id="cartCount">0</span>)</h3></div>
 <div class="pos-cart-items" id="cartItems"><div class="empty-state"><i class="fas fa-shopping-cart"></i><p>Click products to add</p></div></div>
 <div class="pos-cart-footer">
+<div style="margin-bottom:8px"><label style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--g500);letter-spacing:.03em">Customer</label><div style="display:flex;gap:4px"><input class="form-control" id="posCustomerSearch" placeholder="Search customer..." oninput="posCustomerSearchHandler()" style="font-size:13px;padding:6px 10px"><button class="btn btn-sm btn-secondary" onclick="clearPosCustomer()" title="Clear customer"><i class="fas fa-times"></i></button></div><div id="posCustomerResults" style="max-height:120px;overflow-y:auto;border:1px solid var(--g200);border-radius:6px;margin-top:2px;display:none"></div><div id="posCustomerSelected" style="font-size:13px;font-weight:700;color:var(--primary);margin-top:2px;display:none"></div></div>
 <div class="totals-row"><span>Subtotal</span><span id="cartSub">£0.00</span></div>
 <div class="discount-row"><input class="form-control" type="number" id="discVal" value="0" min="0" step="0.01" onchange="renderCartTotals()"><button class="disc-toggle" id="discType" onclick="toggleDiscType()">£</button><span style="font-size:12px;color:var(--g500)">discount</span></div>
 <div class="totals-row total"><span>TOTAL</span><span id="cartTotal">£0.00</span></div>
@@ -1339,7 +1340,7 @@ const STORES = ['Main','Dungannon','Cookstown','Omagh'];
 const CATEGORIES = ['Accessories','Accessories - Apple Plugs','Accessories - Devia Power Banks','Accessories - Samsung Phone Cases','Accessories - iPad Cases','Accessories - iPad Tempered Glass','Accessories - iPhone Cases','Accessories - iPhone Lens Protector','Accessories - iPhone Tempered Glass','Acer - LCD','Acer - Screens','Acer Parts','Alba - Parts','Alcatel - Screen','Amazon - Battery','Amazon - Tablet Parts','Amazon - Tablet Screens','Asus - Screens','Boardwork','Camera Lens Tempered Glass','Dell - Parts','Gogle Pixel - Parts','Google Account','Google Pixel - Phones','Google Pixel - Screens','Google pixel - Battery','HP - parts','HP laptop - screen','HUDL - Parts','Honor parts','Huawei - Batteries','Huawei - Parts','Huawei - Screens','JBL','Labour','Laptop','Laptop - Screen','Lenovo - Parts','Lenovo - Screens','Lenovo - Tab Parts','Macbook - Batteries','Macbook - Parts','Macbook - Screens','Macbook - Software','Macbook\'s','Matebook - Parts','Microsoft','Microsoft - Screens','Motorola - Parts','Motorola - Screens','Nintendo - Parts','Nintendo - Screens','Nintendo Switch - Parts','Nokia - Parts','Nokia - screens','OPPO - Parts','OPPO - Screens','Oneplus - Screens','PB - Parts','PC - Batteries','PC - Parts','Pet - Accessories','Playstation - Parts','Redmi - Parts','Redmi - Screens','Samsung - Backs','Samsung - Batteries','Samsung - Parts','Samsung - Phones','Samsung - Screens','Samsung - Tab Parts','Samsung - Tab Screens','Samsung - Tabs','Samsung - Watches','Samsung-Tab batteries','VR - Parts','Vodafone - Parts','XBOX - Parts','Xaomi - Screen','Xbox','Xperia - Batteries','Xperia - Parts','Xperia - Screens','alcatel','beats pill','blackview - screen','iPad','iPad - Batteries','iPad - Digitizer And LCD','iPad - Digitizer Screens','iPad - LCD','iPad - Parts','iPencil','iPhone - Batteries','iPhone - Glass Backs','iPhone - Parts','iPhone - Screens','iPhone Tempered Glass','iPhones','iPod - Batteries','iPod - Parts','iPod - Screens','iWatch','iWatch - Batteries','iWatch - Screens','imac','lenova - tab','microsoft - tab','microsoft surface battery','oneplus - parts','sony - parts','tom tom - parts','xiaomi - parts','zebra - LCD'];
 const STATUSES = ['Checked In','Diagnosing','Awaiting Parts','In Repair','Ready','Completed','Collected'];
 
-function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function uid(){try{return crypto.randomUUID()}catch(e){return'10000000-1000-4000-8000-100000000000'.replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16))}}
 function today(){return new Date().toISOString().slice(0,10)}
 function now(){return new Date().toISOString()}
 function fmtDate(iso){if(!iso)return'-';const d=new Date(iso);return d.toLocaleDateString('en-GB')+' '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}
@@ -1368,6 +1369,7 @@ let currentUser = null;
 let currentStore = 'Dungannon';
 let cart = [];
 let discountIsPercent = false;
+let posCustomerId = null;
 let reportRange = 'today';
 let monitorInterval = null;
 
@@ -1581,6 +1583,33 @@ function toggleDiscType(){
   renderCartTotals();
 }
 
+function posCustomerSearchHandler(){
+  const q=(document.getElementById('posCustomerSearch').value||'').toLowerCase();
+  const box=document.getElementById('posCustomerResults');
+  if(!q||q.length<2){box.style.display='none';box.innerHTML='';return}
+  const customers=getCustomers().filter(c=>c.name.toLowerCase().includes(q)||(c.phone&&c.phone.includes(q))||(c.email&&c.email.toLowerCase().includes(q)));
+  if(!customers.length){box.style.display='none';box.innerHTML='';return}
+  box.style.display='block';
+  box.innerHTML=customers.slice(0,8).map(c=>`<div style="padding:6px 10px;cursor:pointer;font-size:13px;font-weight:600;border-bottom:1px solid var(--g100)" onclick="selectPosCustomer('${c.id}')" onmouseover="this.style.background='var(--g50)'" onmouseout="this.style.background=''">${c.name}${c.phone?' — '+c.phone:''}</div>`).join('');
+}
+
+function selectPosCustomer(cid){
+  posCustomerId=cid;
+  const c=getCustomers().find(x=>x.id===cid);
+  document.getElementById('posCustomerSearch').value='';
+  document.getElementById('posCustomerResults').style.display='none';
+  document.getElementById('posCustomerSelected').style.display='block';
+  document.getElementById('posCustomerSelected').textContent=c?c.name:'Selected';
+}
+
+function clearPosCustomer(){
+  posCustomerId=null;
+  document.getElementById('posCustomerSearch').value='';
+  document.getElementById('posCustomerResults').style.display='none';
+  document.getElementById('posCustomerSelected').style.display='none';
+  document.getElementById('posCustomerSelected').textContent='';
+}
+
 function completeSale(method){
   if(!cart.length)return;
   const sub=cart.reduce((a,x)=>a+x.total,0);
@@ -1600,14 +1629,22 @@ function completeSale(method){
   });
   save('products',products);
 
+  // Capture customer
+  let saleCustomer = null;
+  if(posCustomerId){
+    const c = getCustomers().find(x=>x.id===posCustomerId);
+    if(c) saleCustomer = {id:c.id,name:c.name,phone:c.phone||'',email:c.email||'',address:c.address||''};
+  }
+
   // Save sale
-  const sale={id:uid(),receipt,store:currentStore,userId:currentUser.id,cashier:currentUser.name,method,items:cart.map(c=>({productId:c.pid,name:c.name,qty:c.qty,price:c.price})),subtotal:sub,discount:disc,total,status:'completed',date:now()};
+  const sale={id:uid(),receipt,store:currentStore,userId:currentUser.id,cashier:currentUser.name,method,items:cart.map(c=>({productId:c.pid,name:c.name,qty:c.qty,price:c.price})),subtotal:sub,discount:disc,total,status:'completed',date:now(),customer:saleCustomer};
   const sales=getSales();sales.push(sale);save('sales',sales);
 
   // Show receipt
   showReceipt(sale);
 
   cart=[];
+  clearPosCustomer();
   document.getElementById('discVal').value='0';
   renderPOS();
 }
@@ -1617,8 +1654,9 @@ function completeSale(method){
 // ═══════════════════════════════════════════════════════
 function showReceipt(sale){
   const paper=document.getElementById('receiptPaper');
+  const custName = sale.customer ? sale.customer.name : '';
   paper.innerHTML=`
-    <div class="r-header"><h2 style="font-size:26px;font-weight:900;color:#000">iCovers</h2><p style="font-size:13px;font-weight:700;color:#000">Phone Repair &amp; Accessories</p><p style="font-size:15px;font-weight:800;color:#000">${sale.store} Store</p>${(STORE_INFO[sale.store]||{}).addr?`<p style="font-size:12px;font-weight:600;color:#333">${STORE_INFO[sale.store].addr}</p>`:''}<p style="font-size:13px;font-weight:700;color:#000">${fmtDate(sale.date)}</p><p style="font-size:15px;font-weight:900;color:#000">${sale.receipt}</p>${sale.cashier?`<p style="font-size:12px;font-weight:600;color:#555">Served by: ${sale.cashier}</p>`:''}</div>
+    <div class="r-header"><h2 style="font-size:26px;font-weight:900;color:#000">iCovers</h2><p style="font-size:13px;font-weight:700;color:#000">Phone Repair &amp; Accessories</p><p style="font-size:15px;font-weight:800;color:#000">${sale.store} Store</p>${(STORE_INFO[sale.store]||{}).addr?`<p style="font-size:12px;font-weight:600;color:#333">${STORE_INFO[sale.store].addr}</p>`:''}<p style="font-size:13px;font-weight:700;color:#000">${fmtDate(sale.date)}</p><p style="font-size:15px;font-weight:900;color:#000">${sale.receipt}</p>${sale.cashier?`<p style="font-size:12px;font-weight:600;color:#555">Served by: ${sale.cashier}</p>`:''}${custName?`<p style="font-size:14px;font-weight:800;color:#000;margin-top:4px">Customer: ${custName}</p>`:''}</div>
     <div class="r-line"></div>
     ${sale.items.map(i=>`<div class="r-row"><span style="font-weight:800">${i.name} x${i.qty}</span><span style="font-weight:900">${fmtMoney(i.qty*i.price)}</span></div>`).join('')}
     <div class="r-line"></div>
@@ -1711,6 +1749,104 @@ function printRepairTicket(rid){
     '</div>'+
     '<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script>'+
     '<script>try{JsBarcode("#ticketBarcode","'+r.ticket+'",{format:"CODE128",width:2,height:50,displayValue:false,margin:0})}catch(e){}<\/script>'+
+    '</body></html>');
+  w.document.close();
+  setTimeout(function(){ w.print(); }, 500);
+}
+
+function printRepairInvoice(rid){
+  var repairs=getRepairs();
+  var r=repairs.find(function(x){return x.id===rid});if(!r)return;
+  var customers=getCustomers();
+  var c=customers.find(function(x){return x.id===r.customerId});
+  var products=getProducts();
+
+  // Generate invoice number from ticket: REP-0001 -> RINV-0001
+  var invNo = (r.ticket||'').replace(/^REP/,'RINV') || ('RINV-'+Date.now());
+
+  var partsRows=r.parts.map(function(pt){
+    var prod=products.find(function(x){return x.id===pt.productId});
+    var partName=prod?prod.name:'Part';
+    var partPrice=prod?(prod.sell||0):0;
+    var lineTotal=partPrice*pt.qty;
+    return '<tr><td style="padding:6px 10px;border:1px solid #ccc;font-weight:600">'+partName+'</td>'+
+      '<td style="padding:6px 10px;border:1px solid #ccc;text-align:center">'+pt.qty+'</td>'+
+      '<td style="padding:6px 10px;border:1px solid #ccc;text-align:right;font-weight:700">'+fmtMoney(partPrice)+'</td>'+
+      '<td style="padding:6px 10px;border:1px solid #ccc;text-align:right;font-weight:700">'+fmtMoney(lineTotal)+'</td></tr>';
+  }).join('');
+
+  // If no parts, show labour line
+  if(!r.parts.length){
+    partsRows='<tr><td style="padding:6px 10px;border:1px solid #ccc;font-weight:600">Repair Service — '+r.device+'</td>'+
+      '<td style="padding:6px 10px;border:1px solid #ccc;text-align:center">1</td>'+
+      '<td style="padding:6px 10px;border:1px solid #ccc;text-align:right;font-weight:700">'+fmtMoney(r.cost)+'</td>'+
+      '<td style="padding:6px 10px;border:1px solid #ccc;text-align:right;font-weight:700">'+fmtMoney(r.cost)+'</td></tr>';
+  }
+
+  var netTotal = r.cost / 1.2;
+  var vatAmount = r.cost - netTotal;
+  var remaining = Math.max(0, r.cost - r.paid);
+  var storeInfo = STORE_INFO[r.store]||{};
+
+  var w=window.open('','_blank','width=500,height=800');
+  w.document.write('<html><head><style>'+
+    'body{margin:0;padding:30px;font-family:-apple-system,Helvetica,Arial,sans-serif;font-size:14px;color:#000}'+
+    'h2{margin:0;font-size:26px;font-weight:900}'+
+    '.line{border-top:2px solid #000;margin:14px 0}'+
+    '.row{display:flex;justify-content:space-between;padding:3px 0}'+
+    '.label{font-weight:700;font-size:12px;text-transform:uppercase;color:#333}'+
+    '.value{font-weight:600;font-size:14px}'+
+    'table{width:100%;border-collapse:collapse;font-size:13px;margin:10px 0}'+
+    'th{background:#f0f0f0;padding:6px 10px;border:1px solid #ccc;text-align:left;font-size:11px;text-transform:uppercase;font-weight:800}'+
+    '.total-section{margin-top:12px}'+
+    '.total-row{display:flex;justify-content:space-between;padding:4px 0;font-size:14px}'+
+    '.grand-total{font-size:20px;font-weight:900;border-top:3px solid #000;padding-top:8px;margin-top:6px}'+
+    '.footer{text-align:center;font-size:11px;color:#666;margin-top:20px;line-height:1.6}'+
+    '@media print{body{padding:15px;margin:0}}'+
+    '</style></head><body>'+
+    '<div style="text-align:left">'+
+      '<h2>iCovers</h2>'+
+      '<p style="font-size:14px;font-weight:700;margin:3px 0">Phone Repair &amp; Accessories</p>'+
+      '<p style="font-size:13px;font-weight:700;margin:2px 0">'+r.store+' Store</p>'+
+      (storeInfo.addr?'<p style="font-size:12px;font-weight:600;color:#333;margin:2px 0">'+storeInfo.addr+'</p>':'')+
+      (storeInfo.phone?'<p style="font-size:12px;font-weight:600;color:#333;margin:2px 0">Tel: '+storeInfo.phone+'</p>':'')+
+      '<p style="font-size:13px;font-weight:700;margin:2px 0">Email: '+COMPANY_EMAIL+'</p>'+
+      '<p style="font-size:13px;font-weight:700;margin:2px 0">Web: www.icovers.co.uk</p>'+
+    '</div>'+
+    '<div class="line"></div>'+
+    '<div style="display:flex;justify-content:space-between;margin:10px 0">'+
+      '<div>'+
+        '<div style="font-weight:900;font-size:16px;margin-bottom:4px">REPAIR INVOICE</div>'+
+        '<div style="font-weight:700">No: <strong>'+invNo+'</strong></div>'+
+        '<div style="font-weight:700">Ticket: <strong>'+r.ticket+'</strong></div>'+
+        '<div style="font-weight:700">Date: '+fmtDate(r.created)+'</div>'+
+      '</div>'+
+      '<div style="text-align:right">'+
+        '<div style="font-weight:900;font-size:16px;margin-bottom:4px">BILL TO</div>'+
+        '<div style="font-weight:800">'+(c?c.name:'Walk-in Customer')+'</div>'+
+        (c&&c.phone?'<div>'+c.phone+'</div>':'')+
+        (c&&c.email?'<div>'+c.email+'</div>':'')+
+        (c&&c.address?'<div>'+c.address+'</div>':'')+
+      '</div>'+
+    '</div>'+
+    '<div class="line"></div>'+
+    '<div style="font-weight:700;margin-bottom:4px"><span class="label">Device:</span> '+r.device+(r.imei?' (IMEI: '+r.imei+')':'')+'</div>'+
+    '<div style="font-weight:700;margin-bottom:8px"><span class="label">Issue:</span> '+r.issue+'</div>'+
+    '<table><thead><tr><th>Description</th><th style="text-align:center">Qty</th><th style="text-align:right">Unit Price</th><th style="text-align:right">Total</th></tr></thead><tbody>'+partsRows+'</tbody></table>'+
+    '<div class="total-section">'+
+      '<div class="total-row"><span style="font-weight:700">Subtotal (excl. VAT)</span><span style="font-weight:800">'+fmtMoney(netTotal)+'</span></div>'+
+      '<div class="total-row"><span style="font-weight:700">VAT (20%)</span><span style="font-weight:800">'+fmtMoney(vatAmount)+'</span></div>'+
+      '<div class="total-row grand-total"><span>TOTAL</span><span>'+fmtMoney(r.cost)+'</span></div>'+
+      '<div class="total-row"><span style="font-weight:700">Paid</span><span style="font-weight:800">'+fmtMoney(r.paid)+'</span></div>'+
+      (remaining>0?'<div class="total-row" style="color:#c00"><span style="font-weight:700">Balance Due</span><span style="font-weight:900">'+fmtMoney(remaining)+'</span></div>':'<div class="total-row" style="color:green"><span style="font-weight:700">Status</span><span style="font-weight:900">FULLY PAID</span></div>')+
+    '</div>'+
+    '<div class="line"></div>'+
+    '<div class="footer">'+
+      'Thank you for your business.<br>'+
+      'For any queries please contact: '+COMPANY_EMAIL+'<br>'+
+      'All repairs carry a 90-day warranty on parts &amp; labour.<br>'+
+      'iCovers — www.icovers.co.uk'+
+    '</div>'+
     '</body></html>');
   w.document.close();
   setTimeout(function(){ w.print(); }, 500);
@@ -2088,7 +2224,7 @@ function openRepairDetail(rid){
     <h3 style="margin-top:20px">Payment</h3>
     <div style="margin-bottom:8px"><strong>Total:</strong> ${fmtMoney(r.cost)} &nbsp;|&nbsp; <strong>Paid:</strong> ${fmtMoney(r.paid)} &nbsp;|&nbsp; <strong>Remaining:</strong> ${fmtMoney(remaining)} ${fullyPaid?'<span class="badge badge-success">FULLY PAID</span>':''}</div>
     ${!fullyPaid?`<div class="form-row" style="grid-template-columns:120px auto auto;align-items:end"><div class="form-group" style="margin:0"><label>Amount (£)</label><input class="form-control" type="number" step="0.01" id="rdPayAmt" value="${remaining.toFixed(2)}"></div><button class="btn btn-success" onclick="makeRepairPayment('${rid}','cash')"><i class="fas fa-money-bill"></i> Cash</button><button class="btn btn-primary" onclick="makeRepairPayment('${rid}','card')"><i class="fas fa-credit-card"></i> Card</button></div>`:''}`;
-  document.getElementById('modalFooter').innerHTML=`<button class="btn btn-primary" onclick="printRepairTicket('${rid}')"><i class="fas fa-print"></i> Print Ticket</button> <button class="btn btn-secondary" onclick="closeModal()">Close</button>`;
+  document.getElementById('modalFooter').innerHTML=`<button class="btn btn-primary" onclick="printRepairTicket('${rid}')"><i class="fas fa-print"></i> Print Ticket</button> <button class="btn btn-success" onclick="printRepairInvoice('${rid}')"><i class="fas fa-file-invoice"></i> Print Invoice</button> <button class="btn btn-secondary" onclick="closeModal()">Close</button>`;
   openModal();
   renderPhotoStrip('rdPhotoStrip', r.photos||[]);
 }
@@ -2525,8 +2661,8 @@ function posScanEnter(){
     addToCart(exact.id);
     document.getElementById('posSearch').value = '';
     renderPOS();
-    // Flash feedback
-    showToast('Added: ' + exact.name);
+    // Flash feedback with name and price
+    showToast('Added: ' + exact.name + ' — ' + fmtMoney(exact.sell));
   }
 }
 
