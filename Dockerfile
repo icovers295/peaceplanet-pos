@@ -3,7 +3,7 @@ FROM node:20-alpine
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci --production
+RUN npm install --production --ignore-scripts=false
 
 COPY . .
 
@@ -15,5 +15,5 @@ ENV DB_PATH=/app/data/peaceplanet.db
 
 EXPOSE 3000
 
-# Build: v1.0.3 — repair invoices + customer on POS receipts
+# Build: v1.0.4 — fix npm ci (no lockfile), use npm install
 CMD ["node", "server.js"]
